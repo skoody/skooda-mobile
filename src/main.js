@@ -1152,7 +1152,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.1.0";
+const CURRENT_VERSION = "0.1.3";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {
@@ -1178,10 +1178,22 @@ if (checkUpdateBtn) {
           downloadUpdateBtn.style.display = 'block';
           const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
           if (apkAsset) {
-            downloadUpdateBtn.onclick = () => window.open(apkAsset.browser_download_url, '_blank');
+            downloadUpdateBtn.onclick = () => {
+              if (window.Android && window.Android.openExternalUrl) {
+                window.Android.openExternalUrl(apkAsset.browser_download_url);
+              } else {
+                window.open(apkAsset.browser_download_url, '_blank');
+              }
+            };
           } else {
             downloadUpdateBtn.innerText = "Release Seite öffnen";
-            downloadUpdateBtn.onclick = () => window.open(data.html_url, '_blank');
+            downloadUpdateBtn.onclick = () => {
+              if (window.Android && window.Android.openExternalUrl) {
+                window.Android.openExternalUrl(data.html_url);
+              } else {
+                window.open(data.html_url, '_blank');
+              }
+            };
           }
         }
       } else {
