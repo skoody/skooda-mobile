@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' tauri: 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com; connect-src 'self' tauri: http://localhost:* https://api.ipify.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;">
+  <title>Skooda Mobile</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="html5-qrcode.min.js"></script>
+  <script src="qrcode.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- MONITOR TAB -->
+    <div id="monitor-tab" class="tab-content active">
+      <header class="header">
+        <div class="status-dot online"></div>
+        <h1>Skooda Monitor</h1>
+      </header>
+
+      <div class="monitor-grid">
+        <!-- Network Speed -->
+        <div class="stat-card full-row">
+          <div class="stat-header">
+            <div style="display:flex; flex-direction:column">
+              <span class="stat-label">NETWORK: <span id="wifi-ssid" style="color:#fff">Scanning...</span></span>
+              <span id="local-ip" class="stat-value-small">0.0.0.0</span>
+              <div style="display:flex; align-items:center">
+                <span id="public-ip" class="stat-value-small privacy-blur">Detecting...</span>
+                <span class="privacy-hint">🔒 tap to reveal</span>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <span id="uptime-val" class="stat-value-small">0h 0m</span><br />
+              <span id="wifi-rssi" class="stat-value-small">0 dBm</span>
+            </div>
+          </div>
+          <div class="net-stats">
+            <div class="net-item">
+              <span class="net-icon">↓</span>
+              <span id="net-down" class="stat-value-mid">0.0</span>
+              <span class="unit">KB/s</span>
+            </div>
+            <div class="net-item">
+              <span class="net-icon">↑</span>
+              <span id="net-up" class="stat-value-mid">0.0</span>
+              <span class="unit">KB/s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">BATTERY</span>
+            <span id="battery-health" class="stat-value-small">Health: ...</span>
+          </div>
+          <div class="stat-main">
+            <span id="battery-pct" class="stat-value">0</span><span class="unit">%</span>
+          </div>
+          <div class="progress-bg">
+            <div id="battery-progress" class="progress-bar" style="width: 0%"></div>
+          </div>
+          <div class="stat-footer">
+            <span><span id="battery-volts">0.0</span>V</span>
+            <span><span id="battery-current">0</span>mA</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <span class="stat-label">PROCESSOR</span>
+            <span class="stat-value-small"><span id="cpu-temp">0</span>°C</span>
+          </div>
+          <div class="stat-main">
+            <span id="cpu-usage" class="stat-value">0</span><span class="unit">%</span>
+          </div>
+          <div class="progress-bg">
+            <div id="cpu-progress" class="progress-bar cyan" style="width: 0%"></div>
+          </div>
+          <!-- Core Monitor Grid -->
+          <div id="cpu-cores-container" class="core-grid"></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">MEMORY (RAM)</span></div>
+          <div class="stat-main">
+            <span id="ram-pct" class="stat-value">0</span><span class="unit">%</span>
+          </div>
+          <div class="progress-bg">
+            <div id="ram-progress" class="progress-bar purple" style="width: 0%"></div>
+          </div>
+          <div class="stat-footer">
+            <span><span id="ram-used">0</span> GB</span>
+            <span>Total: <span id="ram-total">0</span>G</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-label">STORAGE</span></div>
+          <div class="stat-main">
+            <span id="storage-pct" class="stat-value">0</span><span class="unit">%</span>
+          </div>
+          <div class="progress-bg">
+            <div id="storage-progress" class="progress-bar orange" style="width: 0%"></div>
+          </div>
+          <div class="stat-footer">
+            <span><span id="storage-free">0</span> GB Free</span>
+          </div>
+        </div>
+
+        <!-- Device Specs -->
+        <div class="stat-card full-row">
+          <div class="stat-header"><span class="stat-label">DEVICE SPECIFICATIONS</span></div>
+          <div class="info-list mini">
+            <div class="info-item"><span class="info-label">Model</span><span id="dev-model"
+                class="info-value">...</span></div>
+            <div class="info-item"><span class="info-label">Hardware</span><span id="dev-hw"
+                class="info-value">...</span></div>
+            <div class="info-item"><span class="info-label">OS</span><span id="dev-android"
+                class="info-value">...</span></div>
+            <div class="info-item"><span class="info-label">Res</span><span id="dev-res" class="info-value">...</span>
+            </div>
+            <div class="info-item"><span class="info-label">Display</span><span id="dev-hz"
+                class="info-value">...</span></div>
+          </div>
+        </div>
+
+        <!-- Sensors -->
+        <div class="stat-card full-row">
+          <div class="stat-header">
+            <span class="stat-label">MOTION & ENVIRONMENT</span>
+            <span id="prox-alert" class="stat-value-small" style="color:var(--neon-purple)"></span>
+          </div>
+          <div class="sensor-container">
+            <!-- 3D Crosshair -->
+            <div class="orientation-box">
+              <div id="crosshair" class="crosshair-dot"></div>
+              <div class="grid-line v"></div>
+              <div class="grid-line h"></div>
+            </div>
+
+            <div class="sensor-stats">
+              <div class="sensor-item"><span class="sensor-axis">ACC</span>
+                <div class="sensor-track">
+                  <div id="sensor-ax" class="sensor-bar"></div>
+                  <div id="peak-ax" class="peak"></div>
+                </div>
+              </div>
+              <div class="sensor-item"><span class="sensor-axis">GYR</span>
+                <div class="sensor-track">
+                  <div id="sensor-gx" class="sensor-bar cyan"></div>
+                  <div id="peak-gx" class="peak"></div>
+                </div>
+              </div>
+              <div class="sensor-item"><span class="sensor-axis">EMF</span>
+                <div class="sensor-track">
+                  <div id="sensor-mag" class="sensor-bar purple"></div>
+                  <div id="peak-mag" class="peak"></div>
+                </div>
+              </div>
+              <div class="info-list mini no-pad">
+                <div class="info-item"><span class="info-label">G-Force</span><span id="gforce-val"
+                    class="info-value">1.0 G</span></div>
+                <div class="info-item"><span class="info-label">Magnetic</span><span id="mag-val" class="info-value">0
+                    µT</span></div>
+                <div class="info-item"><span class="info-label">Prox</span><span id="prox-val"
+                    class="info-value">Far</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLS TAB -->
+    <div id="tools-tab" class="tab-content">
+      <header class="header">
+        <div class="status-dot online"></div>
+        <h1>Skooda Tools</h1>
+      </header>
+
+      <div id="tool-categories" class="tool-grid">
+        <div class="tool-card category-card" data-sub="cyber-toolset">
+          <div class="card-icon">🛡️</div>
+          <div class="card-info">
+            <h3>Cyber Tools</h3>
+            <p>Network & Security</p>
+          </div>
+        </div>
+        <div class="tool-card category-card" data-sub="qr-toolset">
+          <div class="card-icon">📱</div>
+          <div class="card-info">
+            <h3>QR Tools</h3>
+            <p>Scanner & Generator</p>
+          </div>
+        </div>
+        <div class="tool-card category-card" data-sub="map-toolset">
+          <div class="card-icon">🗺️</div>
+          <div class="card-info">
+            <h3>Map</h3>
+            <p>Offline Navigation</p>
+          </div>
+        </div>
+        <div class="tool-card category-card" data-sub="esp-toolset">
+          <div class="card-icon">👁️</div>
+          <div class="card-info">
+            <h3>ESP Kamera</h3>
+            <p>KI Objekterkennung</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map (Untermenü) -->
+      <div id="map-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+        <div class="tool-card full-row no-pad">
+          <div id="map-container" class="map-container-default">
+            <div id="map" style="height: 100%; width: 100%;"></div>
+            <div id="map-search-container" class="map-top-bar">
+              <input type="text" id="map-search-input" placeholder="Search Location..." class="map-search">
+              <button id="fullscreen-map" class="map-top-btn" title="Toggle Fullscreen">⛶</button>
+              <button id="clear-route" class="map-top-btn" title="Clear Route">🗑️</button>
+            </div>
+            <div class="map-overlay-stats">
+              <div id="map-coords">GPS: Scanning...</div>
+              <div id="map-speed">SPD: 0.0 km/h</div>
+              <div id="map-alt">ALT: 0 m</div>
+              <div id="map-acc">ACC: -- m</div>
+              <button id="map-theme-toggle" class="map-theme-btn">🌓 Toggle Theme</button>
+            </div>
+            <button id="center-map" class="map-btn">🎯</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESP Kamera (Untermenü) -->
+      <div id="esp-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+        <div class="tool-card full-row no-pad">
+          <div class="esp-container">
+            <video id="esp-video" autoplay playsinline muted></video>
+            <canvas id="esp-canvas"></canvas>
+            <div id="esp-reticle" class="esp-reticle"></div>
+            
+            <div class="esp-ui">
+              <div class="esp-header">
+                <div class="esp-status" id="esp-status">Offline</div>
+                <button id="esp-capture-btn" class="icon-btn" title="Capture Target">📸</button>
+              </div>
+              
+              <div class="esp-filters">
+                <div class="filter-row">
+                  <label><input type="checkbox" id="esp-filter-person" checked> Personen</label>
+                  <label><input type="checkbox" id="esp-filter-car" checked> Fahrzeuge</label>
+                  <label><input type="checkbox" id="esp-filter-other"> Andere</label>
+                </div>
+                <div class="filter-row" style="margin-top: 5px;">
+                  <input type="text" id="esp-custom-filter" placeholder="Custom Label (dog, bird)..." class="cyber-input mini">
+                </div>
+              </div>
+              
+              <div class="esp-sliders" id="esp-sliders" style="display: none;">
+                <div class="slider-group">
+                  <label>Zoom: <span id="esp-zoom-val">1x</span></label>
+                  <input type="range" id="esp-zoom" min="1" max="5" step="0.1" value="1">
+                </div>
+                <div class="slider-group">
+                  <label>Sensibilität: <span id="esp-sens-val">60%</span></label>
+                  <input type="range" id="esp-sens" min="0.1" max="0.9" step="0.05" value="0.6">
+                </div>
+              </div>
+              
+              <button id="toggle-esp-btn" class="btn primary full-width">Starte ESP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cyber Tools (Untermenü) -->
+      <div id="cyber-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>IP Scanner</h3>
+            <p class="tool-desc">Discover devices & open ports</p>
+            <div id="scan-progress-container" class="progress-bg" style="display: none; margin-bottom: 10px;">
+              <div id="scan-progress-bar" class="progress-bar orange" style="width: 0%"></div>
+            </div>
+            <button id="start-net-scan" class="btn primary full-width">Start Network Scan</button>
+            <div id="scan-list" class="cyber-list"></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>Ping Tool</h3>
+            <div class="input-group">
+              <input type="text" id="ping-host" placeholder="8.8.8.8" class="cyber-input" />
+              <button id="start-ping" class="btn primary">Ping</button>
+            </div>
+            <div id="ping-result" class="console-box">Ready...</div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>DNS Lookup</h3>
+            <div class="input-group">
+              <input type="text" id="dns-host" placeholder="google.com" class="cyber-input" />
+              <button id="start-dns" class="btn primary">Lookup</button>
+            </div>
+            <div id="dns-result" class="console-box">...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="qr-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>QR Generator</h3>
+            <input type="text" id="qr-input" placeholder="Enter text..." class="cyber-input" />
+            <div id="qr-code-result" class="qr-container"></div>
+            <div class="btn-group">
+              <button id="qr-clear" class="btn secondary">Clear</button>
+              <button id="qr-download" class="btn primary" style="display: none;">Download</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>QR Scanner</h3>
+            <div id="reader-container" class="qr-reader-container">
+              <div id="reader" class="qr-reader"></div>
+              <div class="scan-line"></div>
+              <button id="qr-torch" class="torch-btn" style="display: none;">🔦</button>
+              <div id="zoom-controls" class="zoom-controls" style="display: none;">
+                <span>1x</span>
+                <input type="range" id="camera-zoom" min="1" max="5" step="0.1" value="1">
+                <span id="zoom-max">5x</span>
+              </div>
+            </div>
+            <div id="scan-result" class="scan-text">Ready...</div>
+            <div id="scanner-actions" class="btn-group" style="display: none;">
+              <button id="qr-copy" class="btn secondary">Copy</button>
+              <button id="qr-open" class="btn primary">Open</button>
+            </div>
+            <button id="start-scan" class="btn primary full-width">Start Scanner</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPDATE TAB -->
+    <div id="update-tab" class="tab-content">
+      <header class="header">
+        <div class="status-dot online" id="update-status-dot"></div>
+        <h1>System Update</h1>
+      </header>
+
+      <div class="tool-card full-row">
+        <div class="card-info" style="text-align: center;">
+          <div class="update-icon" style="font-size: 3rem; margin-bottom: 10px;">🚀</div>
+          <h2 id="update-title">Nach Updates suchen</h2>
+          <p id="update-desc" style="color: var(--text-dim); margin-bottom: 20px;">Klicke unten, um eine Verbindung zu GitHub herzustellen.</p>
+          
+          <div id="update-info" style="display: none; margin: 20px 0; display:flex; justify-content:center; gap:15px;">
+            <div class="version-badge" style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
+              <span class="label" style="font-size: 0.7rem; color: var(--text-dim); display:block;">Aktuell</span>
+              <span class="value" style="font-weight: bold;">v0.1.0</span>
+            </div>
+            <div class="version-badge highlight" style="background: rgba(0,242,255,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--neon-cyan);">
+              <span class="label" style="font-size: 0.7rem; color: var(--neon-cyan); display:block;">Neueste</span>
+              <span id="latest-version-val" class="value" style="font-weight: bold; color: var(--neon-cyan);">v?.?.?</span>
+            </div>
+          </div>
+
+          <button id="check-update-btn" class="btn primary full-width">Jetzt prüfen</button>
+          <button id="download-update-btn" class="btn secondary full-width" style="display: none; margin-top: 10px;">Update herunterladen (.apk)</button>
+        </div>
+      </div>
+
+      <div class="tool-card full-row">
+        <div class="card-info">
+          <h3>Release Notes</h3>
+          <div id="release-notes" class="cyber-list" style="max-height: 200px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+            Noch keine Informationen verfügbar.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="monitor-tab">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Monitor</span>
+      </button>
+      <button class="nav-btn" data-tab="tools-tab">
+        <span class="nav-icon">🛠️</span>
+        <span class="nav-label">Tools</span>
+      </button>
+      <button class="nav-btn" data-tab="update-tab">
+        <span class="nav-icon">🚀</span>
+        <span class="nav-label">Update</span>
+      </button>
+    </nav>
+
+
+  </div>
+
+  <!-- DEVICE ACTION MODAL -->
+  <div id="device-modal" class="modal-overlay">
+    <div class="action-modal">
+      <div id="modal-device-name" class="modal-title">Device Name</div>
+      <div id="modal-device-ip" class="modal-subtitle">192.168.1.1</div>
+      <div class="action-list">
+        <button id="action-copy" class="action-item">📋 Copy IP Address</button>
+        <button id="action-ping" class="action-item">📡 Ping Device</button>
+        <button id="action-browser" class="action-item">🌐 Open in Browser</button>
+        <button id="action-close" class="action-item"
+          style="margin-top:10px; border:none; background:none; justify-content:center; color:var(--text-dim)">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+
+</html>
