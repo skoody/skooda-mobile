@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.2.1";
+const CURRENT_VERSION = "0.2.2";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {

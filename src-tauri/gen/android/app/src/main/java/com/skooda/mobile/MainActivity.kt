@@ -88,7 +88,9 @@ class MainActivity : TauriActivity(), SensorEventListener {
         val permissions = mutableListOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
-            android.Manifest.permission.CAMERA
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
         if (Build.VERSION.SDK_INT >= 31) {
             permissions.add(android.Manifest.permission.BLUETOOTH_CONNECT)
@@ -514,17 +516,20 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun cleanupOldApks() {
             try {
+                // Try standard downloads directory
                 val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val files = downloadDir.listFiles(FilenameFilter { _, name -> 
-                    name.startsWith("skooda-mobile-") && name.endsWith(".apk") 
-                })
+                val files = downloadDir.listFiles()
                 
-                // We don't know the exact "current" filename here easily, 
-                // but we can delete everything except the most recently created one
-                if (files != null && files.size > 1) {
-                    files.sortByDescending { it.lastModified() }
-                    for (i in 1 until files.size) {
-                        files[i].delete()
+                if (files != null) {
+                    val apks = files.filter { it.name.lowercase().contains("skooda-mobile") && it.name.lowercase().endsWith(".apk") }
+                    
+                    if (apks.size > 1) {
+                        // Sort by modification date (newest first)
+                        val sortedApks = apks.sortedByDescending { it.lastModified() }
+                        // Delete everything except the newest one
+                        for (i in 1 until sortedApks.size) {
+                            sortedApks[i].delete()
+                        }
                     }
                 }
             } catch (e: Exception) {}
