@@ -375,56 +375,76 @@ body {
   pointer-events: none;
 }
 
-.esp-ui {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  padding: 10px;
+.esp-ui.compact {
+  bottom: 5px;
+  left: 5px;
+  right: 5px;
+  padding: 5px 8px;
+  gap: 4px;
+}
+
+.esp-header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 10;
-  border: 1px solid rgba(0, 242, 255, 0.3);
-  border-radius: 12px;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .esp-status {
   font-family: monospace;
   color: var(--neon-cyan);
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   text-align: center;
 }
 
-.esp-filters {
+.esp-controls-row {
   display: flex;
-  justify-content: space-around;
-  color: var(--text-main);
-  font-size: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 }
 
-.esp-filters label {
+.esp-filters.mini {
+  display: flex;
+  gap: 8px;
+  font-size: 0.65rem;
+  color: var(--text-main);
+}
+
+.esp-filters.mini label {
   display: flex;
   align-items: center;
-  gap: 4px;
-  cursor: pointer;
+  gap: 2px;
 }
 
-.esp-sliders {
+.esp-sliders.mini {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  gap: 10px;
+  flex: 1;
 }
 
-.slider-group {
+.slider-mini {
   display: flex;
-  flex-direction: column;
-  font-family: monospace;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.65rem;
   color: var(--neon-cyan);
+  font-family: monospace;
+  flex: 1;
+}
+
+.slider-mini input {
+  flex: 1;
+  height: 2px;
+}
+
+.btn.mini {
+  padding: 4px 8px;
+  font-size: 0.7rem;
+}
+
+.icon-btn.mini {
+  padding: 4px;
   font-size: 0.8rem;
 }
 

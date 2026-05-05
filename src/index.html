@@ -248,35 +248,30 @@
             <canvas id="esp-canvas"></canvas>
             <div id="esp-reticle" class="esp-reticle"></div>
             
-            <div class="esp-ui">
+            <div class="esp-ui compact">
               <div class="esp-header">
+                <button id="toggle-esp-btn" class="btn primary mini">Starte ESP</button>
                 <div class="esp-status" id="esp-status">Offline</div>
-                <button id="esp-capture-btn" class="icon-btn" title="Capture Target">📸</button>
+                <button id="esp-capture-btn" class="icon-btn mini" title="Capture Target">📸</button>
               </div>
               
-              <div class="esp-filters">
-                <div class="filter-row">
-                  <label><input type="checkbox" id="esp-filter-person" checked> Personen</label>
-                  <label><input type="checkbox" id="esp-filter-car" checked> Fahrzeuge</label>
-                  <label><input type="checkbox" id="esp-filter-other"> Andere</label>
+              <div class="esp-controls-row">
+                <div class="esp-filters mini">
+                  <label><input type="checkbox" id="esp-filter-person" checked> P</label>
+                  <label><input type="checkbox" id="esp-filter-car" checked> V</label>
+                  <label><input type="checkbox" id="esp-filter-other"> O</label>
                 </div>
-                <div class="filter-row" style="margin-top: 5px;">
-                  <input type="text" id="esp-custom-filter" placeholder="Custom Label (dog, bird)..." class="cyber-input mini">
-                </div>
-              </div>
-              
-              <div class="esp-sliders" id="esp-sliders" style="display: none;">
-                <div class="slider-group">
-                  <label>Zoom: <span id="esp-zoom-val">1x</span></label>
-                  <input type="range" id="esp-zoom" min="1" max="5" step="0.1" value="1">
-                </div>
-                <div class="slider-group">
-                  <label>Sensibilität: <span id="esp-sens-val">60%</span></label>
-                  <input type="range" id="esp-sens" min="0.1" max="0.9" step="0.05" value="0.6">
+                <div class="esp-sliders mini" id="esp-sliders" style="display: none;">
+                  <div class="slider-mini">
+                    <span>Z: <span id="esp-zoom-val">1x</span></span>
+                    <input type="range" id="esp-zoom" min="1" max="5" step="0.1" value="1">
+                  </div>
+                  <div class="slider-mini">
+                    <span>S: <span id="esp-sens-val">60%</span></span>
+                    <input type="range" id="esp-sens" min="0.1" max="0.9" step="0.05" value="0.6">
+                  </div>
                 </div>
               </div>
-              
-              <button id="toggle-esp-btn" class="btn primary full-width">Starte ESP</button>
             </div>
           </div>
         </div>
@@ -376,7 +371,7 @@
           <div id="update-info" style="display: none; margin: 20px 0; display:flex; justify-content:center; gap:15px;">
             <div class="version-badge" style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
               <span class="label" style="font-size: 0.7rem; color: var(--text-dim); display:block;">Aktuell</span>
-              <span class="value" style="font-weight: bold;">v0.1.3</span>
+              <span class="value" style="font-weight: bold;">v0.1.4</span>
             </div>
             <div class="version-badge highlight" style="background: rgba(0,242,255,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--neon-cyan);">
               <span class="label" style="font-size: 0.7rem; color: var(--neon-cyan); display:block;">Neueste</span>
