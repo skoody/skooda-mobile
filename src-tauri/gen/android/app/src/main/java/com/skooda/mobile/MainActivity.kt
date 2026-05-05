@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.Sensor
+import android.hardware.camera2.CameraManager
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
@@ -80,14 +81,17 @@ class MainActivity : TauriActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val permissions = arrayOf(
+        val permissions = mutableListOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.CAMERA
         )
+        if (Build.VERSION.SDK_INT >= 31) {
+            permissions.add(android.Manifest.permission.BLUETOOTH_CONNECT)
+        }
         
         if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
-            ActivityCompat.requestPermissions(this, permissions, 100)
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), 100)
         }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -516,6 +520,23 @@ class MainActivity : TauriActivity(), SensorEventListener {
                         files[i].delete()
                     }
                 }
+            } catch (e: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun setFlashlight(on: Boolean) {
+            try {
+                val cameraManager = mContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                val cameraId = cameraManager.cameraIdList[0]
+                cameraManager.setTorchMode(cameraId, on)
+            } catch (e: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun toggleBluetooth(on: Boolean) {
+            try {
+                val adapter = BluetoothAdapter.getDefaultAdapter()
+                if (on) adapter.enable() else adapter.disable()
             } catch (e: Exception) {}
         }
 

@@ -1155,7 +1155,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.1.7";
+const CURRENT_VERSION = "0.1.8";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {
@@ -1211,7 +1211,26 @@ if (checkUpdateBtn) {
     } finally {
       checkUpdateBtn.disabled = false;
       checkUpdateBtn.innerText = "Jetzt prüfen";
-    }
+      // --- HARDWARE TOGGLES ---
+  const toggleFlashlight = document.getElementById('toggle-flashlight');
+  const toggleBluetooth = document.getElementById('toggle-bluetooth');
+  
+  if (toggleFlashlight) {
+    toggleFlashlight.onchange = (e) => {
+      if (window.Android) {
+        window.Android.setFlashlight(e.target.checked);
+      }
+    };
+  }
+  
+  if (toggleBluetooth) {
+    toggleBluetooth.onchange = (e) => {
+      if (window.Android) {
+        window.Android.toggleBluetooth(e.target.checked);
+      }
+    };
+  }
+}
   };
 }
 

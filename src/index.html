@@ -216,8 +216,42 @@
             <p>KI Objekterkennung</p>
           </div>
         </div>
+        <div class="tool-card category-card" data-sub="device-toolset">
+          <div class="card-icon">⚙️</div>
+          <div class="card-info">
+            <h3>Device Controls</h3>
+            <p>Flashlight, BT & more</p>
+          </div>
+        </div>
       </div>
 
+      
+      <!-- Device Controls (Untermenü) -->
+      <div id="device-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+        <div class="tool-card full-row">
+          <div class="card-info">
+            <h3>Hardware Toggles</h3>
+            <div class="cyber-list" style="padding: 10px;">
+              <div class="info-item" style="padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span class="info-label" style="font-size: 1rem;">Flashlight</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggle-flashlight">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="info-item" style="padding: 15px 0;">
+                <span class="info-label" style="font-size: 1rem;">Bluetooth</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggle-bluetooth">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Map (Untermenü) -->
       <div id="map-toolset" class="sub-tool-container" style="display: none;">
         <button class="back-btn">← Back to Tools</button>
@@ -373,7 +407,7 @@
           <div id="update-info" style="display: none; margin: 20px 0; display:flex; justify-content:center; gap:15px;">
             <div class="version-badge" style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
               <span class="label" style="font-size: 0.7rem; color: var(--text-dim); display:block;">Aktuell</span>
-              <span class="value" style="font-weight: bold;">v0.1.7</span>
+              <span class="value" style="font-weight: bold;">v0.1.8</span>
             </div>
             <div class="version-badge highlight" style="background: rgba(0,242,255,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--neon-cyan);">
               <span class="label" style="font-size: 0.7rem; color: var(--neon-cyan); display:block;">Neueste</span>
