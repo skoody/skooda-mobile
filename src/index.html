@@ -128,6 +128,8 @@
             </div>
             <div class="info-item"><span class="info-label">Display</span><span id="dev-hz"
                 class="info-value">...</span></div>
+            <div class="info-item"><span class="info-label">Bluetooth</span><span id="dev-bt"
+                class="info-value">...</span></div>
           </div>
         </div>
 
@@ -371,7 +373,7 @@
           <div id="update-info" style="display: none; margin: 20px 0; display:flex; justify-content:center; gap:15px;">
             <div class="version-badge" style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
               <span class="label" style="font-size: 0.7rem; color: var(--text-dim); display:block;">Aktuell</span>
-              <span class="value" style="font-weight: bold;">v0.1.5</span>
+              <span class="value" style="font-weight: bold;">v0.1.6</span>
             </div>
             <div class="version-badge highlight" style="background: rgba(0,242,255,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--neon-cyan);">
               <span class="label" style="font-size: 0.7rem; color: var(--neon-cyan); display:block;">Neueste</span>
@@ -387,9 +389,18 @@
       <div class="tool-card full-row">
         <div class="card-info">
           <h3>Release Notes</h3>
-          <div id="release-notes" class="cyber-list" style="max-height: 200px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+          <div id="release-notes" class="cyber-list" style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
             Noch keine Informationen verfügbar.
           </div>
+        </div>
+      </div>
+
+      <div class="tool-card full-row">
+        <div class="card-info">
+          <h3>Feedback & Ideen</h3>
+          <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 10px;">Hast du Verbesserungsvorschläge? Schreib uns direkt hier!</p>
+          <textarea id="feedback-text" class="cyber-input" style="width: 100%; height: 80px; margin-bottom: 10px; resize: none;" placeholder="Deine Idee..."></textarea>
+          <button id="send-feedback-btn" class="btn primary full-width">Feedback senden</button>
         </div>
       </div>
     </div>

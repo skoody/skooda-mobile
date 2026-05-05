@@ -43,11 +43,14 @@ window.__skoodaUpdate = (stats) => {
   if (!stats) return;
   try {
     // Static Device Info
-    if (stats.model) setText('dev-model', `${stats.manufacturer} ${stats.model}`);
-    if (stats.android_ver) setText('dev-android', `Android ${stats.android_ver} (API ${stats.api_level})`);
+    if (stats.android_ver) setText('dev-android', stats.android_ver);
+    if (stats.api_level) setText('dev-android', `Android ${stats.android_ver} (API ${stats.api_level})`);
     if (stats.resolution) setText('dev-res', stats.resolution);
-    if (stats.cpu_model) setText('dev-hw', stats.cpu_model);
     if (stats.refresh_rate) setText('dev-hz', `${stats.refresh_rate} Hz`);
+    if (stats.bluetooth_ver) setText('dev-bt', stats.bluetooth_ver);
+    if (stats.refresh_rate) setText('dev-hz', `${stats.refresh_rate} Hz`);
+    if (stats.model) setText('dev-model', `${stats.manufacturer} ${stats.model}`);
+    if (stats.cpu_model) setText('dev-hw', stats.cpu_model);
 
     // Battery
     if (stats.battery_percent !== undefined) {
@@ -1152,7 +1155,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.1.5";
+const CURRENT_VERSION = "0.1.6";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {
@@ -1179,7 +1182,8 @@ if (checkUpdateBtn) {
           const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
           if (apkAsset) {
             downloadUpdateBtn.onclick = () => {
-              if (window.Android && window.Android.openExternalUrl) {
+              if (window.Android) {
+                window.Android.cleanupOldApks();
                 window.Android.openExternalUrl(apkAsset.browser_download_url);
               } else {
                 window.open(apkAsset.browser_download_url, '_blank');
@@ -1211,3 +1215,61 @@ if (checkUpdateBtn) {
   };
 }
 
+  // --- AUTO UPDATER ---
+  async function silentCheckUpdate() {
+    try {
+      const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+      if (!response.ok) return;
+      const data = await response.json();
+      const latestVersion = data.tag_name.replace('v', '');
+      
+      if (latestVersion !== CURRENT_VERSION) {
+        if (window.Android) {
+          window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar. Tippe zum Herunterladen.`);
+        }
+        // Also show a badge on the Update tab
+        const updateTabBtn = document.querySelector('[data-tab="update-tab"]');
+        if (updateTabBtn) {
+          updateTabBtn.style.position = 'relative';
+          let badge = updateTabBtn.querySelector('.notification-badge');
+          if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'notification-badge';
+            badge.style = "position:absolute; top:5px; right:20%; width:8px; height:8px; background:var(--neon-purple); border-radius:50%; box-shadow:0 0 10px var(--neon-purple);";
+            updateTabBtn.appendChild(badge);
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  
+  // Check every 30 minutes
+  setInterval(silentCheckUpdate, 30 * 60 * 1000);
+  setTimeout(silentCheckUpdate, 5000); // Also check 5s after start
+
+  // --- FEEDBACK LOGIC ---
+  const sendFeedbackBtn = document.getElementById('send-feedback-btn');
+  const feedbackText = document.getElementById('feedback-text');
+  
+  if (sendFeedbackBtn && feedbackText) {
+    sendFeedbackBtn.onclick = () => {
+      const text = feedbackText.value.trim();
+      if (!text) return;
+      
+      const subject = encodeURIComponent("Skooda Mobile Feedback");
+      const body = encodeURIComponent(`User Feedback (v${CURRENT_VERSION}):\n\n${text}`);
+      
+      // We open a mailto or a GitHub Issue link
+      const githubIssueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${subject}&body=${body}`;
+      
+      if (window.Android) {
+        window.Android.openExternalUrl(githubIssueUrl);
+        window.Android.cleanupOldApks(); // Clean up on interaction too
+      } else {
+        window.open(githubIssueUrl, '_blank');
+      }
+      
+      feedbackText.value = "";
+      alert("Danke für dein Feedback! Dein Browser öffnet sich jetzt, um das Ticket auf GitHub zu erstellen.");
+    };
+  }
