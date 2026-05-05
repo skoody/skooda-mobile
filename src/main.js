@@ -224,7 +224,7 @@ window.onNetScan = (data) => {
       return `
                 <div class="info-item device-item" onclick="openDeviceModal('${dev.ip}', '${name}', '${portsStr}')">
                     <div style="display:flex; flex-direction:column">
-                        <span class="info-value" style="font-size:0.9rem">${name}</span>
+                        <span class="value" style="font-weight: bold;">v0.2.0</span>
                         <span class="info-label">${dev.ip}</span>
                     </div>
                     <div>${portsHtml}</div>
@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.1.9";
+const CURRENT_VERSION = "0.2.0";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {
@@ -1212,7 +1212,7 @@ if (checkUpdateBtn) {
         }
       } else {
         if (updateTitle) updateTitle.innerText = "System Aktuell";
-        if (updateDesc) updateDesc.innerText = "Du nutzt bereits die neueste Version.";
+        if (updateDesc) updateDesc.innerText = "Du nutzt bereits die neueste Version 0.2.0.";
         if (downloadUpdateBtn) downloadUpdateBtn.style.display = 'none';
       }
     } catch (err) {

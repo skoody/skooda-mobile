@@ -1,6 +1,9 @@
 package com.skooda.mobile
 
 import android.os.*
+import android.os.Looper
+import android.provider.Settings
+import android.view.WindowManager
 import android.webkit.*
 import android.app.ActivityManager
 import android.content.Context
@@ -536,12 +539,26 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun toggleBluetooth(on: Boolean) {
             try {
-                val adapter = BluetoothAdapter.getDefaultAdapter()
-                if (adapter != null) {
-                    if (on && !adapter.isEnabled) {
-                        adapter.enable()
-                    } else if (!on && adapter.isEnabled) {
-                        adapter.disable()
+                val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
+                if (on) {
+                    if (!adapter.isEnabled) {
+                        // Try direct enable
+                        if (!adapter.enable()) {
+                            // Fallback: System dialog
+                            val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            mContext.startActivity(intent)
+                        }
+                    }
+                } else {
+                    if (adapter.isEnabled) {
+                        // Try direct disable
+                        if (!adapter.disable()) {
+                            // Fallback: Open settings (Apple-style, since disable is blocked on newer Androids)
+                            val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            mContext.startActivity(intent)
+                        }
                     }
                 }
             } catch (e: Exception) {}
