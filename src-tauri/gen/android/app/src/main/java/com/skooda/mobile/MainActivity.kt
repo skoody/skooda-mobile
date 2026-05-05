@@ -35,6 +35,7 @@ import java.io.RandomAccessFile
 import java.io.File
 import java.io.FilenameFilter
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
@@ -91,6 +92,7 @@ class MainActivity : TauriActivity(), SensorEventListener {
         )
         if (Build.VERSION.SDK_INT >= 31) {
             permissions.add(android.Manifest.permission.BLUETOOTH_CONNECT)
+            permissions.add(android.Manifest.permission.BLUETOOTH_SCAN)
         }
         
         if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
@@ -273,7 +275,8 @@ class MainActivity : TauriActivity(), SensorEventListener {
             stats.put("local_ip", localIp)
             stats.put("public_ip", publicIp)
             stats.put("bluetooth_ver", getBluetoothVersion())
-            stats.put("bluetooth_enabled", BluetoothAdapter.getDefaultAdapter()?.isEnabled ?: false)
+            val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            stats.put("bluetooth_enabled", btManager.adapter?.isEnabled ?: false)
             
             // Sensors
             val sObj = JSONObject()
@@ -539,12 +542,11 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun toggleBluetooth(on: Boolean) {
             try {
-                val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
+                val btManager = mContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                val adapter = btManager.adapter ?: return
                 if (on) {
                     if (!adapter.isEnabled) {
-                        // Try direct enable
                         if (!adapter.enable()) {
-                            // Fallback: System dialog
                             val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             mContext.startActivity(intent)
@@ -552,9 +554,7 @@ class MainActivity : TauriActivity(), SensorEventListener {
                     }
                 } else {
                     if (adapter.isEnabled) {
-                        // Try direct disable
                         if (!adapter.disable()) {
-                            // Fallback: Open settings (Apple-style, since disable is blocked on newer Androids)
                             val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             mContext.startActivity(intent)
