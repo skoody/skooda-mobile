@@ -270,6 +270,7 @@ class MainActivity : TauriActivity(), SensorEventListener {
             stats.put("local_ip", localIp)
             stats.put("public_ip", publicIp)
             stats.put("bluetooth_ver", getBluetoothVersion())
+            stats.put("bluetooth_enabled", BluetoothAdapter.getDefaultAdapter()?.isEnabled ?: false)
             
             // Sensors
             val sObj = JSONObject()
@@ -536,7 +537,13 @@ class MainActivity : TauriActivity(), SensorEventListener {
         fun toggleBluetooth(on: Boolean) {
             try {
                 val adapter = BluetoothAdapter.getDefaultAdapter()
-                if (on) adapter.enable() else adapter.disable()
+                if (adapter != null) {
+                    if (on && !adapter.isEnabled) {
+                        adapter.enable()
+                    } else if (!on && adapter.isEnabled) {
+                        adapter.disable()
+                    }
+                }
             } catch (e: Exception) {}
         }
 

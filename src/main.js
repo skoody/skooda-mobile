@@ -164,6 +164,16 @@ window.__skoodaUpdate = (stats) => {
       const s = Math.floor(stats.uptime % 60);
       setText('uptime-val', `${h}h ${m}m ${s}s`);
     }
+
+    // Sync Toggles
+    const toggleBT = document.getElementById('toggle-bluetooth');
+    if (toggleBT && stats.bluetooth_enabled !== undefined) {
+      if (!window.__isUpdatingBT && toggleBT.checked !== stats.bluetooth_enabled) {
+        window.__isUpdatingBT = true;
+        toggleBT.checked = stats.bluetooth_enabled;
+        window.__isUpdatingBT = false;
+      }
+    }
   } catch (e) {
     console.error("UI Update Error", e);
   }
@@ -1155,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.1.8";
+const CURRENT_VERSION = "0.1.9";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {
@@ -1212,25 +1222,26 @@ if (checkUpdateBtn) {
       checkUpdateBtn.disabled = false;
       checkUpdateBtn.innerText = "Jetzt prüfen";
       // --- HARDWARE TOGGLES ---
-  const toggleFlashlight = document.getElementById('toggle-flashlight');
-  const toggleBluetooth = document.getElementById('toggle-bluetooth');
-  
-  if (toggleFlashlight) {
-    toggleFlashlight.onchange = (e) => {
-      if (window.Android) {
-        window.Android.setFlashlight(e.target.checked);
+      const toggleFlashlight = document.getElementById('toggle-flashlight');
+      const toggleBluetooth = document.getElementById('toggle-bluetooth');
+      
+      if (toggleFlashlight) {
+        toggleFlashlight.onchange = (e) => {
+          if (window.Android) {
+            window.Android.setFlashlight(e.target.checked);
+          }
+        };
       }
-    };
-  }
-  
-  if (toggleBluetooth) {
-    toggleBluetooth.onchange = (e) => {
-      if (window.Android) {
-        window.Android.toggleBluetooth(e.target.checked);
+      
+      if (toggleBluetooth) {
+        toggleBluetooth.onchange = (e) => {
+          if (window.__isUpdatingBT) return;
+          if (window.Android) {
+            window.Android.toggleBluetooth(e.target.checked);
+          }
+        };
       }
-    };
-  }
-}
+    }
   };
 }
 
