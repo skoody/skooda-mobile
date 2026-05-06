@@ -1,0 +1,90 @@
+        Info Using installed NDK: /opt/android-sdk/ndk/29.0.14206865
+        Info Looking up installed tauri packages to check mismatched versions...
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 0.15s
+        Info symlinking lib "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" in jniLibs dir "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a"
+        Info "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libandroid.so"
+        Info "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libdl.so"
+        Info "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "liblog.so"
+        Info "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libm.so"
+        Info "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libc.so"
+        Info symlink at "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a/libskooda_mobile_lib.so" points to "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so"
+        Info symlink at "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/armeabi-v7a/libskooda_mobile_lib.so" points to "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so"
+        Info symlink at "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/x86/libskooda_mobile_lib.so" points to "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so"
+        Info symlink at "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/x86_64/libskooda_mobile_lib.so" points to "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so"
+        Info connection; remote_addr=127.0.0.1:47254 conn_id=0
+
+> skooda-mobile@0.7.0 tauri
+> tauri android android-studio-script --release --target aarch64
+
+[1m[32m        Info[0m Using installed NDK: /opt/android-sdk/ndk/29.0.14206865
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 0.15s
+[1m[32m        Info[0m symlinking lib "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" in jniLibs dir "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libandroid.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libdl.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "liblog.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libm.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/aarch64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libc.so"
+        Info connection; remote_addr=127.0.0.1:47258 conn_id=1
+
+> skooda-mobile@0.7.0 tauri
+> tauri android android-studio-script --release --target armv7
+
+[1m[32m        Info[0m Using installed NDK: /opt/android-sdk/ndk/29.0.14206865
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 0.14s
+[1m[32m        Info[0m symlinking lib "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so" in jniLibs dir "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/armeabi-v7a"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so" requires shared lib "libandroid.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so" requires shared lib "libdl.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so" requires shared lib "liblog.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so" requires shared lib "libm.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/armv7-linux-androideabi/release/libskooda_mobile_lib.so" requires shared lib "libc.so"
+
+> skooda-mobile@0.7.0 tauri
+> tauri android android-studio-script --release --target i686
+
+        Info connection; remote_addr=127.0.0.1:47260 conn_id=2
+[1m[32m        Info[0m Using installed NDK: /opt/android-sdk/ndk/29.0.14206865
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 0.14s
+[1m[32m        Info[0m symlinking lib "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so" in jniLibs dir "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/x86"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libandroid.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libdl.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so" requires shared lib "liblog.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libm.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/i686-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libc.so"
+
+> skooda-mobile@0.7.0 tauri
+> tauri android android-studio-script --release --target x86_64
+
+        Info connection; remote_addr=127.0.0.1:47266 conn_id=3
+[1m[32m        Info[0m Using installed NDK: /opt/android-sdk/ndk/29.0.14206865
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 0.14s
+[1m[32m        Info[0m symlinking lib "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so" in jniLibs dir "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/jniLibs/x86_64"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libandroid.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libdl.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "liblog.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libm.so"
+[1m[32m        Info[0m "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/target/x86_64-linux-android/release/libskooda_mobile_lib.so" requires shared lib "libc.so"
+
+[Incubating] Problems report is available at: file:///home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:packageUniversalRelease'.
+> A failure occurred while executing com.android.build.gradle.tasks.PackageAndroidArtifact$IncrementalSplitterRunnable
+   > SigningConfig "release" is missing required property "storeFile".
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2s
+failed to build APK: Failed to assemble APK with Io(BeforeSpawn(<closure>), Io(StderrFile(OwnedFd { fd: 34 }), Io(StdoutFile(OwnedFd { fd: 33 }), Io(StdinFile(OwnedFd { fd: 32 }), Io(Env("WRY_ANDROID_PACKAGE", "com.skooda.mobile"), Io(Env("WRY_ANDROID_KOTLIN_FILES_OUT_DIR", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/java/com/skooda/mobile/generated"), Io(Env("CARGO_TARGET_I686_LINUX_ANDROID_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android24-clang"), Io(Env("CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"), Io(Env("TERM", "dumb"), Io(Env("RUST_LOG_STYLE", "always"), Io(Env("WRY_ANDROID_LIBRARY", "skooda_mobile_lib"), Io(Env("ANDROID_HOME", "/opt/android-sdk"), Io(Env("CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang"), Io(Env("NDK_HOME", "/opt/android-sdk/ndk/29.0.14206865"), Io(Env("CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi24-clang"), Io(Env("TAURI_ANDROID_PROJECT_PATH", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android"), Io(Env("PATH", "/home/skoody/Dokumente/Coding/skooda-mobile/node_modules/.bin:/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/node_modules/.bin:/home/skoody/Dokumente/Coding/skooda-mobile/node_modules/.bin:/home/skoody/Dokumente/Coding/node_modules/.bin:/home/skoody/Dokumente/node_modules/.bin:/home/skoody/node_modules/.bin:/home/node_modules/.bin:/node_modules/.bin:/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:/home/skoody/.cargo/bin:/home/skoody/.deno/bin:/home/skoody/.local/bin:/opt/rocm/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/android-ndk:/opt/android-sdk/tools:/opt/android-sdk/tools/bin:/home/skoody/.local/share/flatpak/exports/bin:/var/lib/flatpak/exports/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl"), Io(Env("CARGO_TARGET_I686_LINUX_ANDROID_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("TAURI_CLI_VERBOSITY", "0"), Io(Env("HOME", "/home/skoody"), Io(Env("CARGO_TARGET_X86_64_LINUX_ANDROID_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("TAURI_ANDROID_PACKAGE_UNESCAPED", "com.skooda.mobile"), Cmd(["/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/gradlew", "--project-dir", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android"]))))))))))))))))))))))))): command ["/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/gradlew", "--project-dir", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android"] exited with code 1
+       Error failed to build APK: Failed to assemble APK with Io(BeforeSpawn(<closure>), Io(StderrFile(OwnedFd { fd: 34 }), Io(StdoutFile(OwnedFd { fd: 33 }), Io(StdinFile(OwnedFd { fd: 32 }), Io(Env("WRY_ANDROID_PACKAGE", "com.skooda.mobile"), Io(Env("WRY_ANDROID_KOTLIN_FILES_OUT_DIR", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/app/src/main/java/com/skooda/mobile/generated"), Io(Env("CARGO_TARGET_I686_LINUX_ANDROID_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android24-clang"), Io(Env("CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"), Io(Env("TERM", "dumb"), Io(Env("RUST_LOG_STYLE", "always"), Io(Env("WRY_ANDROID_LIBRARY", "skooda_mobile_lib"), Io(Env("ANDROID_HOME", "/opt/android-sdk"), Io(Env("CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang"), Io(Env("NDK_HOME", "/opt/android-sdk/ndk/29.0.14206865"), Io(Env("CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER", "/opt/android-sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi24-clang"), Io(Env("TAURI_ANDROID_PROJECT_PATH", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android"), Io(Env("PATH", "/home/skoody/Dokumente/Coding/skooda-mobile/node_modules/.bin:/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/node_modules/.bin:/home/skoody/Dokumente/Coding/skooda-mobile/node_modules/.bin:/home/skoody/Dokumente/Coding/node_modules/.bin:/home/skoody/Dokumente/node_modules/.bin:/home/skoody/node_modules/.bin:/home/node_modules/.bin:/node_modules/.bin:/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:/home/skoody/.cargo/bin:/home/skoody/.deno/bin:/home/skoody/.local/bin:/opt/rocm/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/android-ndk:/opt/android-sdk/tools:/opt/android-sdk/tools/bin:/home/skoody/.local/share/flatpak/exports/bin:/var/lib/flatpak/exports/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl"), Io(Env("CARGO_TARGET_I686_LINUX_ANDROID_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("TAURI_CLI_VERBOSITY", "0"), Io(Env("HOME", "/home/skoody"), Io(Env("CARGO_TARGET_X86_64_LINUX_ANDROID_RUSTFLAGS", "-Clink-arg=-landroid -Clink-arg=-llog -Clink-arg=-lOpenSLES"), Io(Env("TAURI_ANDROID_PACKAGE_UNESCAPED", "com.skooda.mobile"), Cmd(["/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/gradlew", "--project-dir", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android"]))))))))))))))))))))))))): command ["/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android/gradlew", "--project-dir", "/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri/gen/android"] exited with code 1

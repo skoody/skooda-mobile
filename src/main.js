@@ -1331,50 +1331,44 @@ if (!userHandle) {
   localStorage.setItem('skooda_chat_handle', userHandle);
 }
 
-async function getEncryptionKey(roomId) {
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw", encoder.encode(roomId), "PBKDF2", false, ["deriveKey"]
-  );
-  return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt: encoder.encode("skooda-salt"), iterations: 100000, hash: "SHA-256" },
-    keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-  );
-}
 
-async function encryptMsg(text, roomId) {
-  const key = await getEncryptionKey(roomId);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(text);
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
-  return { iv: btoa(String.fromCharCode(...iv)), data: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
-}
-
-async function decryptMsg(payload, roomId) {
+async function loadHistory() {
+  chatWindow.innerHTML = '';
   try {
-    const key = await getEncryptionKey(roomId);
-    const iv = new Uint8Array(atob(payload.iv).split("").map(c => c.charCodeAt(0)));
-    const data = new Uint8Array(atob(payload.data).split("").map(c => c.charCodeAt(0)));
-    const decoded = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
-    return new TextDecoder().decode(decoded);
-  } catch (e) { return "[Decryption Failed]"; }
+    const history = await window.__TAURI__.core.invoke("get_chat_history", { room: currentRoom });
+    history.forEach(m => {
+        appendMsg(m.sender, m.text, m.isMe, true);
+    });
+  } catch (e) { console.error("History Error", e); }
 }
 
-function appendMsg(sender, text, isMe) {
+function appendMsg(sender, text, isMe, skipSave = false) {
   const div = document.createElement("div");
   div.className = `chat-bubble ${isMe ? "sent" : "received"}`;
   
   let contentHtml = `<span class="sender">${sender}</span>`;
   
   if (text.startsWith("FILE:")) {
-      const [meta, data] = text.substring(5).split('|');
-      contentHtml += `<div class="file-msg">📎 ${meta} <button onclick="downloadFile('${meta}', '${data}')" class="btn mini" style="margin-left: 10px;">Save</button></div>`;
+      const parts = text.substring(5).split('|');
+      const meta = parts[0];
+      const data = parts[1];
+      const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(meta);
+      
+      if (isImg) {
+          contentHtml += `<div class="file-msg">
+            <img src="data:image/auto;base64,${data}" style="max-width: 100%; border-radius: 8px; margin-top: 5px; border: 1px solid var(--neon-cyan);">
+            <div style="font-size: 0.7rem; margin-top: 5px;">📎 ${meta}</div>
+            <button onclick="downloadFile('${meta}', '${data}')" class="btn mini">Save</button>
+          </div>`;
+      } else {
+          contentHtml += `<div class="file-msg">📎 ${meta} <button onclick="downloadFile('${meta}', '${data}')" class="btn mini" style="margin-left: 10px;">Save</button></div>`;
+      }
   } else if (text.startsWith("VOICE:")) {
       const data = text.substring(6);
       contentHtml += `<audio controls src="data:audio/webm;base64,${data}" style="width: 100%; margin-top: 5px;"></audio>`;
   } else if (text.startsWith("LOC:")) {
       const [lat, lon] = text.substring(4).split(',');
-      contentHtml += `<div class="loc-msg">📍 Location: <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}" target="_blank" style="color: var(--neon-cyan)">${lat}, ${lon}</a></div>`;
+      contentHtml += `<div class="loc-msg">📍 Location: <a href="#" onclick="map.setView([${lat}, ${lon}], 16); return false;" style="color: var(--neon-cyan)">[Show on Map]</a></div>`;
   } else {
       contentHtml += `<div class="text">${text}</div>`;
   }
@@ -1384,6 +1378,16 @@ function appendMsg(sender, text, isMe) {
   div.innerHTML = contentHtml;
   chatWindow.appendChild(div);
   chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // Persistence
+  if (!skipSave) {
+    window.__TAURI__.core.invoke("save_to_history", { 
+        room: currentRoom, 
+        sender, 
+        text, 
+        isMe 
+    }).catch(console.error);
+  }
 }
 
 function downloadFile(name, base64) {
@@ -1430,11 +1434,15 @@ async function connectChat() {
         if (msgData.room === currentRoom) {
           let text = msgData.text;
           if (msgData.encrypted) {
-            text = await decryptMsg(msgData.encrypted, msgData.room);
+              try {
+                text = await window.__TAURI__.core.invoke("decrypt_message", { 
+                    room: msgData.room, 
+                    encryptedJson: msgData.encrypted 
+                });
+              } catch(e) { text = "[Decryption Error]"; }
           }
           appendMsg(msgData.sender, text, msgData.sender === userHandle);
-          playChatSound();
-          sendReadReceipt(msgData.id);
+          if (data.sender !== userHandle) playChatSound();
         }
       });
 
@@ -1445,6 +1453,7 @@ async function connectChat() {
             socketConnected = true;
             statusBubble.remove();
             processOfflineQueue();
+            loadHistory();
         }
       });
       window.chatListenerActive = true;
@@ -1502,30 +1511,19 @@ async function sendChatMessage(text = null, isSystem = false) {
 
   if (!text) chatInput.value = "";
 
-  // Anti-Spoofing Signature from Rust
-  const secureContainer = await window.__TAURI__.core.invoke("sign_and_encrypt", { 
-    text: content, 
-    roomId: currentRoom 
-  });
-  const secureData = JSON.parse(secureContainer);
-
-  const payload = {
-    msg_type: "chat",
-    sender: userHandle,
-    room: currentRoom,
-    text: secureData.payload,
-    signature: secureData.signature,
-    pubkey: secureData.pubkey
-  };
-
-  if (!isSystem) {
-    payload.encrypted = await encryptMsg(content, currentRoom);
-    payload.text = "[Encrypted Content]";
-  }
+  if (!text) chatInput.value = "";
 
   try {
-    await window.__TAURI__.core.invoke("send_chat_message", { message: JSON.stringify(payload) });
+    const processed = await window.__TAURI__.core.invoke("process_message", { 
+        room: currentRoom, 
+        sender: userHandle, 
+        text: content,
+        isSystem
+    });
+    
+    await window.__TAURI__.core.invoke("send_chat_message", { message: processed });
   } catch (e) {
+    console.error("Send Error", e);
     offlineQueue.push({ text: content, isSystem });
   }
 }
@@ -1618,7 +1616,8 @@ if (joinRoomBtn) {
     if (!newRoom) return;
     currentRoom = newRoom;
     privateSetup.style.display = 'none';
-    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Joined Private Room: ${newRoom}</div>`;
+    chatWindow.innerHTML = '';
+    loadHistory();
     sendChatMessage(`System: ${userHandle} joined ${newRoom}`, true);
   };
 }
