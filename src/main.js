@@ -1358,8 +1358,8 @@ if (checkUpdateBtn) {
 
   function connectChat() {
     if (socket) socket.close();
-    // Using a public demo relay for the lobby
-    const url = currentRoom === 'lobby' ? "wss://echo.websocket.org" : "wss://echo.websocket.org"; // In real app, use a proper relay
+    // Using a public relay service (SocketsBay) for real-time broadcasting
+    const url = "wss://socketsbay.com/wss/v2/1/demo/"; 
     socket = new WebSocket(url);
     
     socket.onmessage = async (event) => {
