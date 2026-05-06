@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.4.0"; // Milestone Stability
+let CURRENT_VERSION = "0.5.0"; // Custom Relay Milestone
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1370,11 +1370,10 @@ function appendMsg(sender, text, isSent) {
 }
 
   async function connectChat() {
-    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbinde via Rust-Bridge...</div>';
+    let url = localStorage.getItem('skooda_relay_url') || "wss://socketsbay.com/wss/v2/1/demo/";
+    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
     
     try {
-      // Back to SocketsBay but via Native Bridge
-      const url = "wss://socketsbay.com/wss/v2/1/demo/";
       
       // Initialize listener once
       if (!window.chatListenerActive) {
