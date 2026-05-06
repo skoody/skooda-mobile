@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.3.9"; // Fallback dev value
+let CURRENT_VERSION = "0.4.0"; // Milestone Stability
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1373,7 +1373,8 @@ function appendMsg(sender, text, isSent) {
     chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbinde via Rust-Bridge...</div>';
     
     try {
-      const url = "wss://free.piesocket.com/v3/demo?api_key=VCXCEuvhuc6Eh7shZUDsk68q6h7e6sk8JU7zZBA9&notify_self";
+      // Back to SocketsBay but via Native Bridge
+      const url = "wss://socketsbay.com/wss/v2/1/demo/";
       
       // Initialize listener once
       if (!window.chatListenerActive) {

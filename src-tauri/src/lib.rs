@@ -18,23 +18,34 @@ struct ChatEvent {
 
 #[tauri::command]
 async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) -> Result<(), String> {
-    let (ws_stream, _) = connect_async(url).await.map_err(|e| e.to_string())?;
-    let (sink, mut stream) = ws_stream.split();
-    
-    // Store sink
-    let mut sink_lock = state.sink.lock().await;
-    *sink_lock = Some(sink);
-    
-    // Spawn reader
-    tokio::spawn(async move {
-        while let Some(Ok(msg)) = stream.next().await {
-            if let Message::Text(text) = msg {
-                let _ = app.emit("chat-msg", ChatEvent { message: text });
+    // Attempt connection with retry logic
+    let mut last_err = String::new();
+    for _ in 0..3 {
+        match connect_async(&url).await {
+            Ok((ws_stream, _)) => {
+                let (sink, mut stream) = ws_stream.split();
+                
+                // Store sink
+                let mut sink_lock = state.sink.lock().await;
+                *sink_lock = Some(sink);
+                
+                // Spawn reader
+                tokio::spawn(async move {
+                    while let Some(Ok(msg)) = stream.next().await {
+                        if let Message::Text(text) = msg {
+                            let _ = app.emit("chat-msg", ChatEvent { message: text });
+                        }
+                    }
+                });
+                return Ok(());
+            }
+            Err(e) => {
+                last_err = e.to_string();
+                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
             }
         }
-    });
-    
-    Ok(())
+    }
+    Err(format!("Native Connection Failed: {}", last_err))
 }
 
 #[tauri::command]
