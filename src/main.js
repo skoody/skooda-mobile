@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.6.0"; // Auto-Discovery Milestone
+let CURRENT_VERSION = "0.6.1"; // Discovery Robustness
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1373,11 +1373,24 @@ function appendMsg(sender, text, isSent) {
     chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Suche Relay-Server...</div>';
     
     try {
-      // 1. Discovery: Fetch current URL from GitHub
-      const discoveryUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/discovery.json`;
-      const response = await fetch(discoveryUrl + '?cache=' + Date.now());
-      const discovery = await response.json();
-      const url = discovery.relay_url;
+      // 1. Discovery: Fetch current URL from GitHub API (more robust)
+      let url;
+      try {
+        const apiDiscoveryUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/discovery.json`;
+        const response = await fetch(apiDiscoveryUrl + '?t=' + Date.now());
+        if (!response.ok) throw new Error("API-Fehler");
+        const data = await response.json();
+        // GitHub API returns content as base64
+        const content = atob(data.content.replace(/\s/g, ''));
+        const discovery = JSON.parse(content);
+        url = discovery.relay_url;
+      } catch (e) {
+        // Fallback to raw if API fails
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/discovery.json`;
+        const response = await fetch(rawUrl + '?t=' + Date.now());
+        const discovery = await response.json();
+        url = discovery.relay_url;
+      }
       
       chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
 
@@ -1404,7 +1417,7 @@ function appendMsg(sender, text, isSent) {
       await window.__TAURI__.core.invoke("connect_chat", { url });
       chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbunden (Native Rust). Viel Spaß!</div>';
     } catch (err) {
-      chatWindow.innerHTML += `<div class="chat-bubble received"><span class="sender">System</span>Bridge-Fehler: ${err}</div>`;
+      chatWindow.innerHTML += `<div class="chat-bubble received"><span class="sender">System</span>Fehler: ${err.message || err}</div>`;
     }
   }
 
