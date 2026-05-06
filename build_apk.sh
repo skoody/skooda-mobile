@@ -12,5 +12,5 @@ export PATH=$PWD/.bin:$PATH
 # Cargo Linker Settings
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
 
-echo "🚀 Starte APK Build v0.7.1 (Encrypted & Persistent)..."
+echo "🚀 Starte APK Build v0.7.2 (Pro Features)..."
 npx tauri android build --apk --ci

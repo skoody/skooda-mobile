@@ -1,6 +1,6 @@
 [package]
 name = "skooda-mobile"
-version = "0.7.1"
+version = "0.7.2"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -28,6 +28,7 @@ rand = "0.8"
 chacha20poly1305 = "0.10"
 rusqlite = { version = "0.31", features = ["bundled"] }
 anyhow = "1.0"
+tauri-plugin-notification = "2"
 thiserror = "1.0"
 
 [profile.dev]

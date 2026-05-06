@@ -1331,6 +1331,24 @@ if (!userHandle) {
   localStorage.setItem('skooda_chat_handle', userHandle);
 }
 
+// --- SOUND & NOTIFICATION ---
+function playChatSound() {
+  if (localStorage.getItem('skooda_chat_sounds') === 'false') return;
+  const audio = new Audio('chat_pop.mp3');
+  audio.play().catch(() => {});
+}
+
+async function sendPushNotification(title, body) {
+  try {
+    const { isPermissionGranted, requestPermission, sendNotification } = window.__TAURI__.notification;
+    let permission = await isPermissionGranted();
+    if (!permission) permission = await requestPermission();
+    if (permission === 'granted') {
+      sendNotification({ title: `Skooda: ${title}`, body: body.substring(0, 100) });
+    }
+  } catch(e) { console.error("Notification Error", e); }
+}
+
 
 async function loadHistory() {
   chatWindow.innerHTML = '';
@@ -1442,7 +1460,10 @@ async function connectChat() {
               } catch(e) { text = "[Decryption Error]"; }
           }
           appendMsg(msgData.sender, text, msgData.sender === userHandle);
-          if (data.sender !== userHandle) playChatSound();
+          if (msgData.sender !== userHandle) {
+              playChatSound();
+              sendPushNotification(msgData.sender, text);
+          }
         }
       });
 
@@ -1454,6 +1475,11 @@ async function connectChat() {
             statusBubble.remove();
             processOfflineQueue();
             loadHistory();
+        } else if (status.includes("Disconnected") || status.includes("Error")) {
+            socketConnected = false;
+            setTimeout(() => {
+                if (!socketConnected) connectChat();
+            }, 5000);
         }
       });
       window.chatListenerActive = true;
@@ -1502,6 +1528,8 @@ async function processOfflineQueue() {
 async function sendChatMessage(text = null, isSystem = false) {
   const content = text || chatInput.value.trim();
   if (!content) return;
+  
+  if (!isSystem) playChatSound();
 
   if (!socketConnected) {
     offlineQueue.push({ text: content, isSystem });
@@ -1621,6 +1649,31 @@ if (joinRoomBtn) {
     sendChatMessage(`System: ${userHandle} joined ${newRoom}`, true);
   };
 }
+
+// --- SETTINGS MODAL LOGIC ---
+const settingsModal = getEl('chat-settings-modal');
+const settingsUser = getEl('settings-username');
+const settingsSounds = getEl('settings-sounds');
+
+getEl('chat-settings-btn').onclick = () => {
+  settingsUser.value = userHandle;
+  settingsSounds.checked = localStorage.getItem('skooda_chat_sounds') !== 'false';
+  settingsModal.classList.add('active');
+};
+
+getEl('settings-save').onclick = () => {
+  const newHandle = settingsUser.value.trim();
+  if (newHandle) {
+    userHandle = newHandle;
+    localStorage.setItem('skooda_chat_handle', userHandle);
+  }
+  localStorage.setItem('skooda_chat_sounds', settingsSounds.checked);
+  settingsModal.classList.remove('active');
+  appendMsg("System", "Einstellungen gespeichert.", true, true);
+};
+
+getEl('settings-close').onclick = () => settingsModal.classList.remove('active');
+getEl('settings-notif-btn').onclick = () => sendPushNotification("Test", "Benachrichtigungen funktionieren!");
 
 if (sendChatBtn) sendChatBtn.onclick = () => sendChatMessage();
 if (chatInput) {

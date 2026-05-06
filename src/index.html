@@ -444,6 +444,7 @@
         <div class="status-dot online"></div>
         <h1>Skooda Chat</h1>
         <div id="online-count" class="online-badge" style="margin-left: auto; font-size: 0.7rem; background: rgba(0,255,255,0.1); padding: 4px 8px; border-radius: 12px; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);">0 Online</div>
+        <button id="chat-settings-btn" class="icon-btn mini" style="margin-left: 10px;">⚙️</button>
       </header>
 
       <div class="chat-container">
@@ -516,6 +517,34 @@
         <button id="action-browser" class="action-item">🌐 Open in Browser</button>
         <button id="action-close" class="action-item"
           style="margin-top:10px; border:none; background:none; justify-content:center; color:var(--text-dim)">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT SETTINGS MODAL -->
+  <div id="chat-settings-modal" class="modal-overlay">
+    <div class="action-modal">
+      <div class="modal-title">Chat Settings</div>
+      <div class="cyber-list" style="padding: 15px;">
+        <div class="info-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <span class="info-label">Benutzername</span>
+          <input type="text" id="settings-username" class="cyber-input" style="width: 100%;" placeholder="Username...">
+        </div>
+        <div class="info-item" style="padding: 15px 0;">
+          <span class="info-label">Chat Sounds</span>
+          <label class="switch">
+            <input type="checkbox" id="settings-sounds" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+        <div class="info-item" style="padding: 15px 0;">
+          <span class="info-label">Benachrichtigungen</span>
+          <button id="settings-notif-btn" class="btn mini">Prüfen</button>
+        </div>
+      </div>
+      <div class="action-list">
+        <button id="settings-save" class="action-item" style="color: var(--neon-cyan)">💾 Speichern</button>
+        <button id="settings-close" class="action-item" style="color: var(--text-dim)">Schließen</button>
       </div>
     </div>
   </div>

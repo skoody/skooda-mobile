@@ -242,6 +242,7 @@ async fn get_chat_history(room: String, state: State<'_, ChatState>) -> Result<V
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir().unwrap();
             if !data_dir.exists() { fs::create_dir_all(&data_dir).unwrap(); }
