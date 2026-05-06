@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.6.5"; // High Performance Chat & Auto-Reconnect
+let CURRENT_VERSION = "0.6.6"; // Full Lobby Encryption & Privacy Patch
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1396,7 +1396,7 @@ async function connectChat() {
 
         if (msgData.room === currentRoom) {
           let text = msgData.text;
-          if (msgData.room !== 'lobby' && msgData.encrypted) {
+          if (msgData.encrypted) {
             text = await decryptMsg(msgData.encrypted, msgData.room);
           }
           appendMsg(msgData.sender, text, msgData.sender === userHandle);
@@ -1440,7 +1440,7 @@ async function sendChatMessage(text = null, isSystem = false) {
     text: content
   };
 
-  if (currentRoom !== 'lobby' && !isSystem) {
+  if (!isSystem) {
     payload.encrypted = await encryptMsg(content, currentRoom);
     payload.text = "[Encrypted Content]";
   }
