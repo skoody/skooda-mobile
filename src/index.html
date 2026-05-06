@@ -407,7 +407,7 @@
           <div id="update-info" style="display: none; margin: 20px 0; display:flex; justify-content:center; gap:15px;">
             <div class="version-badge" style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
               <span class="label" style="font-size: 0.7rem; color: var(--text-dim); display:block;">Aktuell</span>
-              <span class="value" style="font-weight: bold;">v0.2.2</span>
+              <span class="value" style="font-weight: bold;">v0.3.0</span>
             </div>
             <div class="version-badge highlight" style="background: rgba(0,242,255,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--neon-cyan);">
               <span class="label" style="font-size: 0.7rem; color: var(--neon-cyan); display:block;">Neueste</span>
@@ -438,6 +438,42 @@
         </div>
       </div>
     </div>
+    
+    <!-- CHAT TAB -->
+    <div id="chat-tab" class="tab-content">
+      <header class="header">
+        <div class="status-dot online"></div>
+        <h1>Skooda Chat</h1>
+      </header>
+
+      <div class="chat-container">
+        <div class="chat-rooms">
+          <button id="btn-lobby" class="chat-room-btn active">Public Lobby</button>
+          <button id="btn-private" class="chat-room-btn">Private Room</button>
+        </div>
+
+        <!-- Room Setup (Private) -->
+        <div id="private-setup" class="room-setup" style="display: none;">
+          <h3 style="font-size: 0.9rem;">Join Private Room</h3>
+          <p style="font-size: 0.7rem; color: var(--text-dim);">Enter a Room-ID to join or create a private encrypted session.</p>
+          <input type="text" id="room-id-input" class="cyber-input" placeholder="Room-ID (e.g. skooda-123)">
+          <button id="join-room-btn" class="btn primary full-width">Join / Create</button>
+        </div>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="chat-messages">
+          <div class="chat-bubble received">
+            <span class="sender">System</span>
+            Willkommen im Skooda Chat. Verbinde...
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <input type="text" id="chat-input" class="cyber-input chat-input" placeholder="Nachricht schreiben...">
+          <button id="send-chat-btn" class="btn primary" style="padding: 12px;"><span style="font-size: 1.2rem;">⚡</span></button>
+        </div>
+      </div>
+    </div>
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
@@ -448,6 +484,10 @@
       <button class="nav-btn" data-tab="tools-tab">
         <span class="nav-icon">🛠️</span>
         <span class="nav-label">Tools</span>
+      </button>
+      <button class="nav-btn" data-tab="chat-tab">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">Chat</span>
       </button>
       <button class="nav-btn" data-tab="update-tab">
         <span class="nav-icon">🚀</span>

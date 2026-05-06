@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.2.2";
+const CURRENT_VERSION = "0.3.0";
 const GITHUB_REPO = "skoody/skooda-mobile"; 
 
 if (checkUpdateBtn) {
@@ -1303,3 +1303,117 @@ if (checkUpdateBtn) {
       alert("Danke für dein Feedback! Dein Browser öffnet sich jetzt, um das Ticket auf GitHub zu erstellen.");
     };
   }
+  // --- CHAT LOGIC ---
+  const chatWindow = document.getElementById('chat-window');
+  const chatInput = document.getElementById('chat-input');
+  const sendChatBtn = document.getElementById('send-chat-btn');
+  const btnLobby = document.getElementById('btn-lobby');
+  const btnPrivate = document.getElementById('btn-private');
+  const privateSetup = document.getElementById('private-setup');
+  const roomIdInput = document.getElementById('room-id-input');
+  const joinRoomBtn = document.getElementById('join-room-btn');
+
+  let currentRoom = 'lobby';
+  let privateRoomId = '';
+  let socket = null;
+  const userHandle = "User_" + Math.floor(Math.random() * 9000 + 1000);
+
+  async function getEncryptionKey(roomId) {
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw", encoder.encode(roomId), "PBKDF2", false, ["deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: encoder.encode("skooda-salt"), iterations: 100000, hash: "SHA-256" },
+      keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+    );
+  }
+
+  async function encryptMsg(text, roomId) {
+    const key = await getEncryptionKey(roomId);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(text);
+    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+    return { iv: btoa(String.fromCharCode(...iv)), data: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
+  }
+
+  async function decryptMsg(payload, roomId) {
+    try {
+      const key = await getEncryptionKey(roomId);
+      const iv = new Uint8Array(atob(payload.iv).split("").map(c => c.charCodeAt(0)));
+      const data = new Uint8Array(atob(payload.data).split("").map(c => c.charCodeAt(0)));
+      const decoded = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+      return new TextDecoder().decode(decoded);
+    } catch (e) { return "[Decryption Failed]"; }
+  }
+
+  function appendMsg(sender, text, isSent) {
+    if (!chatWindow) return;
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${isSent ? 'sent' : 'received'}`;
+    bubble.innerHTML = `<span class="sender">${sender}</span>${text}`;
+    chatWindow.appendChild(bubble);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function connectChat() {
+    if (socket) socket.close();
+    // Using a public demo relay for the lobby
+    const url = currentRoom === 'lobby' ? "wss://echo.websocket.org" : "wss://echo.websocket.org"; // In real app, use a proper relay
+    socket = new WebSocket(url);
+    
+    socket.onmessage = async (event) => {
+      let msgData;
+      try { msgData = JSON.parse(event.data); } catch(e) { return; }
+      
+      if (msgData.room === currentRoom && msgData.sender !== userHandle) {
+        let text = msgData.text;
+        if (currentRoom !== 'lobby') {
+          text = await decryptMsg(msgData.encrypted, msgData.room);
+        }
+        appendMsg(msgData.sender, text, false);
+        if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+      }
+    };
+  }
+
+  if (btnLobby) btnLobby.onclick = () => {
+    currentRoom = 'lobby';
+    btnLobby.classList.add('active');
+    btnPrivate.classList.remove('active');
+    privateSetup.style.display = 'none';
+    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Lobby beigetreten.</div>';
+    connectChat();
+  };
+
+  if (btnPrivate) btnPrivate.onclick = () => {
+    btnPrivate.classList.add('active');
+    btnLobby.classList.remove('active');
+    privateSetup.style.display = 'block';
+  };
+
+  if (joinRoomBtn) joinRoomBtn.onclick = () => {
+    const id = roomIdInput.value.trim();
+    if (!id) return;
+    currentRoom = id;
+    privateSetup.style.display = 'none';
+    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Raum [${id}] beigetreten. (Verschlüsselt)</div>`;
+    connectChat();
+  };
+
+  if (sendChatBtn) sendChatBtn.onclick = async () => {
+    const text = chatInput.value.trim();
+    if (!text || !socket) return;
+    
+    const msg = { sender: userHandle, room: currentRoom, text: text };
+    if (currentRoom !== 'lobby') {
+      msg.encrypted = await encryptMsg(text, currentRoom);
+      msg.text = "[Encrypted Content]";
+    }
+    
+    socket.send(JSON.stringify(msg));
+    appendMsg("Du", text, true);
+    chatInput.value = "";
+  };
+
+  connectChat();
