@@ -8,6 +8,7 @@ use ed25519_dalek::{SigningKey, Signer};
 use base64::{prelude::BASE64_STANDARD, Engine};
 use rand::RngCore;
 use rand::rngs::OsRng;
+use tauri_plugin_notification::NotificationExt;
 
 #[derive(Serialize, Deserialize, Clone)]
 struct ChatEvent {
@@ -16,9 +17,9 @@ struct ChatEvent {
 
 #[derive(Serialize, Deserialize, Clone)]
 struct SecureMessage {
-    payload: String, // Encrypted JSON or Plaintext
-    signature: String, // Base64 signature
-    pubkey: String, // Sender's public key
+    payload: String,
+    signature: String,
+    pubkey: String,
 }
 
 pub struct ChatState {
@@ -38,7 +39,6 @@ async fn sign_and_encrypt(
     _room_id: String,
     state: State<'_, ChatState>
 ) -> Result<String, String> {
-    // 1. Sign the original text for Anti-Spoofing
     let signature = state.signing_key.sign(text.as_bytes());
     let signature_b64 = BASE64_STANDARD.encode(signature.to_bytes());
     let pubkey_b64 = BASE64_STANDARD.encode(state.signing_key.verifying_key().to_bytes());
@@ -99,9 +99,27 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
 
                     loop {
                         tokio::select! {
+                            // Heartbeat to keep connection alive
+                            _ = tokio::time::sleep(tokio::time::Duration::from_secs(30)) => {
+                                if sink.send(Message::Ping(vec![])).await.is_err() {
+                                    break;
+                                }
+                            }
                             Some(Ok(msg)) = stream.next() => {
-                                if let Message::Text(text) = msg {
-                                    let _ = app_clone.emit("chat-msg", ChatEvent { message: text.to_string() });
+                                match msg {
+                                    Message::Text(text) => {
+                                        // Trigger System Notification
+                                        if text.contains("\"msg_type\":\"chat\"") {
+                                            let _ = app_clone.notification()
+                                                .builder()
+                                                .title("Skooda Chat")
+                                                .body("Neue Nachricht empfangen")
+                                                .show();
+                                        }
+                                        let _ = app_clone.emit("chat-msg", ChatEvent { message: text.to_string() });
+                                    }
+                                    Message::Pong(_) => { /* Keep alive successful */ }
+                                    _ => {}
                                 }
                             }
                             Some(msg_text) = rx.recv() => {
@@ -142,6 +160,7 @@ pub fn run() {
     let signing_key = SigningKey::from_bytes(&seed);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .manage(ChatState { 
             tx: Arc::new(Mutex::new(None)),
             current_url: Arc::new(Mutex::new(String::new())),

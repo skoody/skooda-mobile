@@ -1360,9 +1360,9 @@ async function decryptMsg(payload, roomId) {
   } catch (e) { return "[Decryption Failed]"; }
 }
 
-function appendMsg(sender, text, isMe) {
+function appendMsg(sender, text, isMe, isHistory = false) {
   const div = document.createElement("div");
-  div.className = `chat-bubble ${isMe ? "sent" : "received"}`;
+  div.className = `chat-bubble ${isMe ? "sent" : "received"}${isHistory ? " history-msg" : ""}`;
   
   let contentHtml = `<span class="sender">${sender}</span>`;
   
@@ -1383,7 +1383,7 @@ function appendMsg(sender, text, isMe) {
   
   div.innerHTML = contentHtml;
   chatWindow.appendChild(div);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+  if (!isHistory) chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 function downloadFile(name, base64) {
@@ -1393,11 +1393,61 @@ function downloadFile(name, base64) {
     link.click();
 }
 
+// --- INDEXEDDB PERSISTENCE ---
+const DB_NAME = "SkoodaChatDB";
+const DB_VERSION = 1;
+let db;
+
+function initDB() {
+    return new Promise((resolve) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("messages")) {
+                db.createObjectStore("messages", { keyPath: "id", autoIncrement: true });
+            }
+        };
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            resolve();
+        };
+    });
+}
+
+async function saveMsgLocally(msg) {
+    if (!db) return;
+    const tx = db.transaction("messages", "readwrite");
+    tx.objectStore("messages").add(msg);
+}
+
+async function loadLocalHistory(room) {
+    if (!db) return;
+    const tx = db.transaction("messages", "readonly");
+    const store = tx.objectStore("messages");
+    const request = store.getAll();
+    request.onsuccess = () => {
+        const msgs = request.result.filter(m => m.room === room).slice(-50);
+        chatWindow.innerHTML = ''; // Clear for fresh history
+        msgs.forEach(m => appendMsg(m.sender, m.text, m.sender === userHandle, true));
+    };
+}
 
 let offlineQueue = [];
 let typingTimeout;
 
 async function connectChat() {
+  if (window.isConnecting) return;
+  window.isConnecting = true;
+
+  // Request Notifications Permission
+  try {
+    const permission = await window.__TAURI__.core.invoke("plugin:notification|request_permission");
+    console.log("Notification permission:", permission);
+  } catch(e) {}
+
+  await initDB();
+  await loadLocalHistory(currentRoom);
+
   const statusBubble = document.createElement('div');
   statusBubble.className = "chat-bubble received system-msg";
   statusBubble.innerHTML = '<span class="sender">System</span>Verbindung wird aufgebaut...';
@@ -1427,14 +1477,20 @@ async function connectChat() {
           return;
         }
 
-        if (msgData.room === currentRoom) {
-          let text = msgData.text;
-          if (msgData.encrypted) {
-            text = await decryptMsg(msgData.encrypted, msgData.room);
-          }
-          appendMsg(msgData.sender, text, msgData.sender === userHandle);
-          playChatSound();
-          sendReadReceipt(msgData.id);
+        if (msgData.msg_type === 'chat') {
+            let text = msgData.text;
+            if (msgData.encrypted) {
+              text = await decryptMsg(msgData.encrypted, msgData.room);
+            }
+            
+            // Persist locally
+            saveMsgLocally({ sender: msgData.sender, text, room: msgData.room, timestamp: Date.now() });
+
+            if (msgData.room === currentRoom) {
+              appendMsg(msgData.sender, text, msgData.sender === userHandle);
+              playChatSound();
+              sendReadReceipt(msgData.id);
+            }
         }
       });
 
@@ -1445,18 +1501,29 @@ async function connectChat() {
             socketConnected = true;
             statusBubble.remove();
             processOfflineQueue();
+        } else {
+            socketConnected = false;
         }
       });
       window.chatListenerActive = true;
     }
 
     await window.__TAURI__.core.invoke("connect_chat", { url });
+    window.isConnecting = false;
     
   } catch (err) {
     statusBubble.innerHTML = `<span class="sender">System</span>Fehler: ${err.message}. Reconnect in 5s...`;
+    window.isConnecting = false;
     setTimeout(connectChat, 5000);
   }
 }
+
+// Keep-Alive Logic for Visibility Change
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && !socketConnected) {
+        connectChat();
+    }
+});
 
 function playChatSound() {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
@@ -1593,13 +1660,13 @@ function sendReadReceipt(msgId) {
 
 // Room Switching Logic
 if (btnLobby) {
-  btnLobby.onclick = () => {
+  btnLobby.onclick = async () => {
     btnLobby.classList.add('active');
     btnPrivate.classList.remove('active');
     privateSetup.style.display = 'none';
     if (currentRoom === 'lobby') return;
     currentRoom = 'lobby';
-    chatWindow.innerHTML = '';
+    await loadLocalHistory(currentRoom);
     sendChatMessage(`System: ${userHandle} joined lobby`, true);
   };
 }
@@ -1613,12 +1680,12 @@ if (btnPrivate) {
 }
 
 if (joinRoomBtn) {
-  joinRoomBtn.onclick = () => {
+  joinRoomBtn.onclick = async () => {
     const newRoom = roomIdInput.value.trim();
     if (!newRoom) return;
     currentRoom = newRoom;
     privateSetup.style.display = 'none';
-    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Joined Private Room: ${newRoom}</div>`;
+    await loadLocalHistory(currentRoom);
     sendChatMessage(`System: ${userHandle} joined ${newRoom}`, true);
   };
 }
