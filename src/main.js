@@ -6,36 +6,36 @@ const getEl = (id) => document.getElementById(id);
 // --- PERFORMANCE CACHE & DIFFING ---
 const UI = {};
 function getCached(id) {
-    if (UI[id] === undefined) UI[id] = document.getElementById(id);
-    return UI[id];
+  if (UI[id] === undefined) UI[id] = document.getElementById(id);
+  return UI[id];
 }
 function setText(id, text) {
-    const el = getCached(id);
-    if (el && el.innerText !== String(text)) el.innerText = text;
+  const el = getCached(id);
+  if (el && el.innerText !== String(text)) el.innerText = text;
 }
 function setWidth(id, pct) {
-    const el = getCached(id);
-    if (el) {
-        const val = pct + '%';
-        if (el.style.width !== val) el.style.width = val;
-    }
+  const el = getCached(id);
+  if (el) {
+    const val = pct + '%';
+    if (el.style.width !== val) el.style.width = val;
+  }
 }
 function setBg(id, color) {
-    const el = getCached(id);
-    if (el && el.style.background !== color) el.style.background = color;
+  const el = getCached(id);
+  if (el && el.style.background !== color) el.style.background = color;
 }
 function setHTML(id, html) {
-    const el = getCached(id);
-    if (el && el.innerHTML !== html) el.innerHTML = html;
+  const el = getCached(id);
+  if (el && el.innerHTML !== html) el.innerHTML = html;
 }
 function setPos(id, x, y) {
-    const el = getCached(id);
-    if (el) {
-        const left = x + '%';
-        const top = y + '%';
-        if (el.style.left !== left) el.style.left = left;
-        if (el.style.top !== top) el.style.top = top;
-    }
+  const el = getCached(id);
+  if (el) {
+    const left = x + '%';
+    const top = y + '%';
+    if (el.style.left !== left) el.style.left = left;
+    if (el.style.top !== top) el.style.top = top;
+  }
 }
 
 // Global Update Hook (called from Kotlin)
@@ -106,7 +106,7 @@ window.__skoodaUpdate = (stats) => {
       setText('prox-val', isNear ? "NEAR" : "FAR");
       const pVal = getCached('prox-val');
       if (pVal && pVal.style.color !== (isNear ? "var(--neon-purple)" : "var(--text-dim)")) {
-          pVal.style.color = isNear ? "var(--neon-purple)" : "var(--text-dim)";
+        pVal.style.color = isNear ? "var(--neon-purple)" : "var(--text-dim)";
       }
       setText('prox-alert', isNear ? "⚠️ PROXIMITY ALERT" : "");
 
@@ -115,10 +115,10 @@ window.__skoodaUpdate = (stats) => {
       updatePeakBar('sensor-gx', Math.abs(stats.sensors.gx) * 50);
       updatePeakBar('sensor-g', stats.sensors.gforce * 30);
       updatePeakBar('sensor-mag', (stats.sensors.mag_strength / 100) * 100);
-      
+
       setText('gforce-val', stats.sensors.gforce.toFixed(2));
       setText('mag-val', Math.round(stats.sensors.mag_strength));
-      
+
       // Update Map Heading
       updateMapHeading(stats.sensors);
     }
@@ -392,10 +392,10 @@ document.querySelectorAll('.category-card').forEach(card => {
     if (toolCategories) toolCategories.style.display = 'none';
     const target = document.getElementById(subId);
     if (target) target.style.display = 'block';
-    
+
     // Start Map if selected
     if (subId === 'map-toolset') {
-        setTimeout(initMap, 100);
+      setTimeout(initMap, 100);
     }
   });
 });
@@ -482,9 +482,9 @@ if (startBtn) {
       return;
     }
     const boxSize = Math.min(250, window.innerWidth * 0.7);
-    const config = { 
-      fps: 20, 
-      qrbox: { width: boxSize, height: boxSize }, 
+    const config = {
+      fps: 20,
+      qrbox: { width: boxSize, height: boxSize },
       aspectRatio: 1.777778,
       formatsToSupport: [
         Html5QrcodeSupportedFormats.QR_CODE,
@@ -521,7 +521,7 @@ if (startBtn) {
           const track = video.srcObject.getVideoTracks()[0];
           const caps = track.getCapabilities();
           if (caps && caps.torch && qrTorch) qrTorch.style.display = 'block';
-          
+
           const zoomControls = document.getElementById('zoom-controls');
           const zoomSlider = document.getElementById('camera-zoom');
           const zoomMax = document.getElementById('zoom-max');
@@ -538,11 +538,11 @@ if (startBtn) {
             }
             zoomSlider.value = (track.getSettings && track.getSettings().zoom) ? track.getSettings().zoom : 1;
             if (zoomMax) zoomMax.innerText = `${zoomSlider.max}x`;
-            
+
             zoomSlider.oninput = async (e) => {
               const val = parseFloat(e.target.value);
-              try { await track.applyConstraints({ advanced: [{ zoom: val }] }); } catch(err){
-                try { await track.applyConstraints({ zoom: val }); } catch(err2){}
+              try { await track.applyConstraints({ advanced: [{ zoom: val }] }); } catch (err) {
+                try { await track.applyConstraints({ zoom: val }); } catch (err2) { }
               }
             };
           }
@@ -550,7 +550,7 @@ if (startBtn) {
             if (caps && caps.focusMode && caps.focusMode.includes('continuous')) {
               track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
             }
-          } catch(e) {}
+          } catch (e) { }
         }
       }, 500);
     }).catch(err => {
@@ -572,7 +572,7 @@ function stopScanner() {
         if (zc1) zc1.style.display = 'none';
         torchActive = false;
       }).catch(() => {
-        try { window.html5QrCode.clear(); } catch(e) {}
+        try { window.html5QrCode.clear(); } catch (e) { }
         if (startBtn) startBtn.innerText = "Start Scanner";
         if (readerContainer) readerContainer.classList.remove('active');
         if (qrTorch) qrTorch.style.display = 'none';
@@ -580,7 +580,7 @@ function stopScanner() {
         if (zc2) zc2.style.display = 'none';
         torchActive = false;
       });
-    } catch(e) {}
+    } catch (e) { }
   }
 }
 
@@ -649,10 +649,10 @@ function initMap() {
   // Tile Layer Manager
   const setTiles = (mode) => {
     if (currentTiles) map.removeLayer(currentTiles);
-    
+
     let url = '';
     let filter = 'none';
-    
+
     if (mode === 0) { // Dark
       url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
       filter = 'brightness(1.6) contrast(1.1) saturate(1.1)';
@@ -698,15 +698,15 @@ function initMap() {
     navigator.geolocation.watchPosition((pos) => {
       const { latitude, longitude, speed, accuracy, altitude } = pos.coords;
       const latlng = [latitude, longitude];
-      
+
       if (mapMarker) mapMarker.setLatLng(latlng);
       if (accuracyCircle) {
-          accuracyCircle.setLatLng(latlng);
-          accuracyCircle.setRadius(accuracy);
+        accuracyCircle.setLatLng(latlng);
+        accuracyCircle.setRadius(accuracy);
       }
-      
+
       if (map && isAutoCenter) {
-          map.panTo(latlng, { animate: true, duration: 0.5 });
+        map.panTo(latlng, { animate: true, duration: 0.5 });
       }
 
       const kmh = speed ? (speed * 3.6).toFixed(1) : "0.0";
@@ -779,27 +779,27 @@ function initMap() {
   const searchInput = document.getElementById('map-search-input');
   if (searchInput) {
     searchInput.onkeydown = async (e) => {
-        if (e.key === 'Enter') {
-            const query = searchInput.value;
-            if (!query) return;
-            isAutoCenter = false;
-            try {
-                const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-                const data = await resp.json();
-                if (data[0]) {
-                    map.setView([data[0].lat, data[0].lon], 15);
-                }
-            } catch(err) {}
-        }
+      if (e.key === 'Enter') {
+        const query = searchInput.value;
+        if (!query) return;
+        isAutoCenter = false;
+        try {
+          const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+          const data = await resp.json();
+          if (data[0]) {
+            map.setView([data[0].lat, data[0].lon], 15);
+          }
+        } catch (err) { }
+      }
     };
   }
 
   const themeBtn = document.getElementById('map-theme-toggle');
   if (themeBtn) themeBtn.remove(); // Remove old if exists
-  
+
   const ThemeToggle = L.Control.extend({
     options: { position: 'bottomright' },
-    onAdd: function() {
+    onAdd: function () {
       const btn = L.DomUtil.create('button', 'map-btn');
       btn.id = 'map-theme-toggle';
       btn.innerHTML = '🌓';
@@ -816,7 +816,7 @@ function initMap() {
 
   const RotateToggle = L.Control.extend({
     options: { position: 'bottomright' },
-    onAdd: function() {
+    onAdd: function () {
       const btn = L.DomUtil.create('button', 'map-btn');
       btn.id = 'map-rotate-toggle';
       btn.innerHTML = '🧭';
@@ -826,8 +826,8 @@ function initMap() {
         isAutoRotate = !isAutoRotate;
         btn.style.opacity = isAutoRotate ? '1' : '0.5';
         if (!isAutoRotate) {
-            const mapDiv = getCached('map');
-            if (mapDiv) mapDiv.style.transform = 'rotate(0deg)';
+          const mapDiv = getCached('map');
+          if (mapDiv) mapDiv.style.transform = 'rotate(0deg)';
         }
       });
       return btn;
@@ -839,102 +839,102 @@ function initMap() {
 }
 
 function addTacticalMarker(lat, lng, save = false) {
-    const markerId = tacticalMarkers.length + 1;
-    const icon = L.divIcon({
-      className: 'tactical-marker',
-      html: `<div class="marker-inner"></div><div class="marker-label">POI #${markerId}</div>`,
-      iconSize: [12, 12],
-      iconAnchor: [6, 6]
-    });
-    
-    const newMarker = L.marker([lat, lng], { icon: icon }).addTo(map);
-    tacticalMarkers.push(newMarker);
+  const markerId = tacticalMarkers.length + 1;
+  const icon = L.divIcon({
+    className: 'tactical-marker',
+    html: `<div class="marker-inner"></div><div class="marker-label">POI #${markerId}</div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6]
+  });
 
-    if (save) saveMarkers();
-    updateDistanceTool();
+  const newMarker = L.marker([lat, lng], { icon: icon }).addTo(map);
+  tacticalMarkers.push(newMarker);
+
+  if (save) saveMarkers();
+  updateDistanceTool();
 }
 
 function updateDistanceTool() {
-    if (tacticalMarkers.length < 2) {
-        if (distanceLine) map.removeLayer(distanceLine);
-        if (distanceLabel) map.removeLayer(distanceLabel);
-        return;
-    }
-    
-    const latlngs = tacticalMarkers.map(m => m.getLatLng());
-    
+  if (tacticalMarkers.length < 2) {
     if (distanceLine) map.removeLayer(distanceLine);
     if (distanceLabel) map.removeLayer(distanceLabel);
-    
-    distanceLine = L.polyline(latlngs, { className: 'distance-line', color: 'var(--neon-cyan)', weight: 3, opacity: 0.8 }).addTo(map);
-    
-    let totalDist = 0;
-    for (let i = 0; i < latlngs.length - 1; i++) {
-        totalDist += latlngs[i].distanceTo(latlngs[i+1]);
-    }
-    
-    const distText = totalDist > 1000 ? (totalDist/1000).toFixed(2) + " km" : Math.round(totalDist) + " m";
-    const lastM = latlngs[latlngs.length - 1];
-    
-    distanceLabel = L.marker([lastM.lat, lastM.lng], {
-        icon: L.divIcon({
-            className: 'distance-label',
-            html: `<div style="background: rgba(0,0,0,0.8); color: var(--neon-cyan); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--neon-cyan); margin-top: 15px; font-size: 0.7rem; white-space: nowrap;">Route: ${distText}</div>`,
-            iconSize: [0, 0]
-        })
-    }).addTo(map);
+    return;
+  }
+
+  const latlngs = tacticalMarkers.map(m => m.getLatLng());
+
+  if (distanceLine) map.removeLayer(distanceLine);
+  if (distanceLabel) map.removeLayer(distanceLabel);
+
+  distanceLine = L.polyline(latlngs, { className: 'distance-line', color: 'var(--neon-cyan)', weight: 3, opacity: 0.8 }).addTo(map);
+
+  let totalDist = 0;
+  for (let i = 0; i < latlngs.length - 1; i++) {
+    totalDist += latlngs[i].distanceTo(latlngs[i + 1]);
+  }
+
+  const distText = totalDist > 1000 ? (totalDist / 1000).toFixed(2) + " km" : Math.round(totalDist) + " m";
+  const lastM = latlngs[latlngs.length - 1];
+
+  distanceLabel = L.marker([lastM.lat, lastM.lng], {
+    icon: L.divIcon({
+      className: 'distance-label',
+      html: `<div style="background: rgba(0,0,0,0.8); color: var(--neon-cyan); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--neon-cyan); margin-top: 15px; font-size: 0.7rem; white-space: nowrap;">Route: ${distText}</div>`,
+      iconSize: [0, 0]
+    })
+  }).addTo(map);
 }
 
 function saveMarkers() {
-    const data = tacticalMarkers.map(m => {
-        const ll = m.getLatLng();
-        return { lat: ll.lat, lng: ll.lng };
-    });
-    localStorage.setItem('skooda_markers', JSON.stringify(data));
+  const data = tacticalMarkers.map(m => {
+    const ll = m.getLatLng();
+    return { lat: ll.lat, lng: ll.lng };
+  });
+  localStorage.setItem('skooda_markers', JSON.stringify(data));
 }
 
 function loadMarkers() {
-    const saved = localStorage.getItem('skooda_markers');
-    if (!saved) return;
-    try {
-        const data = JSON.parse(saved);
-        data.forEach(m => addTacticalMarker(m.lat, m.lng, false));
-    } catch(e) {}
+  const saved = localStorage.getItem('skooda_markers');
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    data.forEach(m => addTacticalMarker(m.lat, m.lng, false));
+  } catch (e) { }
 }
 
 // Update Heading with smoothing and Sensor Fusion
 function updateMapHeading(sensors) {
-    if (!sensors || sensors.mx === undefined) return;
-    
-    // Sensor Fusion: Pitch and Roll compensation for Magnetometer
-    const ax = sensors.ax || 0;
-    const ay = sensors.ay || 0;
-    const az = sensors.az || 9.81;
-    const mx = sensors.mx;
-    const my = sensors.my;
-    const mz = sensors.mz || 0;
+  if (!sensors || sensors.mx === undefined) return;
 
-    // Pitch & Roll
-    const roll = Math.atan2(ay, az);
-    const pitch = Math.atan2(-ax, Math.sqrt(ay * ay + az * az));
+  // Sensor Fusion: Pitch and Roll compensation for Magnetometer
+  const ax = sensors.ax || 0;
+  const ay = sensors.ay || 0;
+  const az = sensors.az || 9.81;
+  const mx = sensors.mx;
+  const my = sensors.my;
+  const mz = sensors.mz || 0;
 
-    // Tilt compensated magnetic field
-    const cx = mx * Math.cos(pitch) + mz * Math.sin(pitch);
-    const cy = mx * Math.sin(roll) * Math.sin(pitch) + my * Math.cos(roll) - mz * Math.sin(roll) * Math.cos(pitch);
+  // Pitch & Roll
+  const roll = Math.atan2(ay, az);
+  const pitch = Math.atan2(-ax, Math.sqrt(ay * ay + az * az));
 
-    let rawHeading = Math.atan2(cy, cx) * (180 / Math.PI);
-    
-    // Normalize and smooth (Lerp)
-    const diff = ((rawHeading - smoothedHeading + 180) % 360) - 180;
-    smoothedHeading += diff * 0.15; 
-    
-    const mapDiv = getCached('map');
-    if (mapDiv && isAutoRotate) {
-        const transform = `rotate(${-smoothedHeading}deg)`;
-        if (mapDiv.style.transform !== transform) {
-            mapDiv.style.transform = transform;
-        }
+  // Tilt compensated magnetic field
+  const cx = mx * Math.cos(pitch) + mz * Math.sin(pitch);
+  const cy = mx * Math.sin(roll) * Math.sin(pitch) + my * Math.cos(roll) - mz * Math.sin(roll) * Math.cos(pitch);
+
+  let rawHeading = Math.atan2(cy, cx) * (180 / Math.PI);
+
+  // Normalize and smooth (Lerp)
+  const diff = ((rawHeading - smoothedHeading + 180) % 360) - 180;
+  smoothedHeading += diff * 0.15;
+
+  const mapDiv = getCached('map');
+  if (mapDiv && isAutoRotate) {
+    const transform = `rotate(${-smoothedHeading}deg)`;
+    if (mapDiv.style.transform !== transform) {
+      mapDiv.style.transform = transform;
     }
+  }
 }
 
 // --- ESP KAMERA ---
@@ -975,7 +975,7 @@ async function startESP() {
       espVideo.srcObject = stream;
       await espVideo.play();
     }
-  } catch(e) {
+  } catch (e) {
     if (espStatus) espStatus.innerText = 'Kamera Fehler: ' + e.message;
     window.espActive = false;
     if (toggleEspBtn) toggleEspBtn.innerText = 'Starte ESP';
@@ -997,13 +997,13 @@ async function startESP() {
       });
     }
     if (espStatus) espStatus.innerText = 'ESP AKTIV';
-    
+
     if ('requestVideoFrameCallback' in espVideo) {
       espVideo.requestVideoFrameCallback(detectFrameCallback);
     } else {
       detectFrame();
     }
-  } catch(e) {
+  } catch (e) {
     if (espStatus) espStatus.innerText = 'KI Fehler: ' + e.message;
     stopESP();
   }
@@ -1066,17 +1066,17 @@ function drawDetections(detections) {
   // We detected on a 320x320 canvas, but we draw on the real canvas
   const scaleX = espCanvas.width / 320;
   const scaleY = espCanvas.height / 320;
-  
+
   const espSens = document.getElementById('esp-sens');
   const threshold = espSens ? parseFloat(espSens.value) : 0.5;
-  
+
   const animals = ['bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe'];
   const cars = ['car', 'truck', 'bus', 'motorcycle'];
   const customQuery = customFilter?.value.toLowerCase().trim();
 
   detections.forEach(det => {
     if (det.categories[0].score < threshold) return;
-    
+
     const label = det.categories[0].categoryName;
     const isPerson = label === 'person';
     const isAirplane = label === 'airplane';
@@ -1087,7 +1087,7 @@ function drawDetections(detections) {
     let show = false;
     if (filterPerson?.checked && isPerson) show = true;
     if (filterCar?.checked && isCar) show = true;
-    if (isAirplane || isAnimal) show = true; 
+    if (isAirplane || isAnimal) show = true;
     if (filterOther?.checked && !isPerson && !isCar && !isAirplane && !isAnimal) show = true;
     if (isCustom) show = true;
 
@@ -1120,7 +1120,7 @@ function drawDetections(detections) {
       ctx.fillStyle = color;
       ctx.font = 'bold 12px monospace';
       ctx.fillText(label.toUpperCase() + dist, x + 5, y - 5);
-      
+
       ctx.beginPath();
       ctx.moveTo(x, y); ctx.lineTo(x + 10, y);
       ctx.moveTo(x, y); ctx.lineTo(x, y + 10);
@@ -1165,25 +1165,25 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.3.0";
-const GITHUB_REPO = "skoody/skooda-mobile"; 
+const CURRENT_VERSION = "0.3.2";
+const GITHUB_REPO = "skoody/skooda-mobile";
 
 if (checkUpdateBtn) {
   checkUpdateBtn.onclick = async () => {
     checkUpdateBtn.disabled = true;
     checkUpdateBtn.innerText = "Prüfe...";
-    
+
     try {
       const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
       if (!response.ok) throw new Error("Verbindung fehlgeschlagen");
-      
+
       const data = await response.json();
       const latestVersion = data.tag_name.replace('v', '');
-      
+
       if (latestVersionVal) latestVersionVal.innerText = 'v' + latestVersion;
       if (updateInfo) updateInfo.style.display = 'flex';
       if (releaseNotes) releaseNotes.innerText = data.body || "Keine Release-Notes vorhanden.";
-      
+
       if (latestVersion !== CURRENT_VERSION) {
         if (updateTitle) updateTitle.innerText = "Update Verfügbar!";
         if (updateDesc) updateDesc.innerText = "Eine neue Version wurde auf GitHub gefunden.";
@@ -1212,7 +1212,7 @@ if (checkUpdateBtn) {
         }
       } else {
         if (updateTitle) updateTitle.innerText = "System Aktuell";
-        if (updateDesc) updateDesc.innerText = "Du nutzt bereits die neueste Version 0.2.0.";
+        if (updateDesc) updateDesc.innerText = "Du nutzt bereits die neueste Version 0.3.2.";
         if (downloadUpdateBtn) downloadUpdateBtn.style.display = 'none';
       }
     } catch (err) {
@@ -1224,7 +1224,7 @@ if (checkUpdateBtn) {
       // --- HARDWARE TOGGLES ---
       const toggleFlashlight = document.getElementById('toggle-flashlight');
       const toggleBluetooth = document.getElementById('toggle-bluetooth');
-      
+
       if (toggleFlashlight) {
         toggleFlashlight.onchange = (e) => {
           if (window.Android) {
@@ -1232,7 +1232,7 @@ if (checkUpdateBtn) {
           }
         };
       }
-      
+
       if (toggleBluetooth) {
         toggleBluetooth.onchange = (e) => {
           if (window.__isUpdatingBT) return;
@@ -1245,175 +1245,175 @@ if (checkUpdateBtn) {
   };
 }
 
-  // --- AUTO UPDATER ---
-  async function silentCheckUpdate() {
-    try {
-      const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
-      if (!response.ok) return;
-      const data = await response.json();
-      const latestVersion = data.tag_name.replace('v', '');
-      
-      if (latestVersion !== CURRENT_VERSION) {
-        if (window.Android) {
-          window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar. Tippe zum Herunterladen.`);
-        }
-        // Also show a badge on the Update tab
-        const updateTabBtn = document.querySelector('[data-tab="update-tab"]');
-        if (updateTabBtn) {
-          updateTabBtn.style.position = 'relative';
-          let badge = updateTabBtn.querySelector('.notification-badge');
-          if (!badge) {
-            badge = document.createElement('div');
-            badge.className = 'notification-badge';
-            badge.style = "position:absolute; top:5px; right:20%; width:8px; height:8px; background:var(--neon-purple); border-radius:50%; box-shadow:0 0 10px var(--neon-purple);";
-            updateTabBtn.appendChild(badge);
-          }
-        }
-      }
-    } catch (e) {}
-  }
-  
-  // Check every 30 minutes
-  setInterval(silentCheckUpdate, 30 * 60 * 1000);
-  setTimeout(silentCheckUpdate, 5000); // Also check 5s after start
+// --- AUTO UPDATER ---
+async function silentCheckUpdate() {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+    if (!response.ok) return;
+    const data = await response.json();
+    const latestVersion = data.tag_name.replace('v', '');
 
-  // --- FEEDBACK LOGIC ---
-  const sendFeedbackBtn = document.getElementById('send-feedback-btn');
-  const feedbackText = document.getElementById('feedback-text');
-  
-  if (sendFeedbackBtn && feedbackText) {
-    sendFeedbackBtn.onclick = () => {
-      const text = feedbackText.value.trim();
-      if (!text) return;
-      
-      const subject = encodeURIComponent("Skooda Mobile Feedback");
-      const body = encodeURIComponent(`User Feedback (v${CURRENT_VERSION}):\n\n${text}`);
-      
-      // We open a mailto or a GitHub Issue link
-      const githubIssueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${subject}&body=${body}`;
-      
+    if (latestVersion !== CURRENT_VERSION) {
       if (window.Android) {
-        window.Android.openExternalUrl(githubIssueUrl);
-        window.Android.cleanupOldApks(); // Clean up on interaction too
-      } else {
-        window.open(githubIssueUrl, '_blank');
+        window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar. Tippe zum Herunterladen.`);
       }
-      
-      feedbackText.value = "";
-      alert("Danke für dein Feedback! Dein Browser öffnet sich jetzt, um das Ticket auf GitHub zu erstellen.");
-    };
-  }
-  // --- CHAT LOGIC ---
-  const chatWindow = document.getElementById('chat-window');
-  const chatInput = document.getElementById('chat-input');
-  const sendChatBtn = document.getElementById('send-chat-btn');
-  const btnLobby = document.getElementById('btn-lobby');
-  const btnPrivate = document.getElementById('btn-private');
-  const privateSetup = document.getElementById('private-setup');
-  const roomIdInput = document.getElementById('room-id-input');
-  const joinRoomBtn = document.getElementById('join-room-btn');
-
-  let currentRoom = 'lobby';
-  let privateRoomId = '';
-  let socket = null;
-  const userHandle = "User_" + Math.floor(Math.random() * 9000 + 1000);
-
-  async function getEncryptionKey(roomId) {
-    const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      "raw", encoder.encode(roomId), "PBKDF2", false, ["deriveKey"]
-    );
-    return crypto.subtle.deriveKey(
-      { name: "PBKDF2", salt: encoder.encode("skooda-salt"), iterations: 100000, hash: "SHA-256" },
-      keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-    );
-  }
-
-  async function encryptMsg(text, roomId) {
-    const key = await getEncryptionKey(roomId);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encoded = new TextEncoder().encode(text);
-    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
-    return { iv: btoa(String.fromCharCode(...iv)), data: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
-  }
-
-  async function decryptMsg(payload, roomId) {
-    try {
-      const key = await getEncryptionKey(roomId);
-      const iv = new Uint8Array(atob(payload.iv).split("").map(c => c.charCodeAt(0)));
-      const data = new Uint8Array(atob(payload.data).split("").map(c => c.charCodeAt(0)));
-      const decoded = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
-      return new TextDecoder().decode(decoded);
-    } catch (e) { return "[Decryption Failed]"; }
-  }
-
-  function appendMsg(sender, text, isSent) {
-    if (!chatWindow) return;
-    const bubble = document.createElement('div');
-    bubble.className = `chat-bubble ${isSent ? 'sent' : 'received'}`;
-    bubble.innerHTML = `<span class="sender">${sender}</span>${text}`;
-    chatWindow.appendChild(bubble);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-  }
-
-  function connectChat() {
-    if (socket) socket.close();
-    // Using a public relay service (SocketsBay) for real-time broadcasting
-    const url = "wss://socketsbay.com/wss/v2/1/demo/"; 
-    socket = new WebSocket(url);
-    
-    socket.onmessage = async (event) => {
-      let msgData;
-      try { msgData = JSON.parse(event.data); } catch(e) { return; }
-      
-      if (msgData.room === currentRoom && msgData.sender !== userHandle) {
-        let text = msgData.text;
-        if (currentRoom !== 'lobby') {
-          text = await decryptMsg(msgData.encrypted, msgData.room);
+      // Also show a badge on the Update tab
+      const updateTabBtn = document.querySelector('[data-tab="update-tab"]');
+      if (updateTabBtn) {
+        updateTabBtn.style.position = 'relative';
+        let badge = updateTabBtn.querySelector('.notification-badge');
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'notification-badge';
+          badge.style = "position:absolute; top:5px; right:20%; width:8px; height:8px; background:var(--neon-purple); border-radius:50%; box-shadow:0 0 10px var(--neon-purple);";
+          updateTabBtn.appendChild(badge);
         }
-        appendMsg(msgData.sender, text, false);
-        if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
       }
-    };
+    }
+  } catch (e) { }
+}
+
+// Check every 30 minutes
+setInterval(silentCheckUpdate, 30 * 60 * 1000);
+setTimeout(silentCheckUpdate, 5000); // Also check 5s after start
+
+// --- FEEDBACK LOGIC ---
+const sendFeedbackBtn = document.getElementById('send-feedback-btn');
+const feedbackText = document.getElementById('feedback-text');
+
+if (sendFeedbackBtn && feedbackText) {
+  sendFeedbackBtn.onclick = () => {
+    const text = feedbackText.value.trim();
+    if (!text) return;
+
+    const subject = encodeURIComponent("Skooda Mobile Feedback");
+    const body = encodeURIComponent(`User Feedback (v${CURRENT_VERSION}):\n\n${text}`);
+
+    // We open a mailto or a GitHub Issue link
+    const githubIssueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${subject}&body=${body}`;
+
+    if (window.Android) {
+      window.Android.openExternalUrl(githubIssueUrl);
+      window.Android.cleanupOldApks(); // Clean up on interaction too
+    } else {
+      window.open(githubIssueUrl, '_blank');
+    }
+
+    feedbackText.value = "";
+    alert("Danke für dein Feedback! Dein Browser öffnet sich jetzt, um das Ticket auf GitHub zu erstellen.");
+  };
+}
+// --- CHAT LOGIC ---
+const chatWindow = document.getElementById('chat-window');
+const chatInput = document.getElementById('chat-input');
+const sendChatBtn = document.getElementById('send-chat-btn');
+const btnLobby = document.getElementById('btn-lobby');
+const btnPrivate = document.getElementById('btn-private');
+const privateSetup = document.getElementById('private-setup');
+const roomIdInput = document.getElementById('room-id-input');
+const joinRoomBtn = document.getElementById('join-room-btn');
+
+let currentRoom = 'lobby';
+let privateRoomId = '';
+let socket = null;
+const userHandle = "User_" + Math.floor(Math.random() * 9000 + 1000);
+
+async function getEncryptionKey(roomId) {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw", encoder.encode(roomId), "PBKDF2", false, ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: encoder.encode("skooda-salt"), iterations: 100000, hash: "SHA-256" },
+    keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptMsg(text, roomId) {
+  const key = await getEncryptionKey(roomId);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(text);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  return { iv: btoa(String.fromCharCode(...iv)), data: btoa(String.fromCharCode(...new Uint8Array(ciphertext))) };
+}
+
+async function decryptMsg(payload, roomId) {
+  try {
+    const key = await getEncryptionKey(roomId);
+    const iv = new Uint8Array(atob(payload.iv).split("").map(c => c.charCodeAt(0)));
+    const data = new Uint8Array(atob(payload.data).split("").map(c => c.charCodeAt(0)));
+    const decoded = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+    return new TextDecoder().decode(decoded);
+  } catch (e) { return "[Decryption Failed]"; }
+}
+
+function appendMsg(sender, text, isSent) {
+  if (!chatWindow) return;
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${isSent ? 'sent' : 'received'}`;
+  bubble.innerHTML = `<span class="sender">${sender}</span>${text}`;
+  chatWindow.appendChild(bubble);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function connectChat() {
+  if (socket) socket.close();
+  // Using a public relay service (SocketsBay) for real-time broadcasting
+  const url = "wss://socketsbay.com/wss/v2/2/demo/";
+  socket = new WebSocket(url);
+
+  socket.onmessage = async (event) => {
+    let msgData;
+    try { msgData = JSON.parse(event.data); } catch (e) { return; }
+
+    if (msgData.room === currentRoom && msgData.sender !== userHandle) {
+      let text = msgData.text;
+      if (currentRoom !== 'lobby') {
+        text = await decryptMsg(msgData.encrypted, msgData.room);
+      }
+      appendMsg(msgData.sender, text, false);
+      if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+    }
+  };
+}
+
+if (btnLobby) btnLobby.onclick = () => {
+  currentRoom = 'lobby';
+  btnLobby.classList.add('active');
+  btnPrivate.classList.remove('active');
+  privateSetup.style.display = 'none';
+  chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Lobby beigetreten.</div>';
+  connectChat();
+};
+
+if (btnPrivate) btnPrivate.onclick = () => {
+  btnPrivate.classList.add('active');
+  btnLobby.classList.remove('active');
+  privateSetup.style.display = 'block';
+};
+
+if (joinRoomBtn) joinRoomBtn.onclick = () => {
+  const id = roomIdInput.value.trim();
+  if (!id) return;
+  currentRoom = id;
+  privateSetup.style.display = 'none';
+  chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Raum [${id}] beigetreten. (Verschlüsselt)</div>`;
+  connectChat();
+};
+
+if (sendChatBtn) sendChatBtn.onclick = async () => {
+  const text = chatInput.value.trim();
+  if (!text || !socket) return;
+
+  const msg = { sender: userHandle, room: currentRoom, text: text };
+  if (currentRoom !== 'lobby') {
+    msg.encrypted = await encryptMsg(text, currentRoom);
+    msg.text = "[Encrypted Content]";
   }
 
-  if (btnLobby) btnLobby.onclick = () => {
-    currentRoom = 'lobby';
-    btnLobby.classList.add('active');
-    btnPrivate.classList.remove('active');
-    privateSetup.style.display = 'none';
-    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Lobby beigetreten.</div>';
-    connectChat();
-  };
+  socket.send(JSON.stringify(msg));
+  appendMsg("Du", text, true);
+  chatInput.value = "";
+};
 
-  if (btnPrivate) btnPrivate.onclick = () => {
-    btnPrivate.classList.add('active');
-    btnLobby.classList.remove('active');
-    privateSetup.style.display = 'block';
-  };
-
-  if (joinRoomBtn) joinRoomBtn.onclick = () => {
-    const id = roomIdInput.value.trim();
-    if (!id) return;
-    currentRoom = id;
-    privateSetup.style.display = 'none';
-    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Raum [${id}] beigetreten. (Verschlüsselt)</div>`;
-    connectChat();
-  };
-
-  if (sendChatBtn) sendChatBtn.onclick = async () => {
-    const text = chatInput.value.trim();
-    if (!text || !socket) return;
-    
-    const msg = { sender: userHandle, room: currentRoom, text: text };
-    if (currentRoom !== 'lobby') {
-      msg.encrypted = await encryptMsg(text, currentRoom);
-      msg.text = "[Encrypted Content]";
-    }
-    
-    socket.send(JSON.stringify(msg));
-    appendMsg("Du", text, true);
-    chatInput.value = "";
-  };
-
-  connectChat();
+connectChat();
