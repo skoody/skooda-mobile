@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.3.7"; // Fallback dev value
+let CURRENT_VERSION = "0.3.8"; // Fallback dev value
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1325,7 +1325,11 @@ const joinRoomBtn = document.getElementById('join-room-btn');
 let currentRoom = 'lobby';
 let privateRoomId = '';
 let socket = null;
-const userHandle = "User_" + Math.floor(Math.random() * 9000 + 1000);
+let userHandle = localStorage.getItem('skooda_chat_handle');
+if (!userHandle) {
+  userHandle = "User_" + Math.floor(Math.random() * 9000 + 1000);
+  localStorage.setItem('skooda_chat_handle', userHandle);
+}
 
 async function getEncryptionKey(roomId) {
   const encoder = new TextEncoder();
@@ -1373,8 +1377,8 @@ function connectChat() {
     
     chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbinde zum Relay...</div>';
     
-    // SocketsBay demo broadcaster
-    const url = "wss://socketsbay.com/wss/v2/1/demo/";
+    // Switch to PieSocket (more robust demo endpoint)
+    const url = "wss://free.piesocket.com/v3/demo?api_key=VCXCEuvhuc6Eh7shZUDsk68q6h7e6sk8JU7zZBA9&notify_self";
     socket = new WebSocket(url);
     
     socket.onopen = () => {
