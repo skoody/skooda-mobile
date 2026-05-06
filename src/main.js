@@ -1213,6 +1213,7 @@ if (checkUpdateBtn) {
                 window.open(apkAsset.browser_download_url, '_blank');
               }
             };
+            downloadUpdateBtn.innerText = "v" + latestVersion + " .apk herunterladen";
           } else {
             downloadUpdateBtn.innerText = "Release Seite öffnen";
             downloadUpdateBtn.onclick = () => {
