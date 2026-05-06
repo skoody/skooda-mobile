@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.3.2";
+const CURRENT_VERSION = "0.3.3";
 const GITHUB_REPO = "skoody/skooda-mobile";
 
 if (checkUpdateBtn) {
@@ -1212,7 +1212,7 @@ if (checkUpdateBtn) {
         }
       } else {
         if (updateTitle) updateTitle.innerText = "System Aktuell";
-        if (updateDesc) updateDesc.innerText = "Du nutzt bereits die neueste Version 0.3.2.";
+        if (updateDesc) updateDesc.innerText = "Du nutzt bereits die neueste Version 0.3.3.";
         if (downloadUpdateBtn) downloadUpdateBtn.style.display = 'none';
       }
     } catch (err) {
@@ -1357,25 +1357,49 @@ function appendMsg(sender, text, isSent) {
 }
 
 function connectChat() {
-  if (socket) socket.close();
-  // Using a public relay service (SocketsBay) for real-time broadcasting
-  const url = "wss://socketsbay.com/wss/v2/2/demo/";
-  socket = new WebSocket(url);
-
-  socket.onmessage = async (event) => {
-    let msgData;
-    try { msgData = JSON.parse(event.data); } catch (e) { return; }
-
-    if (msgData.room === currentRoom && msgData.sender !== userHandle) {
-      let text = msgData.text;
-      if (currentRoom !== 'lobby') {
-        text = await decryptMsg(msgData.encrypted, msgData.room);
-      }
-      appendMsg(msgData.sender, text, false);
-      if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+    if (socket) {
+      socket.onclose = null;
+      socket.close();
     }
-  };
-}
+    
+    // SocketsBay demo broadcaster
+    const url = "wss://socketsbay.com/wss/v2/1/demo/";
+    socket = new WebSocket(url);
+    
+    socket.onopen = () => {
+      console.log("Chat connected");
+      // Keep-alive ping every 30s
+      if (window.chatPing) clearInterval(window.chatPing);
+      window.chatPing = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'ping' }));
+      }, 30000);
+    };
+
+    socket.onmessage = async (event) => {
+      let msgData;
+      try { msgData = JSON.parse(event.data); } catch(e) { return; }
+      
+      if (msgData.type === 'ping') return;
+      
+      if (msgData.room === currentRoom && msgData.sender !== userHandle) {
+        let text = msgData.text;
+        if (currentRoom !== 'lobby' && msgData.encrypted) {
+          text = await decryptMsg(msgData.encrypted, msgData.room);
+        }
+        appendMsg(msgData.sender, text, false);
+        if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("Chat disconnected, reconnecting...");
+      setTimeout(connectChat, 3000);
+    };
+    
+    socket.onerror = (err) => {
+      console.error("Chat error", err);
+    };
+  }
 
 if (btnLobby) btnLobby.onclick = () => {
   currentRoom = 'lobby';
