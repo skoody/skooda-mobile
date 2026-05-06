@@ -20,8 +20,16 @@ struct ChatEvent {
 async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) -> Result<(), String> {
     let mut last_err = String::new();
     
+    // Create a native-tls connector that ignores certificate errors
+    let native_connector = native_tls::TlsConnector::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let connector = tokio_tungstenite::Connector::NativeTls(native_connector);
+
     for _ in 0..3 {
-        match connect_async(&url).await {
+        match tokio_tungstenite::connect_async_tls_with_config(&url, None, false, Some(connector.clone())).await {
             Ok((ws_stream, _)) => {
                 let (sink, mut stream) = ws_stream.split();
                 let mut sink_lock = state.sink.lock().await;

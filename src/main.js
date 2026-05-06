@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.6.2"; // TLS Bypass Milestone
+let CURRENT_VERSION = "0.6.3"; // TLS Verification Bypass Milestone
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
