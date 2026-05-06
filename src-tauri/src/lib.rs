@@ -292,15 +292,25 @@ pub fn run() {
         .setup(|app| {
             let key_path = get_key_path(&app.handle());
             let signing_key = if key_path.exists() {
-                let bytes = fs::read(&key_path).expect("Failed to read key");
-                let mut seed = [0u8; 32];
-                seed.copy_from_slice(&bytes);
-                SigningKey::from_bytes(&seed)
+                match fs::read(&key_path) {
+                    Ok(bytes) if bytes.len() == 32 => {
+                        let mut seed = [0u8; 32];
+                        seed.copy_from_slice(&bytes);
+                        SigningKey::from_bytes(&seed)
+                    }
+                    _ => {
+                        let mut seed = [0u8; 32];
+                        use rand::RngCore;
+                        rand::rngs::OsRng.fill_bytes(&mut seed);
+                        let _ = fs::write(&key_path, &seed);
+                        SigningKey::from_bytes(&seed)
+                    }
+                }
             } else {
                 let mut seed = [0u8; 32];
                 use rand::RngCore;
                 rand::rngs::OsRng.fill_bytes(&mut seed);
-                fs::write(&key_path, &seed).expect("Failed to save key");
+                let _ = fs::write(&key_path, &seed);
                 SigningKey::from_bytes(&seed)
             };
 

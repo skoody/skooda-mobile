@@ -39,12 +39,20 @@ function setPos(id, x, y) {
 }
 
 // --- TAURI BRIDGE ---
-const invoke = window.__TAURI__.core.invoke;
-const listen = window.__TAURI__.event.listen;
+let invoke = () => {};
+let listen = () => {};
+
+if (window.__TAURI__) {
+  invoke = window.__TAURI__.core.invoke;
+  listen = window.__TAURI__.event.listen;
+} else {
+  console.error("Tauri global not found! Are you running in a Tauri window?");
+}
 
 // Global Update Hook (moved to Tauri Listener)
-listen('stats-update', (event) => {
-  const stats = event.payload;
+if (window.__TAURI__) {
+  listen('stats-update', (event) => {
+    const stats = event.payload;
   if (!stats) return;
   try {
     // Static Device Info
@@ -182,7 +190,8 @@ listen('stats-update', (event) => {
   } catch (e) {
     console.error("UI Update Error", e);
   }
-};
+  });
+}
 
 // --- CYBER TOOLS ---
 const scanBtn = getEl('start-net-scan');
@@ -206,8 +215,9 @@ if (scanBtn) {
   });
 }
 
-listen('scan-progress', (event) => {
-  const data = event.payload;
+if (window.__TAURI__) {
+  listen('scan-progress', (event) => {
+    const data = event.payload;
   if (data.progress !== undefined) {
     if (scanProgBar) scanProgBar.style.width = data.progress + '%';
     return;
@@ -238,7 +248,8 @@ listen('scan-progress', (event) => {
             `;
     }).join('');
   }
-};
+});
+}
 
 // Privacy Reveal Logic
 const pIpEl = getEl('public-ip');
