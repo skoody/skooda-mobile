@@ -80,26 +80,13 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
                 continue;
             }
 
-            let native_connector = match native_tls::TlsConnector::builder()
-                .danger_accept_invalid_certs(true)
-                .build() {
-                    Ok(c) => c,
-                    Err(_) => {
-                        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-                        continue;
-                    }
-                };
-
-            let connector = tokio_tungstenite::Connector::NativeTls(native_connector);
-
-            match tokio_tungstenite::connect_async_tls_with_config(&url, None, false, Some(connector)).await {
+            match tokio_tungstenite::connect_async(&url).await {
                 Ok((ws_stream, _)) => {
                     let (mut sink, mut stream) = ws_stream.split();
                     let _ = app_clone.emit("chat-status", "Connected");
 
                     loop {
                         tokio::select! {
-                            // Heartbeat to keep connection alive
                             _ = tokio::time::sleep(tokio::time::Duration::from_secs(30)) => {
                                 if sink.send(Message::Ping(vec![])).await.is_err() {
                                     break;
@@ -108,7 +95,6 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
                             Some(Ok(msg)) = stream.next() => {
                                 match msg {
                                     Message::Text(text) => {
-                                        // Trigger System Notification
                                         if text.contains("\"msg_type\":\"chat\"") {
                                             let _ = app_clone.notification()
                                                 .builder()
@@ -118,7 +104,7 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
                                         }
                                         let _ = app_clone.emit("chat-msg", ChatEvent { message: text.to_string() });
                                     }
-                                    Message::Pong(_) => { /* Keep alive successful */ }
+                                    Message::Pong(_) => { }
                                     _ => {}
                                 }
                             }
