@@ -1344,16 +1344,3 @@ body {
   padding: 10px;
   scroll-behavior: smooth;
 }
-
-.history-msg {
-    opacity: 0.7;
-    border-left: 2px solid var(--text-dim);
-}
-
-.system-msg {
-    text-align: center;
-    background: none !important;
-    border: none !important;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-}

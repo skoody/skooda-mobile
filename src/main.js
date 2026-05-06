@@ -38,21 +38,8 @@ function setPos(id, x, y) {
   }
 }
 
-// --- TAURI BRIDGE ---
-let invoke = () => {};
-let listen = () => {};
-
-if (window.__TAURI__) {
-  invoke = window.__TAURI__.core.invoke;
-  listen = window.__TAURI__.event.listen;
-} else {
-  console.error("Tauri global not found! Are you running in a Tauri window?");
-}
-
-// Global Update Hook (moved to Tauri Listener)
-if (window.__TAURI__) {
-  listen('stats-update', (event) => {
-    const stats = event.payload;
+// Global Update Hook (called from Kotlin)
+window.__skoodaUpdate = (stats) => {
   if (!stats) return;
   try {
     // Static Device Info
@@ -190,8 +177,7 @@ if (window.__TAURI__) {
   } catch (e) {
     console.error("UI Update Error", e);
   }
-  });
-}
+};
 
 // --- CYBER TOOLS ---
 const scanBtn = getEl('start-net-scan');
@@ -211,13 +197,11 @@ if (scanBtn) {
     scanBtn.disabled = true;
     if (scanProgCont) scanProgCont.style.display = 'block';
     if (scanProgBar) scanProgBar.style.width = '0%';
-    invoke('scan_network');
+    window.Android.scanNetwork('onNetScan');
   });
 }
 
-if (window.__TAURI__) {
-  listen('scan-progress', (event) => {
-    const data = event.payload;
+window.onNetScan = (data) => {
   if (data.progress !== undefined) {
     if (scanProgBar) scanProgBar.style.width = data.progress + '%';
     return;
@@ -248,8 +232,7 @@ if (window.__TAURI__) {
             `;
     }).join('');
   }
-});
-}
+};
 
 // Privacy Reveal Logic
 const pIpEl = getEl('public-ip');
@@ -348,8 +331,8 @@ actionPing.addEventListener('click', () => {
 });
 
 actionBrowser.addEventListener('click', () => {
-  if (window.__TAURI__) {
-    window.__TAURI__.shell.open(`http://${currentModalIp}`);
+  if (window.Android && window.Android.openExternalUrl) {
+    window.Android.openExternalUrl(`http://${currentModalIp}`);
   } else {
     window.open(`http://${currentModalIp}`, '_blank');
   }
@@ -364,7 +347,7 @@ if (pingBtn) {
   pingBtn.addEventListener('click', () => {
     const host = pingHost.value || "8.8.8.8";
     pingResult.innerText = "Pinging " + host + "...";
-    invoke('ping', { host }).then(res => onPingResult({ result: res })).catch(err => onPingResult({ error: err }));
+    window.Android.ping(host, 'onPingResult');
   });
 }
 
@@ -377,7 +360,7 @@ if (dnsBtn) {
   dnsBtn.addEventListener('click', () => {
     const host = dnsHost.value || "google.com";
     dnsResult.innerText = "Resolving " + host + "...";
-    invoke('dns_lookup', { host }).then(ips => onDnsResult({ ips })).catch(err => onDnsResult({ error: err }));
+    window.Android.dnsLookup(host, 'onDnsResult');
   });
 }
 
@@ -472,9 +455,9 @@ if (qrDownload) {
     let dataUrl = "";
     if (canvas) dataUrl = canvas.toDataURL("image/png");
     else if (img && img.src) dataUrl = img.src;
-    if (dataUrl) {
+    if (dataUrl && window.Android) {
       const timestamp = Math.floor(Date.now() / 1000);
-      invoke('save_image', { base64Data: dataUrl, filename: `skooda-qr-${timestamp}.png` });
+      window.Android.saveImage(dataUrl, `skooda-qr-${timestamp}.png`);
     }
   });
 }
@@ -627,8 +610,8 @@ if (qrCopy) {
 
 if (qrOpen) {
   qrOpen.addEventListener('click', () => {
-    if (window.__TAURI__) {
-      window.__TAURI__.shell.open(lastResult);
+    if (window.Android && window.Android.openExternalUrl) {
+      window.Android.openExternalUrl(lastResult);
     } else {
       window.open(lastResult, '_blank');
     }
@@ -1156,7 +1139,7 @@ if (captureBtn) {
     tCtx.drawImage(espVideo, 0, 0);
     tCtx.drawImage(espCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
     const dataUrl = tempCanvas.toDataURL('image/png');
-    invoke('save_image', { base64Data: dataUrl, filename: 'esp-capture-' + Date.now() + '.png' });
+    window.Android.saveImage(dataUrl, 'esp-capture-' + Date.now() + '.png');
   };
 }
 
@@ -1183,8 +1166,8 @@ const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
 let CURRENT_VERSION = "0.6.6"; // Full Lobby Encryption & Privacy Patch
-if (window.__TAURI__) {
-  window.__TAURI__.app.getVersion().then(v => { CURRENT_VERSION = v; });
+if (window.Android && window.Android.getAppVersion) {
+  CURRENT_VERSION = window.Android.getAppVersion();
 }
 const GITHUB_REPO = "skoody/skooda-mobile";
 
@@ -1218,18 +1201,18 @@ if (checkUpdateBtn) {
           const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
           if (apkAsset) {
             downloadUpdateBtn.onclick = () => {
-              if (window.__TAURI__) {
-                window.__TAURI__.shell.open(apkAsset.browser_download_url);
+              if (window.Android) {
+                window.Android.cleanupOldApks();
+                window.Android.openExternalUrl(apkAsset.browser_download_url);
               } else {
                 window.open(apkAsset.browser_download_url, '_blank');
               }
             };
-            downloadUpdateBtn.innerText = "v" + latestVersion + " .apk herunterladen";
           } else {
             downloadUpdateBtn.innerText = "Release Seite öffnen";
             downloadUpdateBtn.onclick = () => {
-              if (window.__TAURI__) {
-                window.__TAURI__.shell.open(data.html_url);
+              if (window.Android && window.Android.openExternalUrl) {
+                window.Android.openExternalUrl(data.html_url);
               } else {
                 window.open(data.html_url, '_blank');
               }
@@ -1253,8 +1236,8 @@ if (checkUpdateBtn) {
 
       if (toggleFlashlight) {
         toggleFlashlight.onchange = (e) => {
-          if (window.__TAURI__) {
-            invoke('set_flashlight', { enabled: e.target.checked });
+          if (window.Android) {
+            window.Android.setFlashlight(e.target.checked);
           }
         };
       }
@@ -1262,8 +1245,8 @@ if (checkUpdateBtn) {
       if (toggleBluetooth) {
         toggleBluetooth.onchange = (e) => {
           if (window.__isUpdatingBT) return;
-          if (window.__TAURI__) {
-            invoke('toggle_bluetooth', { enabled: e.target.checked });
+          if (window.Android) {
+            window.Android.toggleBluetooth(e.target.checked);
           }
         };
       }
@@ -1280,7 +1263,8 @@ async function silentCheckUpdate() {
     const latestVersion = data.tag_name.replace('v', '');
 
     if (latestVersion !== CURRENT_VERSION) {
-      invoke('show_notification', { title: "Skooda Update Verfügbar!", body: `Version v${latestVersion} ist jetzt verfügbar.` });
+      if (window.Android) {
+        window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar. Tippe zum Herunterladen.`);
       }
       // Also show a badge on the Update tab
       const updateTabBtn = document.querySelector('[data-tab="update-tab"]');
@@ -1317,8 +1301,9 @@ if (sendFeedbackBtn && feedbackText) {
     // We open a mailto or a GitHub Issue link
     const githubIssueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${subject}&body=${body}`;
 
-    if (window.__TAURI__) {
-      window.__TAURI__.shell.open(githubIssueUrl);
+    if (window.Android) {
+      window.Android.openExternalUrl(githubIssueUrl);
+      window.Android.cleanupOldApks(); // Clean up on interaction too
     } else {
       window.open(githubIssueUrl, '_blank');
     }
@@ -1375,9 +1360,9 @@ async function decryptMsg(payload, roomId) {
   } catch (e) { return "[Decryption Failed]"; }
 }
 
-function appendMsg(sender, text, isMe, isHistory = false) {
+function appendMsg(sender, text, isMe) {
   const div = document.createElement("div");
-  div.className = `chat-bubble ${isMe ? "sent" : "received"}${isHistory ? " history-msg" : ""}`;
+  div.className = `chat-bubble ${isMe ? "sent" : "received"}`;
   
   let contentHtml = `<span class="sender">${sender}</span>`;
   
@@ -1398,7 +1383,7 @@ function appendMsg(sender, text, isMe, isHistory = false) {
   
   div.innerHTML = contentHtml;
   chatWindow.appendChild(div);
-  if (!isHistory) chatWindow.scrollTop = chatWindow.scrollHeight;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 function downloadFile(name, base64) {
@@ -1408,61 +1393,11 @@ function downloadFile(name, base64) {
     link.click();
 }
 
-// --- INDEXEDDB PERSISTENCE ---
-const DB_NAME = "SkoodaChatDB";
-const DB_VERSION = 1;
-let db;
-
-function initDB() {
-    return new Promise((resolve) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains("messages")) {
-                db.createObjectStore("messages", { keyPath: "id", autoIncrement: true });
-            }
-        };
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            resolve();
-        };
-    });
-}
-
-async function saveMsgLocally(msg) {
-    if (!db) return;
-    const tx = db.transaction("messages", "readwrite");
-    tx.objectStore("messages").add(msg);
-}
-
-async function loadLocalHistory(room) {
-    if (!db) return;
-    const tx = db.transaction("messages", "readonly");
-    const store = tx.objectStore("messages");
-    const request = store.getAll();
-    request.onsuccess = () => {
-        const msgs = request.result.filter(m => m.room === room).slice(-50);
-        chatWindow.innerHTML = ''; // Clear for fresh history
-        msgs.forEach(m => appendMsg(m.sender, m.text, m.sender === userHandle, true));
-    };
-}
 
 let offlineQueue = [];
 let typingTimeout;
 
 async function connectChat() {
-  if (window.isConnecting) return;
-  window.isConnecting = true;
-
-  // Request Notifications Permission
-  try {
-    const permission = await window.__TAURI__.core.invoke("plugin:notification|request_permission");
-    console.log("Notification permission:", permission);
-  } catch(e) {}
-
-  await initDB();
-  await loadLocalHistory(currentRoom);
-
   const statusBubble = document.createElement('div');
   statusBubble.className = "chat-bubble received system-msg";
   statusBubble.innerHTML = '<span class="sender">System</span>Verbindung wird aufgebaut...';
@@ -1492,20 +1427,14 @@ async function connectChat() {
           return;
         }
 
-        if (msgData.msg_type === 'chat') {
-            let text = msgData.text;
-            if (msgData.encrypted) {
-              text = await decryptMsg(msgData.encrypted, msgData.room);
-            }
-            
-            // Persist locally
-            saveMsgLocally({ sender: msgData.sender, text, room: msgData.room, timestamp: Date.now() });
-
-            if (msgData.room === currentRoom) {
-              appendMsg(msgData.sender, text, msgData.sender === userHandle);
-              playChatSound();
-              sendReadReceipt(msgData.id);
-            }
+        if (msgData.room === currentRoom) {
+          let text = msgData.text;
+          if (msgData.encrypted) {
+            text = await decryptMsg(msgData.encrypted, msgData.room);
+          }
+          appendMsg(msgData.sender, text, msgData.sender === userHandle);
+          playChatSound();
+          sendReadReceipt(msgData.id);
         }
       });
 
@@ -1516,29 +1445,18 @@ async function connectChat() {
             socketConnected = true;
             statusBubble.remove();
             processOfflineQueue();
-        } else {
-            socketConnected = false;
         }
       });
       window.chatListenerActive = true;
     }
 
     await window.__TAURI__.core.invoke("connect_chat", { url });
-    window.isConnecting = false;
     
   } catch (err) {
     statusBubble.innerHTML = `<span class="sender">System</span>Fehler: ${err.message}. Reconnect in 5s...`;
-    window.isConnecting = false;
     setTimeout(connectChat, 5000);
   }
 }
-
-// Keep-Alive Logic for Visibility Change
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && !socketConnected) {
-        connectChat();
-    }
-});
 
 function playChatSound() {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
@@ -1675,13 +1593,13 @@ function sendReadReceipt(msgId) {
 
 // Room Switching Logic
 if (btnLobby) {
-  btnLobby.onclick = async () => {
+  btnLobby.onclick = () => {
     btnLobby.classList.add('active');
     btnPrivate.classList.remove('active');
     privateSetup.style.display = 'none';
     if (currentRoom === 'lobby') return;
     currentRoom = 'lobby';
-    await loadLocalHistory(currentRoom);
+    chatWindow.innerHTML = '';
     sendChatMessage(`System: ${userHandle} joined lobby`, true);
   };
 }
@@ -1695,12 +1613,12 @@ if (btnPrivate) {
 }
 
 if (joinRoomBtn) {
-  joinRoomBtn.onclick = async () => {
+  joinRoomBtn.onclick = () => {
     const newRoom = roomIdInput.value.trim();
     if (!newRoom) return;
     currentRoom = newRoom;
     privateSetup.style.display = 'none';
-    await loadLocalHistory(currentRoom);
+    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Joined Private Room: ${newRoom}</div>`;
     sendChatMessage(`System: ${userHandle} joined ${newRoom}`, true);
   };
 }
