@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.5.1"; // Custom Relay UI
+let CURRENT_VERSION = "0.6.0"; // Auto-Discovery Milestone
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1370,37 +1370,17 @@ function appendMsg(sender, text, isSent) {
 }
 
   async function connectChat() {
-    let url = localStorage.getItem('skooda_relay_url') || "wss://socketsbay.com/wss/v2/1/demo/";
-    
-    // Add server URL controls if they don't exist
-    if (!document.getElementById('chat-server-config')) {
-      const configDiv = document.createElement('div');
-      configDiv.id = 'chat-server-config';
-      configDiv.style.padding = '10px';
-      configDiv.style.background = 'rgba(255,255,255,0.05)';
-      configDiv.style.borderRadius = '8px';
-      configDiv.style.marginBottom = '10px';
-      configDiv.innerHTML = `
-        <div style="font-size: 10px; color: #888; margin-bottom: 5px;">Relay Server URL:</div>
-        <div style="display: flex; gap: 5px;">
-          <input type="text" id="relay-url-input" value="${url}" style="flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 5px; border-radius: 4px; font-size: 12px;">
-          <button id="save-relay-btn" style="background: var(--primary); border: none; color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">Save</button>
-        </div>
-      `;
-      chatWindow.parentNode.insertBefore(configDiv, chatWindow);
-      
-      document.getElementById('save-relay-btn').onclick = () => {
-        const newUrl = document.getElementById('relay-url-input').value.trim();
-        if (newUrl) {
-          localStorage.setItem('skooda_relay_url', newUrl);
-          location.reload(); // Quickest way to re-init everything
-        }
-      };
-    }
-
-    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
+    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Suche Relay-Server...</div>';
     
     try {
+      // 1. Discovery: Fetch current URL from GitHub
+      const discoveryUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/discovery.json`;
+      const response = await fetch(discoveryUrl + '?cache=' + Date.now());
+      const discovery = await response.json();
+      const url = discovery.relay_url;
+      
+      chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
+
       // Initialize listener once
       if (!window.chatListenerActive) {
         window.__TAURI__.event.listen("chat-msg", async (event) => {
