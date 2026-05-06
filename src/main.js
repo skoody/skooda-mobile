@@ -1165,8 +1165,17 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-const CURRENT_VERSION = "0.3.4";
+let CURRENT_VERSION = "0.3.4"; // Fallback
+if (window.Android && window.Android.getAppVersion) {
+  CURRENT_VERSION = window.Android.getAppVersion();
+}
 const GITHUB_REPO = "skoody/skooda-mobile";
+
+// Update version displays in UI
+document.addEventListener('DOMContentLoaded', () => {
+  const versionDisplay = document.querySelector('.version-badge .value');
+  if (versionDisplay) versionDisplay.innerText = `v${CURRENT_VERSION}`;
+});
 
 if (checkUpdateBtn) {
   checkUpdateBtn.onclick = async () => {

@@ -377,6 +377,16 @@ class MainActivity : TauriActivity(), SensorEventListener {
         private val executor = Executors.newFixedThreadPool(20)
 
         @JavascriptInterface
+        fun getAppVersion(): String {
+            return try {
+                val pInfo = mContext.packageManager.getPackageInfo(mContext.packageName, 0)
+                pInfo.versionName ?: "0.0.0"
+            } catch (e: Exception) {
+                "0.0.0"
+            }
+        }
+
+        @JavascriptInterface
         fun saveImage(base64: String, filename: String) {
             try {
                 val cleanBase64 = base64.substringAfter("base64,")
