@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.3.6"; // Fallback dev value
+let CURRENT_VERSION = "0.3.7"; // Fallback dev value
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1371,12 +1371,15 @@ function connectChat() {
       socket.close();
     }
     
+    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbinde zum Relay...</div>';
+    
     // SocketsBay demo broadcaster
     const url = "wss://socketsbay.com/wss/v2/1/demo/";
     socket = new WebSocket(url);
     
     socket.onopen = () => {
-      console.log("Chat connected");
+      chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbunden. Viel Spaß!</div>';
+      
       // Keep-alive ping every 30s
       if (window.chatPing) clearInterval(window.chatPing);
       window.chatPing = setInterval(() => {
@@ -1401,12 +1404,12 @@ function connectChat() {
     };
 
     socket.onclose = () => {
-      console.log("Chat disconnected, reconnecting...");
-      setTimeout(connectChat, 3000);
+      chatWindow.innerHTML += '<div class="chat-bubble received"><span class="sender">System</span>Verbindung getrennt. Reconnect in 5s...</div>';
+      setTimeout(connectChat, 5000);
     };
     
     socket.onerror = (err) => {
-      console.error("Chat error", err);
+      chatWindow.innerHTML += '<div class="chat-bubble received"><span class="sender">System</span>Fehler: Verbindung fehlgeschlagen.</div>';
     };
   }
 
@@ -1436,7 +1439,7 @@ if (joinRoomBtn) joinRoomBtn.onclick = () => {
 
 if (sendChatBtn) sendChatBtn.onclick = async () => {
   const text = chatInput.value.trim();
-  if (!text || !socket) return;
+  if (!text || !socket || socket.readyState !== WebSocket.OPEN) return;
 
   const msg = { sender: userHandle, room: currentRoom, text: text };
   if (currentRoom !== 'lobby') {
