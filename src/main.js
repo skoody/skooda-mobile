@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.3.8"; // Fallback dev value
+let CURRENT_VERSION = "0.3.9"; // Fallback dev value
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1369,91 +1369,81 @@ function appendMsg(sender, text, isSent) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function connectChat() {
-    if (socket) {
-      socket.onclose = null;
-      socket.close();
-    }
+  async function connectChat() {
+    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbinde via Rust-Bridge...</div>';
     
-    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbinde zum Relay...</div>';
-    
-    // Switch to PieSocket (more robust demo endpoint)
-    const url = "wss://free.piesocket.com/v3/demo?api_key=VCXCEuvhuc6Eh7shZUDsk68q6h7e6sk8JU7zZBA9&notify_self";
-    socket = new WebSocket(url);
-    
-    socket.onopen = () => {
-      chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbunden. Viel Spaß!</div>';
+    try {
+      const url = "wss://free.piesocket.com/v3/demo?api_key=VCXCEuvhuc6Eh7shZUDsk68q6h7e6sk8JU7zZBA9&notify_self";
       
-      // Keep-alive ping every 30s
-      if (window.chatPing) clearInterval(window.chatPing);
-      window.chatPing = setInterval(() => {
-        if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'ping' }));
-      }, 30000);
-    };
-
-    socket.onmessage = async (event) => {
-      let msgData;
-      try { msgData = JSON.parse(event.data); } catch(e) { return; }
-      
-      if (msgData.type === 'ping') return;
-      
-      if (msgData.room === currentRoom && msgData.sender !== userHandle) {
-        let text = msgData.text;
-        if (currentRoom !== 'lobby' && msgData.encrypted) {
-          text = await decryptMsg(msgData.encrypted, msgData.room);
-        }
-        appendMsg(msgData.sender, text, false);
-        if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+      // Initialize listener once
+      if (!window.chatListenerActive) {
+        window.__TAURI__.event.listen("chat-msg", async (event) => {
+          let msgData;
+          try { msgData = JSON.parse(event.payload.message); } catch(e) { return; }
+          
+          if (msgData.type === 'ping') return;
+          
+          if (msgData.room === currentRoom && msgData.sender !== userHandle) {
+            let text = msgData.text;
+            if (currentRoom !== 'lobby' && msgData.encrypted) {
+              text = await decryptMsg(msgData.encrypted, msgData.room);
+            }
+            appendMsg(msgData.sender, text, false);
+            if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+          }
+        });
+        window.chatListenerActive = true;
       }
-    };
 
-    socket.onclose = () => {
-      chatWindow.innerHTML += '<div class="chat-bubble received"><span class="sender">System</span>Verbindung getrennt. Reconnect in 5s...</div>';
-      setTimeout(connectChat, 5000);
-    };
-    
-    socket.onerror = (err) => {
-      chatWindow.innerHTML += '<div class="chat-bubble received"><span class="sender">System</span>Fehler: Verbindung fehlgeschlagen.</div>';
-    };
+      await window.__TAURI__.core.invoke("connect_chat", { url });
+      chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbunden (Native Rust). Viel Spaß!</div>';
+    } catch (err) {
+      chatWindow.innerHTML += `<div class="chat-bubble received"><span class="sender">System</span>Bridge-Fehler: ${err}</div>`;
+    }
   }
 
-if (btnLobby) btnLobby.onclick = () => {
-  currentRoom = 'lobby';
-  btnLobby.classList.add('active');
-  btnPrivate.classList.remove('active');
-  privateSetup.style.display = 'none';
-  chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Lobby beigetreten.</div>';
-  connectChat();
-};
+  if (sendChatBtn) sendChatBtn.onclick = async () => {
+    const text = chatInput.value.trim();
+    if (!text) return;
 
-if (btnPrivate) btnPrivate.onclick = () => {
-  btnPrivate.classList.add('active');
-  btnLobby.classList.remove('active');
-  privateSetup.style.display = 'block';
-};
+    const msg = { sender: userHandle, room: currentRoom, text: text };
+    if (currentRoom !== 'lobby') {
+      msg.encrypted = await encryptMsg(text, currentRoom);
+      msg.text = "[Encrypted Content]";
+    }
 
-if (joinRoomBtn) joinRoomBtn.onclick = () => {
-  const id = roomIdInput.value.trim();
-  if (!id) return;
-  currentRoom = id;
-  privateSetup.style.display = 'none';
-  chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Raum [${id}] beigetreten. (Verschlüsselt)</div>`;
-  connectChat();
-};
+    try {
+      const msgStr = JSON.stringify(msg);
+      await window.__TAURI__.core.invoke("send_chat_message", { message: msgStr });
+      appendMsg("Du", text, true);
+      chatInput.value = "";
+    } catch (err) {
+      appendMsg("System", "Senden fehlgeschlagen: " + err, false);
+    }
+  };
 
-if (sendChatBtn) sendChatBtn.onclick = async () => {
-  const text = chatInput.value.trim();
-  if (!text || !socket || socket.readyState !== WebSocket.OPEN) return;
+  if (btnLobby) btnLobby.onclick = () => {
+    currentRoom = 'lobby';
+    btnLobby.classList.add('active');
+    btnPrivate.classList.remove('active');
+    privateSetup.style.display = 'none';
+    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Lobby beigetreten.</div>';
+    connectChat();
+  };
 
-  const msg = { sender: userHandle, room: currentRoom, text: text };
-  if (currentRoom !== 'lobby') {
-    msg.encrypted = await encryptMsg(text, currentRoom);
-    msg.text = "[Encrypted Content]";
-  }
+  if (btnPrivate) btnPrivate.onclick = () => {
+    btnPrivate.classList.add('active');
+    btnLobby.classList.remove('active');
+    privateSetup.style.display = 'block';
+  };
 
-  socket.send(JSON.stringify(msg));
-  appendMsg("Du", text, true);
-  chatInput.value = "";
-};
+  if (joinRoomBtn) joinRoomBtn.onclick = () => {
+    const id = roomIdInput.value.trim();
+    if (!id) return;
+    currentRoom = id;
+    privateSetup.style.display = 'none';
+    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Raum [${id}] beigetreten. (Verschlüsselt)</div>`;
+    connectChat();
+  };
 
 connectChat();
