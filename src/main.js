@@ -1321,10 +1321,10 @@ const btnPrivate = document.getElementById('btn-private');
 const privateSetup = document.getElementById('private-setup');
 const roomIdInput = document.getElementById('room-id-input');
 const joinRoomBtn = document.getElementById('join-room-btn');
+const onlineDisplay = document.getElementById('online-count');
 
 let currentRoom = 'lobby';
-let privateRoomId = '';
-let socket = null;
+let socketConnected = false;
 let userHandle = localStorage.getItem('skooda_chat_handle');
 if (!userHandle) {
   userHandle = "User_" + Math.floor(Math.random() * 9000 + 1000);
@@ -1369,100 +1369,112 @@ function appendMsg(sender, text, isSent) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-  async function connectChat() {
-    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Suche Relay-Server...</div>';
+async function connectChat() {
+  chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Suche Relay-Server...</div>';
+  
+  try {
+    const apiDiscoveryUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/discovery.json`;
+    const response = await fetch(apiDiscoveryUrl + '?t=' + Date.now());
+    if (!response.ok) throw new Error("API-Fehler");
+    const data = await response.json();
+    const content = atob(data.content.replace(/\s/g, ''));
+    const discovery = JSON.parse(content);
+    const url = discovery.relay_url;
     
-    try {
-      // 1. Discovery: Fetch current URL from GitHub API (more robust)
-      let url;
-      try {
-        const apiDiscoveryUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/discovery.json`;
-        const response = await fetch(apiDiscoveryUrl + '?t=' + Date.now());
-        if (!response.ok) throw new Error("API-Fehler");
-        const data = await response.json();
-        // GitHub API returns content as base64
-        const content = atob(data.content.replace(/\s/g, ''));
-        const discovery = JSON.parse(content);
-        url = discovery.relay_url;
-      } catch (e) {
-        // Fallback to raw if API fails
-        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/discovery.json`;
-        const response = await fetch(rawUrl + '?t=' + Date.now());
-        const discovery = await response.json();
-        url = discovery.relay_url;
-      }
-      
-      chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
+    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
 
-      // Initialize listener once
-      if (!window.chatListenerActive) {
-        window.__TAURI__.event.listen("chat-msg", async (event) => {
-          let msgData;
-          try { msgData = JSON.parse(event.payload.message); } catch(e) { return; }
-          
-          if (msgData.type === 'ping') return;
-          
-          if (msgData.room === currentRoom && msgData.sender !== userHandle) {
-            let text = msgData.text;
-            if (currentRoom !== 'lobby' && msgData.encrypted) {
-              text = await decryptMsg(msgData.encrypted, msgData.room);
-            }
-            appendMsg(msgData.sender, text, false);
-            if (window.Android) window.Android.showNotification("Skooda Chat", `${msgData.sender}: ${text}`);
+    if (!window.chatListenerActive) {
+      window.__TAURI__.event.listen("chat-msg", async (event) => {
+        let msgData;
+        try { msgData = JSON.parse(event.payload.message); } catch(e) { return; }
+        
+        if (msgData.msg_type === 'stats') {
+          if (onlineDisplay) onlineDisplay.innerText = `${msgData.online_count} Online`;
+          return;
+        }
+
+        if (msgData.room === currentRoom) {
+          let text = msgData.text;
+          if (msgData.room !== 'lobby' && msgData.encrypted) {
+            text = await decryptMsg(msgData.encrypted, msgData.room);
           }
-        });
-        window.chatListenerActive = true;
-      }
-
-      await window.__TAURI__.core.invoke("connect_chat", { url });
-      chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Verbunden (Native Rust). Viel Spaß!</div>';
-    } catch (err) {
-      chatWindow.innerHTML += `<div class="chat-bubble received"><span class="sender">System</span>Fehler: ${err.message || err}</div>`;
+          appendMsg(msgData.sender, text, msgData.sender === userHandle);
+        }
+      });
+      window.chatListenerActive = true;
     }
+
+    await window.__TAURI__.core.invoke("connect_chat", { url });
+    socketConnected = true;
+    
+    // Join current room immediately
+    sendChatMessage(`System: ${userHandle} joined ${currentRoom}`, true);
+    chatWindow.innerHTML = ''; // Clear connecting status
+  } catch (err) {
+    chatWindow.innerHTML += `<div class="chat-bubble received"><span class="sender">System</span>Fehler: ${err.message || err}</div>`;
   }
+}
 
-  if (sendChatBtn) sendChatBtn.onclick = async () => {
-    const text = chatInput.value.trim();
-    if (!text) return;
+async function sendChatMessage(text = null, isSystem = false) {
+  const content = text || chatInput.value.trim();
+  if (!content || !socketConnected) return;
 
-    const msg = { sender: userHandle, room: currentRoom, text: text };
-    if (currentRoom !== 'lobby') {
-      msg.encrypted = await encryptMsg(text, currentRoom);
-      msg.text = "[Encrypted Content]";
-    }
-
-    try {
-      const msgStr = JSON.stringify(msg);
-      await window.__TAURI__.core.invoke("send_chat_message", { message: msgStr });
-      appendMsg("Du", text, true);
-      chatInput.value = "";
-    } catch (err) {
-      appendMsg("System", "Senden fehlgeschlagen: " + err, false);
-    }
+  const payload = {
+    msg_type: "chat",
+    sender: userHandle,
+    room: currentRoom,
+    text: content
   };
 
-  if (btnLobby) btnLobby.onclick = () => {
+  if (currentRoom !== 'lobby' && !isSystem) {
+    payload.encrypted = await encryptMsg(content, currentRoom);
+    payload.text = "[Encrypted Content]";
+  }
+
+  try {
+    await window.__TAURI__.core.invoke("send_chat_message", { message: JSON.stringify(payload) });
+    if (!text) chatInput.value = "";
+  } catch (e) {
+    appendMsg("System", "Senden fehlgeschlagen.", false);
+  }
+}
+
+// Room Switching Logic
+if (btnLobby) {
+  btnLobby.onclick = () => {
+    if (currentRoom === 'lobby') return;
     currentRoom = 'lobby';
     btnLobby.classList.add('active');
     btnPrivate.classList.remove('active');
     privateSetup.style.display = 'none';
-    chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Lobby beigetreten.</div>';
-    connectChat();
+    chatWindow.innerHTML = '';
+    sendChatMessage(`System: ${userHandle} joined lobby`, true);
   };
+}
 
-  if (btnPrivate) btnPrivate.onclick = () => {
+if (btnPrivate) {
+  btnPrivate.onclick = () => {
     btnPrivate.classList.add('active');
     btnLobby.classList.remove('active');
     privateSetup.style.display = 'block';
   };
+}
 
-  if (joinRoomBtn) joinRoomBtn.onclick = () => {
-    const id = roomIdInput.value.trim();
-    if (!id) return;
-    currentRoom = id;
+if (joinRoomBtn) {
+  joinRoomBtn.onclick = () => {
+    const newRoom = roomIdInput.value.trim();
+    if (!newRoom) return;
+    currentRoom = newRoom;
     privateSetup.style.display = 'none';
-    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Raum [${id}] beigetreten. (Verschlüsselt)</div>`;
-    connectChat();
+    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Joined Private Room: ${newRoom}</div>`;
+    sendChatMessage(`System: ${userHandle} joined ${newRoom}`, true);
   };
+}
 
-connectChat();
+if (sendChatBtn) sendChatBtn.onclick = () => sendChatMessage();
+if (chatInput) chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendChatMessage(); };
+
+// Connect on start
+setTimeout(connectChat, 1000);
+
+// Done. Logic is initialized above.
