@@ -18,18 +18,15 @@ struct ChatEvent {
 
 #[tauri::command]
 async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) -> Result<(), String> {
-    // Attempt connection with retry logic
     let mut last_err = String::new();
+    
     for _ in 0..3 {
         match connect_async(&url).await {
             Ok((ws_stream, _)) => {
                 let (sink, mut stream) = ws_stream.split();
-                
-                // Store sink
                 let mut sink_lock = state.sink.lock().await;
                 *sink_lock = Some(sink);
                 
-                // Spawn reader
                 tokio::spawn(async move {
                     while let Some(Ok(msg)) = stream.next().await {
                         if let Message::Text(text) = msg {
