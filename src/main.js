@@ -38,8 +38,13 @@ function setPos(id, x, y) {
   }
 }
 
-// Global Update Hook (called from Kotlin)
-window.__skoodaUpdate = (stats) => {
+// --- TAURI BRIDGE ---
+const invoke = window.__TAURI__.core.invoke;
+const listen = window.__TAURI__.event.listen;
+
+// Global Update Hook (moved to Tauri Listener)
+listen('stats-update', (event) => {
+  const stats = event.payload;
   if (!stats) return;
   try {
     // Static Device Info
@@ -197,11 +202,12 @@ if (scanBtn) {
     scanBtn.disabled = true;
     if (scanProgCont) scanProgCont.style.display = 'block';
     if (scanProgBar) scanProgBar.style.width = '0%';
-    window.Android.scanNetwork('onNetScan');
+    invoke('scan_network');
   });
 }
 
-window.onNetScan = (data) => {
+listen('scan-progress', (event) => {
+  const data = event.payload;
   if (data.progress !== undefined) {
     if (scanProgBar) scanProgBar.style.width = data.progress + '%';
     return;
@@ -331,8 +337,8 @@ actionPing.addEventListener('click', () => {
 });
 
 actionBrowser.addEventListener('click', () => {
-  if (window.Android && window.Android.openExternalUrl) {
-    window.Android.openExternalUrl(`http://${currentModalIp}`);
+  if (window.__TAURI__) {
+    window.__TAURI__.shell.open(`http://${currentModalIp}`);
   } else {
     window.open(`http://${currentModalIp}`, '_blank');
   }
@@ -347,7 +353,7 @@ if (pingBtn) {
   pingBtn.addEventListener('click', () => {
     const host = pingHost.value || "8.8.8.8";
     pingResult.innerText = "Pinging " + host + "...";
-    window.Android.ping(host, 'onPingResult');
+    invoke('ping', { host }).then(res => onPingResult({ result: res })).catch(err => onPingResult({ error: err }));
   });
 }
 
@@ -360,7 +366,7 @@ if (dnsBtn) {
   dnsBtn.addEventListener('click', () => {
     const host = dnsHost.value || "google.com";
     dnsResult.innerText = "Resolving " + host + "...";
-    window.Android.dnsLookup(host, 'onDnsResult');
+    invoke('dns_lookup', { host }).then(ips => onDnsResult({ ips })).catch(err => onDnsResult({ error: err }));
   });
 }
 
@@ -455,9 +461,9 @@ if (qrDownload) {
     let dataUrl = "";
     if (canvas) dataUrl = canvas.toDataURL("image/png");
     else if (img && img.src) dataUrl = img.src;
-    if (dataUrl && window.Android) {
+    if (dataUrl) {
       const timestamp = Math.floor(Date.now() / 1000);
-      window.Android.saveImage(dataUrl, `skooda-qr-${timestamp}.png`);
+      invoke('save_image', { base64Data: dataUrl, filename: `skooda-qr-${timestamp}.png` });
     }
   });
 }
@@ -610,8 +616,8 @@ if (qrCopy) {
 
 if (qrOpen) {
   qrOpen.addEventListener('click', () => {
-    if (window.Android && window.Android.openExternalUrl) {
-      window.Android.openExternalUrl(lastResult);
+    if (window.__TAURI__) {
+      window.__TAURI__.shell.open(lastResult);
     } else {
       window.open(lastResult, '_blank');
     }
@@ -1139,7 +1145,7 @@ if (captureBtn) {
     tCtx.drawImage(espVideo, 0, 0);
     tCtx.drawImage(espCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
     const dataUrl = tempCanvas.toDataURL('image/png');
-    window.Android.saveImage(dataUrl, 'esp-capture-' + Date.now() + '.png');
+    invoke('save_image', { base64Data: dataUrl, filename: 'esp-capture-' + Date.now() + '.png' });
   };
 }
 
@@ -1166,8 +1172,8 @@ const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
 let CURRENT_VERSION = "0.6.6"; // Full Lobby Encryption & Privacy Patch
-if (window.Android && window.Android.getAppVersion) {
-  CURRENT_VERSION = window.Android.getAppVersion();
+if (window.__TAURI__) {
+  window.__TAURI__.app.getVersion().then(v => { CURRENT_VERSION = v; });
 }
 const GITHUB_REPO = "skoody/skooda-mobile";
 
@@ -1201,9 +1207,8 @@ if (checkUpdateBtn) {
           const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
           if (apkAsset) {
             downloadUpdateBtn.onclick = () => {
-              if (window.Android) {
-                window.Android.cleanupOldApks();
-                window.Android.openExternalUrl(apkAsset.browser_download_url);
+              if (window.__TAURI__) {
+                window.__TAURI__.shell.open(apkAsset.browser_download_url);
               } else {
                 window.open(apkAsset.browser_download_url, '_blank');
               }
@@ -1211,8 +1216,8 @@ if (checkUpdateBtn) {
           } else {
             downloadUpdateBtn.innerText = "Release Seite öffnen";
             downloadUpdateBtn.onclick = () => {
-              if (window.Android && window.Android.openExternalUrl) {
-                window.Android.openExternalUrl(data.html_url);
+              if (window.__TAURI__) {
+                window.__TAURI__.shell.open(data.html_url);
               } else {
                 window.open(data.html_url, '_blank');
               }
@@ -1236,8 +1241,8 @@ if (checkUpdateBtn) {
 
       if (toggleFlashlight) {
         toggleFlashlight.onchange = (e) => {
-          if (window.Android) {
-            window.Android.setFlashlight(e.target.checked);
+          if (window.__TAURI__) {
+            invoke('set_flashlight', { enabled: e.target.checked });
           }
         };
       }
@@ -1245,8 +1250,8 @@ if (checkUpdateBtn) {
       if (toggleBluetooth) {
         toggleBluetooth.onchange = (e) => {
           if (window.__isUpdatingBT) return;
-          if (window.Android) {
-            window.Android.toggleBluetooth(e.target.checked);
+          if (window.__TAURI__) {
+            invoke('toggle_bluetooth', { enabled: e.target.checked });
           }
         };
       }
@@ -1263,8 +1268,7 @@ async function silentCheckUpdate() {
     const latestVersion = data.tag_name.replace('v', '');
 
     if (latestVersion !== CURRENT_VERSION) {
-      if (window.Android) {
-        window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar. Tippe zum Herunterladen.`);
+      invoke('show_notification', { title: "Skooda Update Verfügbar!", body: `Version v${latestVersion} ist jetzt verfügbar.` });
       }
       // Also show a badge on the Update tab
       const updateTabBtn = document.querySelector('[data-tab="update-tab"]');
@@ -1301,9 +1305,8 @@ if (sendFeedbackBtn && feedbackText) {
     // We open a mailto or a GitHub Issue link
     const githubIssueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${subject}&body=${body}`;
 
-    if (window.Android) {
-      window.Android.openExternalUrl(githubIssueUrl);
-      window.Android.cleanupOldApks(); // Clean up on interaction too
+    if (window.__TAURI__) {
+      window.__TAURI__.shell.open(githubIssueUrl);
     } else {
       window.open(githubIssueUrl, '_blank');
     }

@@ -1,6 +1,6 @@
 [package]
 name = "skooda-mobile"
-version = "0.7.1"
+version = "0.8.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -13,10 +13,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["custom-protocol"] }
+tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio-tungstenite = { version = "0.21", features = ["rustls-tls-native-roots"] }
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"] }
 futures-util = "0.3"
 tokio = { version = "1", features = ["full"] }
 ed25519-dalek = "2"
@@ -25,6 +25,14 @@ aes-gcm = "0.10"
 base64 = "0.22"
 rand = "0.8"
 tauri-plugin-notification = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-http = "2"
+local-ip-address = "0.6"
+trust-dns-resolver = "0.23"
+jni = "0.21"
+ndk-context = "0.1"
 
 [profile.dev]
 panic = "abort"

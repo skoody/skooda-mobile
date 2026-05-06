@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, State, Manager};
 use tokio::sync::{mpsc, Mutex};
 use tokio_tungstenite::tungstenite::protocol::Message;
 use futures_util::{StreamExt, SinkExt};
@@ -6,9 +6,14 @@ use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 use ed25519_dalek::{SigningKey, Signer};
 use base64::{prelude::BASE64_STANDARD, Engine};
-use rand::RngCore;
-use rand::rngs::OsRng;
 use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_shell::ShellExt;
+use std::fs;
+use std::path::PathBuf;
+use trust_dns_resolver::AsyncResolver;
+use trust_dns_resolver::config::*;
+use std::net::{TcpStream, SocketAddr, IpAddr};
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Clone)]
 struct ChatEvent {
@@ -22,10 +27,34 @@ struct SecureMessage {
     pubkey: String,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+struct ScanResult {
+    devices: Vec<Device>,
+    done: bool,
+    progress: Option<u32>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct Device {
+    ip: String,
+    name: String,
+    ports: Vec<u16>,
+}
+
 pub struct ChatState {
     tx: Arc<Mutex<Option<mpsc::UnboundedSender<String>>>>,
+    stop_tx: Arc<Mutex<Option<tokio::sync::oneshot::Sender<()>>>>,
     current_url: Arc<Mutex<String>>,
     signing_key: SigningKey,
+}
+
+fn get_key_path(app: &AppHandle) -> PathBuf {
+    let mut path = app.path().app_data_dir().unwrap_or_default();
+    if !path.exists() {
+        let _ = fs::create_dir_all(&path);
+    }
+    path.push("identity.seed");
+    path
 }
 
 #[tauri::command]
@@ -65,66 +94,86 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
     *tx_lock = Some(tx);
     
+    let (stop_tx, mut stop_rx) = tokio::sync::oneshot::channel::<()>();
+    let mut stop_lock = state.stop_tx.lock().await;
+    *stop_lock = Some(stop_tx);
+
     let app_clone = app.clone();
     let url_shared = state.current_url.clone();
 
     tokio::spawn(async move {
         loop {
-            let url = {
-                let lock = url_shared.lock().await;
-                lock.clone()
-            };
+            tokio::select! {
+                _ = &mut stop_rx => break,
+                else => {
+                    let url = {
+                        let lock = url_shared.lock().await;
+                        lock.clone()
+                    };
 
-            if url.is_empty() {
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                continue;
-            }
+                    if url.is_empty() {
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                        continue;
+                    }
 
-            match tokio_tungstenite::connect_async(&url).await {
-                Ok((ws_stream, _)) => {
-                    let (mut sink, mut stream) = ws_stream.split();
-                    let _ = app_clone.emit("chat-status", "Connected");
+                    match tokio_tungstenite::connect_async(&url).await {
+                        Ok((ws_stream, _)) => {
+                            let (mut sink, mut stream) = ws_stream.split();
+                            let _ = app_clone.emit("chat-status", "Connected");
 
-                    loop {
-                        tokio::select! {
-                            _ = tokio::time::sleep(tokio::time::Duration::from_secs(30)) => {
-                                if sink.send(Message::Ping(vec![])).await.is_err() {
-                                    break;
-                                }
-                            }
-                            Some(Ok(msg)) = stream.next() => {
-                                match msg {
-                                    Message::Text(text) => {
-                                        if text.contains("\"msg_type\":\"chat\"") {
-                                            let _ = app_clone.notification()
-                                                .builder()
-                                                .title("Skooda Chat")
-                                                .body("Neue Nachricht empfangen")
-                                                .show();
+                            loop {
+                                tokio::select! {
+                                    _ = &mut stop_rx => return,
+                                    _ = tokio::time::sleep(Duration::from_secs(30)) => {
+                                        if sink.send(Message::Ping(vec![])).await.is_err() {
+                                            break;
                                         }
-                                        let _ = app_clone.emit("chat-msg", ChatEvent { message: text.to_string() });
                                     }
-                                    Message::Pong(_) => { }
-                                    _ => {}
+                                    Some(Ok(msg)) = stream.next() => {
+                                        match msg {
+                                            Message::Text(text) => {
+                                                if text.contains("\"msg_type\":\"chat\"") {
+                                                    let _ = app_clone.notification()
+                                                        .builder()
+                                                        .title("Skooda Chat")
+                                                        .body("Neue Nachricht empfangen")
+                                                        .show();
+                                                }
+                                                let _ = app_clone.emit("chat-msg", ChatEvent { message: text.to_string() });
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    Some(msg_text) = rx.recv() => {
+                                        if sink.send(Message::Text(msg_text.into())).await.is_err() {
+                                            break;
+                                        }
+                                    }
+                                    else => break,
                                 }
                             }
-                            Some(msg_text) = rx.recv() => {
-                                if sink.send(Message::Text(msg_text.into())).await.is_err() {
-                                    break;
-                                }
-                            }
-                            else => break,
+                        }
+                        Err(e) => {
+                            let _ = app_clone.emit("chat-status", format!("Error: {}", e));
+                            tokio::time::sleep(Duration::from_secs(3)).await;
                         }
                     }
-                }
-                Err(_) => {
-                    let _ = app_clone.emit("chat-status", "Reconnecting...");
-                    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
                 }
             }
         }
     });
 
+    Ok(())
+}
+
+#[tauri::command]
+async fn disconnect_chat(state: State<'_, ChatState>) -> Result<(), String> {
+    let mut tx_lock = state.tx.lock().await;
+    *tx_lock = None;
+    let mut stop_lock = state.stop_tx.lock().await;
+    if let Some(stop) = stop_lock.take() {
+        let _ = stop.send(());
+    }
     Ok(())
 }
 
@@ -139,25 +188,164 @@ async fn send_chat_message(message: String, state: State<'_, ChatState>) -> Resu
     }
 }
 
+#[tauri::command]
+async fn ping(host: String, app: AppHandle) -> Result<String, String> {
+    let output = app.shell()
+        .command("ping")
+        .args(["-c", "4", &host])
+        .output()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+#[tauri::command]
+async fn dns_lookup(host: String) -> Result<Vec<String>, String> {
+    let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+    let response = resolver.lookup_ip(host).await.map_err(|e| e.to_string())?;
+    Ok(response.iter().map(|ip| ip.to_string()).collect())
+}
+
+#[tauri::command]
+async fn scan_network(app: AppHandle) -> Result<(), String> {
+    let local_ip = local_ip_address::local_ip().map_err(|e| e.to_string())?;
+    let prefix = match local_ip {
+        IpAddr::V4(v4) => {
+            let octets = v4.octets();
+            format!("{}.{}.{}", octets[0], octets[1], octets[2])
+        }
+        _ => return Err("IPv6 scanning not supported".into()),
+    };
+
+    tokio::spawn(async move {
+        let mut devices = Vec::new();
+        for i in 1..255 {
+            let target_ip = format!("{}.{}", prefix, i);
+            let addr: SocketAddr = format!("{}:80", target_ip).parse().unwrap();
+            
+            if TcpStream::connect_timeout(&addr, Duration::from_millis(50)).is_ok() {
+                devices.push(Device {
+                    ip: target_ip.clone(),
+                    name: target_ip,
+                    ports: vec![80],
+                });
+            }
+            
+            if i % 25 == 0 {
+                let _ = app.emit("scan-progress", ScanResult {
+                    devices: devices.clone(),
+                    done: false,
+                    progress: Some((i as f32 / 255.0 * 100.0) as u32),
+                });
+            }
+        }
+        let _ = app.emit("scan-progress", ScanResult { devices, done: true, progress: Some(100) });
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn save_image(base64_data: String, filename: String, app: AppHandle) -> Result<(), String> {
+    let data = BASE64_STANDARD.decode(base64_data.split(',').last().unwrap_or(&base64_data))
+        .map_err(|e| e.to_string())?;
+    
+    let mut path = app.path().download_dir().unwrap_or_default();
+    path.push(filename);
+    
+    fs::write(path, data).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn set_flashlight(_enabled: bool) -> Result<(), String> {
+    // Placeholder for JNI implementation
+    // On Android, this would use camera2 API
+    Ok(())
+}
+
+#[tauri::command]
+async fn toggle_bluetooth(_enabled: bool) -> Result<(), String> {
+    // Placeholder for JNI implementation
+    Ok(())
+}
+
+#[tauri::command]
+async fn show_notification(title: String, body: String, app: AppHandle) -> Result<(), String> {
+    let _ = app.notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show();
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut seed = [0u8; 32];
-    OsRng.fill_bytes(&mut seed);
-    let signing_key = SigningKey::from_bytes(&seed);
-
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
-        .manage(ChatState { 
-            tx: Arc::new(Mutex::new(None)),
-            current_url: Arc::new(Mutex::new(String::new())),
-            signing_key,
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_http::init())
+        .setup(|app| {
+            let key_path = get_key_path(&app.handle());
+            let signing_key = if key_path.exists() {
+                let bytes = fs::read(&key_path).expect("Failed to read key");
+                let mut seed = [0u8; 32];
+                seed.copy_from_slice(&bytes);
+                SigningKey::from_bytes(&seed)
+            } else {
+                let mut seed = [0u8; 32];
+                use rand::RngCore;
+                rand::rngs::OsRng.fill_bytes(&mut seed);
+                fs::write(&key_path, &seed).expect("Failed to save key");
+                SigningKey::from_bytes(&seed)
+            };
+
+            app.manage(ChatState { 
+                tx: Arc::new(Mutex::new(None)),
+                stop_tx: Arc::new(Mutex::new(None)),
+                current_url: Arc::new(Mutex::new(String::new())),
+                signing_key,
+            });
+
+            let app_handle = app.handle().clone();
+            tokio::spawn(async move {
+                loop {
+                    // In a real Android environment, we would use JNI to get these stats.
+                    // For now, we emit some placeholder stats to keep the UI alive.
+                    let _ = app_handle.emit("stats-update", serde_json::json!({
+                        "battery_percent": 85,
+                        "cpu_usage": 15,
+                        "ram_used": 4 * 1024 * 1024 * 1024,
+                        "ram_total": 8 * 1024 * 1024 * 1024,
+                        "uptime": 3600,
+                        "android_ver": "14",
+                        "api_level": "34"
+                    }));
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                }
+            });
+
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            connect_chat, 
+            connect_chat,
+            disconnect_chat,
             send_chat_message,
             get_identity,
-            sign_and_encrypt
+            sign_and_encrypt,
+            ping,
+            dns_lookup,
+            scan_network,
+            save_image,
+            set_flashlight,
+            toggle_bluetooth,
+            show_notification
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+

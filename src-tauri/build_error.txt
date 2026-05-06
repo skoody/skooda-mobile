@@ -1,0 +1,2 @@
+    Checking skooda-mobile v0.8.0 (/home/skoody/Dokumente/Coding/skooda-mobile/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.76s
