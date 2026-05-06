@@ -1,18 +1,53 @@
-use tauri::{AppHandle, Emitter, State, Manager};
+use tauri::{AppHandle, Emitter, State};
 use tokio::sync::{mpsc, Mutex};
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use tokio_tungstenite::tungstenite::protocol::Message;
 use futures_util::{StreamExt, SinkExt};
 use std::sync::Arc;
 use serde::{Serialize, Deserialize};
+use ed25519_dalek::{SigningKey, Signer};
+use base64::{prelude::BASE64_STANDARD, Engine};
+use rand::RngCore;
+use rand::rngs::OsRng;
 
 #[derive(Serialize, Deserialize, Clone)]
 struct ChatEvent {
     message: String,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+struct SecureMessage {
+    payload: String, // Encrypted JSON or Plaintext
+    signature: String, // Base64 signature
+    pubkey: String, // Sender's public key
+}
+
 pub struct ChatState {
     tx: Arc<Mutex<Option<mpsc::UnboundedSender<String>>>>,
     current_url: Arc<Mutex<String>>,
+    signing_key: SigningKey,
+}
+
+#[tauri::command]
+async fn get_identity(state: State<'_, ChatState>) -> Result<String, String> {
+    Ok(BASE64_STANDARD.encode(state.signing_key.verifying_key().to_bytes()))
+}
+
+#[tauri::command]
+async fn sign_and_encrypt(
+    text: String, 
+    _room_id: String,
+    state: State<'_, ChatState>
+) -> Result<String, String> {
+    // 1. Sign the original text for Anti-Spoofing
+    let signature = state.signing_key.sign(text.as_bytes());
+    let signature_b64 = BASE64_STANDARD.encode(signature.to_bytes());
+    let pubkey_b64 = BASE64_STANDARD.encode(state.signing_key.verifying_key().to_bytes());
+
+    Ok(serde_json::to_string(&SecureMessage {
+        payload: text, 
+        signature: signature_b64,
+        pubkey: pubkey_b64,
+    }).unwrap())
 }
 
 #[tauri::command]
@@ -102,12 +137,22 @@ async fn send_chat_message(message: String, state: State<'_, ChatState>) -> Resu
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let mut seed = [0u8; 32];
+    OsRng.fill_bytes(&mut seed);
+    let signing_key = SigningKey::from_bytes(&seed);
+
     tauri::Builder::default()
         .manage(ChatState { 
             tx: Arc::new(Mutex::new(None)),
             current_url: Arc::new(Mutex::new(String::new())),
+            signing_key,
         })
-        .invoke_handler(tauri::generate_handler![connect_chat, send_chat_message])
+        .invoke_handler(tauri::generate_handler![
+            connect_chat, 
+            send_chat_message,
+            get_identity,
+            sign_and_encrypt
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

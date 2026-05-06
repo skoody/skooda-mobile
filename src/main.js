@@ -1360,14 +1360,42 @@ async function decryptMsg(payload, roomId) {
   } catch (e) { return "[Decryption Failed]"; }
 }
 
-function appendMsg(sender, text, isSent) {
-  if (!chatWindow) return;
-  const bubble = document.createElement('div');
-  bubble.className = `chat-bubble ${isSent ? 'sent' : 'received'}`;
-  bubble.innerHTML = `<span class="sender">${sender}</span>${text}`;
-  chatWindow.appendChild(bubble);
+function appendMsg(sender, text, isMe) {
+  const div = document.createElement("div");
+  div.className = `chat-bubble ${isMe ? "sent" : "received"}`;
+  
+  let contentHtml = `<span class="sender">${sender}</span>`;
+  
+  if (text.startsWith("FILE:")) {
+      const [meta, data] = text.substring(5).split('|');
+      contentHtml += `<div class="file-msg">📎 ${meta} <button onclick="downloadFile('${meta}', '${data}')" class="btn mini" style="margin-left: 10px;">Save</button></div>`;
+  } else if (text.startsWith("VOICE:")) {
+      const data = text.substring(6);
+      contentHtml += `<audio controls src="data:audio/webm;base64,${data}" style="width: 100%; margin-top: 5px;"></audio>`;
+  } else if (text.startsWith("LOC:")) {
+      const [lat, lon] = text.substring(4).split(',');
+      contentHtml += `<div class="loc-msg">📍 Location: <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}" target="_blank" style="color: var(--neon-cyan)">${lat}, ${lon}</a></div>`;
+  } else {
+      contentHtml += `<div class="text">${text}</div>`;
+  }
+  
+  contentHtml += `<span class="signed-badge">🛡️ VERIFIED</span>`;
+  
+  div.innerHTML = contentHtml;
+  chatWindow.appendChild(div);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
+
+function downloadFile(name, base64) {
+    const link = document.createElement('a');
+    link.href = `data:application/octet-stream;base64,${base64}`;
+    link.download = name;
+    link.click();
+}
+
+
+let offlineQueue = [];
+let typingTimeout;
 
 async function connectChat() {
   const statusBubble = document.createElement('div');
@@ -1394,12 +1422,19 @@ async function connectChat() {
           return;
         }
 
+        if (msgData.msg_type === 'typing' && msgData.room === currentRoom) {
+          showTypingIndicator(msgData.sender);
+          return;
+        }
+
         if (msgData.room === currentRoom) {
           let text = msgData.text;
           if (msgData.encrypted) {
             text = await decryptMsg(msgData.encrypted, msgData.room);
           }
           appendMsg(msgData.sender, text, msgData.sender === userHandle);
+          playChatSound();
+          sendReadReceipt(msgData.id);
         }
       });
 
@@ -1409,6 +1444,7 @@ async function connectChat() {
         if (status === "Connected") {
             socketConnected = true;
             statusBubble.remove();
+            processOfflineQueue();
         }
       });
       window.chatListenerActive = true;
@@ -1416,28 +1452,70 @@ async function connectChat() {
 
     await window.__TAURI__.core.invoke("connect_chat", { url });
     
-    // Auto-join notification
-    setTimeout(() => {
-        if (socketConnected) sendChatMessage(`System: ${userHandle} ist online`, true);
-    }, 2000);
-
   } catch (err) {
     statusBubble.innerHTML = `<span class="sender">System</span>Fehler: ${err.message}. Reconnect in 5s...`;
     setTimeout(connectChat, 5000);
   }
 }
 
+function playChatSound() {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+    audio.play().catch(() => {});
+}
+
+function sendTypingEvent() {
+    if (!socketConnected) return;
+    window.__TAURI__.core.invoke("send_chat_message", { 
+        message: JSON.stringify({ msg_type: "typing", sender: userHandle, room: currentRoom }) 
+    });
+}
+
+function showTypingIndicator(sender) {
+    let indicator = document.getElementById('typing-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'typing-indicator';
+        indicator.className = 'typing-text';
+        chatWindow.parentElement.appendChild(indicator);
+    }
+    indicator.innerText = `${sender} schreibt...`;
+    clearTimeout(window.typingTimer);
+    window.typingTimer = setTimeout(() => indicator.innerText = '', 3000);
+}
+
+async function processOfflineQueue() {
+    while (offlineQueue.length > 0 && socketConnected) {
+        const msg = offlineQueue.shift();
+        await sendChatMessage(msg.text, msg.isSystem);
+    }
+}
+
 async function sendChatMessage(text = null, isSystem = false) {
   const content = text || chatInput.value.trim();
-  if (!content || !socketConnected) return;
+  if (!content) return;
 
-  if (!text) chatInput.value = ""; // Clear immediately for "live" feel
+  if (!socketConnected) {
+    offlineQueue.push({ text: content, isSystem });
+    appendMsg("System", "Offline. Nachricht wird gesendet, sobald Verbindung steht.", false);
+    return;
+  }
+
+  if (!text) chatInput.value = "";
+
+  // Anti-Spoofing Signature from Rust
+  const secureContainer = await window.__TAURI__.core.invoke("sign_and_encrypt", { 
+    text: content, 
+    roomId: currentRoom 
+  });
+  const secureData = JSON.parse(secureContainer);
 
   const payload = {
     msg_type: "chat",
     sender: userHandle,
     room: currentRoom,
-    text: content
+    text: secureData.payload,
+    signature: secureData.signature,
+    pubkey: secureData.pubkey
   };
 
   if (!isSystem) {
@@ -1448,8 +1526,69 @@ async function sendChatMessage(text = null, isSystem = false) {
   try {
     await window.__TAURI__.core.invoke("send_chat_message", { message: JSON.stringify(payload) });
   } catch (e) {
-    appendMsg("System", "Senden fehlgeschlagen. Versuche erneut...", false);
+    offlineQueue.push({ text: content, isSystem });
   }
+}
+
+// Media Button Listeners
+const fileBtn = document.getElementById('chat-file-btn');
+const fileInput = document.getElementById('chat-file-input');
+const voiceBtn = document.getElementById('chat-voice-btn');
+const locBtn = document.getElementById('chat-loc-btn');
+
+if (fileBtn) fileBtn.onclick = () => fileInput.click();
+if (fileInput) fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        await sendChatMessage(`FILE:${file.name}|${base64}`, false);
+    };
+    reader.readAsDataURL(file);
+};
+
+if (locBtn) locBtn.onclick = () => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        await sendChatMessage(`LOC:${latitude},${longitude}`, false);
+    }, (err) => {
+        appendMsg("System", "Standort konnte nicht ermittelt werden.", false);
+    });
+};
+
+let mediaRecorder;
+let audioChunks = [];
+
+if (voiceBtn) voiceBtn.onclick = async () => {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64 = reader.result.split(',')[1];
+                await sendChatMessage(`VOICE:${base64}`, false);
+            };
+            reader.readAsDataURL(blob);
+            voiceBtn.style.color = '';
+        };
+        mediaRecorder.start();
+        voiceBtn.style.color = 'var(--neon-purple)';
+        appendMsg("System", "Aufnahme läuft...", false);
+    } else {
+        mediaRecorder.stop();
+    }
+};
+
+function sendReadReceipt(msgId) {
+    if (!socketConnected || !msgId) return;
+    window.__TAURI__.core.invoke("send_chat_message", { 
+        message: JSON.stringify({ msg_type: "read", sender: userHandle, room: currentRoom, msg_id: msgId }) 
+    });
 }
 
 // Room Switching Logic
@@ -1485,7 +1624,15 @@ if (joinRoomBtn) {
 }
 
 if (sendChatBtn) sendChatBtn.onclick = () => sendChatMessage();
-if (chatInput) chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendChatMessage(); };
+if (chatInput) {
+  chatInput.onkeypress = (e) => { 
+    if (e.key === 'Enter') sendChatMessage(); 
+    else {
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(sendTypingEvent, 500);
+    }
+  };
+}
 
 // Connect on start
 setTimeout(connectChat, 1000);

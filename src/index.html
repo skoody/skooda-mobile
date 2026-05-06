@@ -468,9 +468,16 @@
           </div>
         </div>
 
+        <div id="typing-indicator" class="typing-indicator"></div>
         <div class="chat-input-area">
+          <div class="chat-extras">
+            <button id="chat-file-btn" class="chat-tool-btn" title="Send File">📎</button>
+            <button id="chat-voice-btn" class="chat-tool-btn" title="Record Voice">🎙️</button>
+            <button id="chat-loc-btn" class="chat-tool-btn" title="Send Location">📍</button>
+          </div>
           <input type="text" id="chat-input" class="cyber-input chat-input" placeholder="Nachricht schreiben...">
           <button id="send-chat-btn" class="btn primary" style="padding: 12px;"><span style="font-size: 1.2rem;">⚡</span></button>
+          <input type="file" id="chat-file-input" style="display: none;">
         </div>
       </div>
     </div>

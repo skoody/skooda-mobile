@@ -1274,3 +1274,73 @@ body {
   border-radius: 20px;
   border: 1px solid var(--glass-border);
 }
+
+/* CHAT v0.7.0 UPDATES */
+.typing-indicator {
+  font-size: 0.7rem;
+  color: var(--neon-cyan);
+  font-family: monospace;
+  height: 15px;
+  margin-left: 20px;
+  margin-bottom: 5px;
+  opacity: 0.8;
+}
+
+.chat-input-area {
+  display: flex;
+  flex-direction: column !important;
+  gap: 8px;
+}
+
+.chat-extras {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.chat-tool-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.chat-tool-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.signed-badge {
+  font-size: 0.55rem;
+  background: rgba(0, 255, 100, 0.1);
+  color: #00ff66;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  border: 1px solid rgba(0, 255, 100, 0.2);
+  vertical-align: middle;
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  scroll-behavior: smooth;
+}
