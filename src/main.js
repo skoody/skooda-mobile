@@ -1165,7 +1165,7 @@ const updateTitle = document.getElementById('update-title');
 const updateDesc = document.getElementById('update-desc');
 const releaseNotes = document.getElementById('release-notes');
 
-let CURRENT_VERSION = "0.6.3"; // TLS Verification Bypass Milestone
+let CURRENT_VERSION = "0.6.5"; // High Performance Chat & Auto-Reconnect
 if (window.Android && window.Android.getAppVersion) {
   CURRENT_VERSION = window.Android.getAppVersion();
 }
@@ -1370,19 +1370,20 @@ function appendMsg(sender, text, isSent) {
 }
 
 async function connectChat() {
-  chatWindow.innerHTML = '<div class="chat-bubble received"><span class="sender">System</span>Suche Relay-Server...</div>';
+  const statusBubble = document.createElement('div');
+  statusBubble.className = "chat-bubble received system-msg";
+  statusBubble.innerHTML = '<span class="sender">System</span>Verbindung wird aufgebaut...';
+  chatWindow.appendChild(statusBubble);
   
   try {
     const apiDiscoveryUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/discovery.json`;
     const response = await fetch(apiDiscoveryUrl + '?t=' + Date.now());
-    if (!response.ok) throw new Error("API-Fehler");
+    if (!response.ok) throw new Error("Entdeckung fehlgeschlagen");
     const data = await response.json();
     const content = atob(data.content.replace(/\s/g, ''));
     const discovery = JSON.parse(content);
     const url = discovery.relay_url;
     
-    chatWindow.innerHTML = `<div class="chat-bubble received"><span class="sender">System</span>Verbinde zu: ${url}</div>`;
-
     if (!window.chatListenerActive) {
       window.__TAURI__.event.listen("chat-msg", async (event) => {
         let msgData;
@@ -1401,23 +1402,36 @@ async function connectChat() {
           appendMsg(msgData.sender, text, msgData.sender === userHandle);
         }
       });
+
+      window.__TAURI__.event.listen("chat-status", (event) => {
+        const status = event.payload;
+        if (onlineDisplay) onlineDisplay.innerText = status;
+        if (status === "Connected") {
+            socketConnected = true;
+            statusBubble.remove();
+        }
+      });
       window.chatListenerActive = true;
     }
 
     await window.__TAURI__.core.invoke("connect_chat", { url });
-    socketConnected = true;
     
-    // Join current room immediately
-    sendChatMessage(`System: ${userHandle} joined ${currentRoom}`, true);
-    chatWindow.innerHTML = ''; // Clear connecting status
+    // Auto-join notification
+    setTimeout(() => {
+        if (socketConnected) sendChatMessage(`System: ${userHandle} ist online`, true);
+    }, 2000);
+
   } catch (err) {
-    chatWindow.innerHTML += `<div class="chat-bubble received"><span class="sender">System</span>Fehler: ${err.message || err}</div>`;
+    statusBubble.innerHTML = `<span class="sender">System</span>Fehler: ${err.message}. Reconnect in 5s...`;
+    setTimeout(connectChat, 5000);
   }
 }
 
 async function sendChatMessage(text = null, isSystem = false) {
   const content = text || chatInput.value.trim();
   if (!content || !socketConnected) return;
+
+  if (!text) chatInput.value = ""; // Clear immediately for "live" feel
 
   const payload = {
     msg_type: "chat",
@@ -1433,20 +1447,19 @@ async function sendChatMessage(text = null, isSystem = false) {
 
   try {
     await window.__TAURI__.core.invoke("send_chat_message", { message: JSON.stringify(payload) });
-    if (!text) chatInput.value = "";
   } catch (e) {
-    appendMsg("System", "Senden fehlgeschlagen.", false);
+    appendMsg("System", "Senden fehlgeschlagen. Versuche erneut...", false);
   }
 }
 
 // Room Switching Logic
 if (btnLobby) {
   btnLobby.onclick = () => {
-    if (currentRoom === 'lobby') return;
-    currentRoom = 'lobby';
     btnLobby.classList.add('active');
     btnPrivate.classList.remove('active');
     privateSetup.style.display = 'none';
+    if (currentRoom === 'lobby') return;
+    currentRoom = 'lobby';
     chatWindow.innerHTML = '';
     sendChatMessage(`System: ${userHandle} joined lobby`, true);
   };
