@@ -8,7 +8,7 @@ const updateTitle = getEl('update-title');
 const updateDesc = getEl('update-desc');
 const releaseNotes = getEl('release-notes');
 
-let CURRENT_VERSION = "0.8.0";
+let CURRENT_VERSION = "0.8.1";
 if (window.Android && window.Android.getAppVersion) {
     CURRENT_VERSION = window.Android.getAppVersion();
 }

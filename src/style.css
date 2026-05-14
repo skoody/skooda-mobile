@@ -1344,3 +1344,21 @@ body {
   padding: 10px;
   scroll-behavior: smooth;
 }
+
+/* Cyber Tools Enhancements */
+@keyframes pulseOpacity {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.loading-pulse {
+  animation: pulseOpacity 1.5s infinite ease-in-out;
+  color: var(--neon-cyan) !important;
+  font-style: italic;
+}
+
+.console-box.loading-pulse {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+}

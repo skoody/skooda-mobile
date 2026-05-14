@@ -488,6 +488,63 @@ class MainActivity : TauriActivity(), SensorEventListener {
         }
 
         @JavascriptInterface
+        fun traceroute(host: String, callback: String) {
+            executor.execute {
+                try {
+                    val result = StringBuilder()
+                    val inetHost = InetAddress.getByName(host).hostAddress
+                    for (ttl in 1..30) {
+                        val process = Runtime.getRuntime().exec("ping -c 1 -t $ttl $host")
+                        val reader = process.inputStream.bufferedReader()
+                        var line: String?
+                        var ipFound: String? = null
+                        
+                        while (reader.readLine().also { line = it } != null) {
+                            if (line!!.contains("from", ignoreCase = true)) {
+                                // Handles "64 bytes from 1.2.3.4..." and "From 1.2.3.4..."
+                                ipFound = line!!.lowercase().substringAfter("from ").trim().split(" ")[0].replace(":", "")
+                                break
+                            }
+                        }
+                        
+                        if (ipFound != null) {
+                            result.append("$ttl: $ipFound\n")
+                            postToJS(callback, JSONObject().put("partial", "$ttl: $ipFound").toString())
+                            if (ipFound == inetHost) break
+                        } else {
+                            result.append("$ttl: * * *\n")
+                            postToJS(callback, JSONObject().put("partial", "$ttl: * * *").toString())
+                        }
+                        process.waitFor()
+                    }
+                    postToJS(callback, JSONObject().put("result", result.toString()).put("done", true).toString())
+                } catch (e: Exception) {
+                    postToJS(callback, JSONObject().put("error", e.message).toString())
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun scanPorts(host: String, callback: String) {
+            executor.execute {
+                try {
+                    val commonPorts = intArrayOf(21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5900, 8080)
+                    val openPorts = JSONArray()
+                    val total = commonPorts.size
+                    for ((index, port) in commonPorts.withIndex()) {
+                        if (isPortOpen(host, port)) {
+                            openPorts.put(port)
+                        }
+                        postToJS(callback, JSONObject().put("progress", (index + 1) * 100 / total).toString())
+                    }
+                    postToJS(callback, JSONObject().put("ports", openPorts).put("done", true).toString())
+                } catch (e: Exception) {
+                    postToJS(callback, JSONObject().put("error", e.message).toString())
+                }
+            }
+        }
+
+        @JavascriptInterface
         fun openExternalUrl(url: String) {
             try {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
