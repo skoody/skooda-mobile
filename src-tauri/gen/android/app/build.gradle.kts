@@ -20,13 +20,13 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 35
     namespace = "com.skooda.mobile"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "com.skooda.mobile"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
@@ -34,10 +34,10 @@ android {
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }

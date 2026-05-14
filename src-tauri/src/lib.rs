@@ -12,6 +12,7 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use std::fs;
 use rusqlite::{params, Connection};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ChatMessage {
@@ -26,6 +27,8 @@ struct ChatMessage {
     signature: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pubkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    msg_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -34,7 +37,7 @@ struct ChatEvent {
 }
 
 pub struct ChatState {
-    tx: Arc<Mutex<Option<mpsc::UnboundedSender<String>>>>,
+    tx: Arc<Mutex<Option<mpsc::UnboundedSender<Message>>>>,
     current_url: Arc<Mutex<String>>,
     signing_key: SigningKey,
     encryption_secret: StaticSecret,
@@ -58,7 +61,7 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
         return Ok(());
     }
 
-    let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+    let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
     *tx_lock = Some(tx);
     
     let app_clone = app.clone();
@@ -98,10 +101,12 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
                             Some(Ok(msg)) = stream.next() => {
                                 if let Message::Text(text) = msg {
                                     let _ = app_clone.emit("chat-msg", ChatEvent { message: text.to_string() });
+                                } else if let Message::Binary(bin) = msg {
+                                    let _ = app_clone.emit("chat-binary", bin);
                                 }
                             }
-                            Some(msg_text) = rx.recv() => {
-                                if sink.send(Message::Text(msg_text.into())).await.is_err() {
+                            Some(msg) = rx.recv() => {
+                                if sink.send(msg).await.is_err() {
                                     break;
                                 }
                             }
@@ -121,10 +126,15 @@ async fn connect_chat(url: String, app: AppHandle, state: State<'_, ChatState>) 
 }
 
 #[tauri::command]
-async fn send_chat_message(message: String, state: State<'_, ChatState>) -> Result<(), String> {
+async fn send_chat_message(message: String, is_binary: bool, state: State<'_, ChatState>) -> Result<(), String> {
     let tx_lock = state.tx.lock().await;
     if let Some(tx) = tx_lock.as_ref() {
-        tx.send(message).map_err(|e| e.to_string())?;
+        if is_binary {
+            let data = BASE64_STANDARD.decode(message).map_err(|e| e.to_string())?;
+            tx.send(Message::Binary(data.into())).map_err(|e| e.to_string())?;
+        } else {
+            tx.send(Message::Text(message.into())).map_err(|e| e.to_string())?;
+        }
         Ok(())
     } else {
         Err("Not connected".into())
@@ -141,14 +151,26 @@ async fn process_message(
     is_system: bool,
     state: State<'_, ChatState>
 ) -> Result<String, String> {
+    let msg_id = Uuid::new_v4().to_string();
+    let mut msg_type = "chat".to_string();
+    let mut display_text = text.clone();
+
+    if text.starts_with("FILE:") {
+        msg_type = "file".to_string();
+        if let Some(pos) = text.find('|') {
+            display_text = text[5..pos].to_string();
+        }
+    }
+
     let mut msg = ChatMessage {
-        msg_type: "chat".to_string(),
+        msg_type,
         sender,
         room: room.clone(),
-        text: text.clone(),
+        text: display_text,
         encrypted: None,
         signature: None,
         pubkey: Some(BASE64_STANDARD.encode(state.signing_key.verifying_key().to_bytes())),
+        msg_id: Some(msg_id),
     };
 
     if !is_system {
@@ -222,7 +244,7 @@ async fn save_to_history(
 #[tauri::command]
 async fn get_chat_history(room: String, state: State<'_, ChatState>) -> Result<Vec<serde_json::Value>, String> {
     let db = state.db.lock().await;
-    let mut stmt = db.prepare("SELECT sender, content, is_me, timestamp FROM history WHERE room = ?1 ORDER BY timestamp ASC").map_err(|e| e.to_string())?;
+    let mut stmt = db.prepare("SELECT sender, content, is_me, timestamp FROM history WHERE room = ?1 ORDER BY id ASC").map_err(|e| e.to_string())?;
     let rows = stmt.query_map(params![room], |row| {
         Ok(serde_json::json!({
             "sender": row.get::<_, String>(0)?,
