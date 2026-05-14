@@ -324,7 +324,10 @@
             <div id="scan-progress-container" class="progress-bg" style="display: none; margin-bottom: 10px;">
               <div id="scan-progress-bar" class="progress-bar orange" style="width: 0%"></div>
             </div>
-            <button id="start-net-scan" class="btn primary full-width">Start Network Scan</button>
+            <div class="btn-group">
+              <button id="start-net-scan" class="btn primary">Start Network Scan</button>
+              <button id="stop-net-scan" class="btn secondary" style="display: none;">Abort</button>
+            </div>
             <div id="scan-list" class="cyber-list"></div>
           </div>
         </div>
@@ -356,7 +359,10 @@
             <h3>Traceroute</h3>
             <div class="input-group">
               <input type="text" id="trace-host" placeholder="8.8.8.8" class="cyber-input" />
-              <button id="start-trace" class="btn primary">Trace</button>
+              <div class="btn-group">
+                <button id="start-trace" class="btn primary">Trace</button>
+                <button id="stop-trace" class="btn secondary" style="display: none;">Abort</button>
+              </div>
             </div>
             <div id="trace-result" class="console-box">Ready...</div>
           </div>
@@ -367,7 +373,11 @@
             <h3>Single Port Scan</h3>
             <div class="input-group">
               <input type="text" id="port-host" placeholder="192.168.1.1" class="cyber-input" />
-              <button id="start-port-scan" class="btn primary">Scan</button>
+              <input type="text" id="port-range" placeholder="21,22,80,443" class="cyber-input" style="width: 100px;" />
+              <div class="btn-group">
+                <button id="start-port-scan" class="btn primary">Scan</button>
+                <button id="stop-port-scan" class="btn secondary" style="display: none;">Abort</button>
+              </div>
             </div>
             <div id="port-scan-result" class="console-box">Ready...</div>
           </div>
@@ -533,6 +543,7 @@
     <div class="action-modal">
       <div id="modal-device-name" class="modal-title">Device Name</div>
       <div id="modal-device-ip" class="modal-subtitle">192.168.1.1</div>
+      <div id="modal-device-mac" class="info-label" style="text-align:center; margin-bottom:15px; font-family:monospace; color:var(--neon-orange)">MAC: 00:00:00:00:00:00</div>
       <div class="action-list">
         <button id="action-copy" class="action-item">📋 Copy IP Address</button>
         <button id="action-ping" class="action-item">📡 Ping Device</button>

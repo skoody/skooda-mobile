@@ -5,6 +5,7 @@ import { CyberTools } from './cyber-utils.js';
 // UI Elements
 const ui = {
     scanBtn: getEl('start-net-scan'),
+    scanStopBtn: getEl('stop-net-scan'),
     scanList: getEl('scan-list'),
     scanProgCont: getEl('scan-progress-container'),
     scanProgBar: getEl('scan-progress-bar'),
@@ -15,14 +16,18 @@ const ui = {
     dnsHost: getEl('dns-host'),
     dnsResult: getEl('dns-result'),
     traceBtn: getEl('start-trace'),
+    traceStopBtn: getEl('stop-trace'),
     traceHost: getEl('trace-host'),
     traceResult: getEl('trace-result'),
     portBtn: getEl('start-port-scan'),
+    portStopBtn: getEl('stop-port-scan'),
     portHost: getEl('port-host'),
+    portRange: getEl('port-range'),
     portResult: getEl('port-scan-result'),
     deviceModal: getEl('device-modal'),
     modalName: getEl('modal-device-name'),
     modalIp: getEl('modal-device-ip'),
+    modalMac: getEl('modal-device-mac'),
     actionCopy: getEl('action-copy'),
     actionPing: getEl('action-ping'),
     actionBrowser: getEl('action-browser'),
@@ -59,12 +64,25 @@ function setupNetworkScanner() {
     if (ui.scanBtn) {
         ui.scanBtn.addEventListener('click', () => {
             ui.scanList.innerHTML = '';
-            ui.scanBtn.disabled = true;
-            ui.scanBtn.innerText = "Scanning Network...";
+            ui.scanBtn.style.display = 'none';
+            ui.scanStopBtn.style.display = 'block';
             if (ui.scanProgCont) ui.scanProgCont.style.display = 'block';
             if (ui.scanProgBar) ui.scanProgBar.style.width = '0%';
             CyberTools.scanNetwork();
         });
+    }
+
+    if (ui.scanStopBtn) {
+        ui.scanStopBtn.addEventListener('click', () => {
+            CyberTools.cancel('netScan');
+            resetScanUI();
+        });
+    }
+
+    function resetScanUI() {
+        ui.scanBtn.style.display = 'block';
+        ui.scanStopBtn.style.display = 'none';
+        if (ui.scanProgCont) ui.scanProgCont.style.display = 'none';
     }
 
     window.onNetScan = (data) => {
@@ -73,9 +91,7 @@ function setupNetworkScanner() {
             return;
         }
 
-        ui.scanBtn.disabled = false;
-        ui.scanBtn.innerText = "Start Network Scan";
-        if (ui.scanProgCont) ui.scanProgCont.style.display = 'none';
+        resetScanUI();
 
         if (data.error) {
             ui.scanList.innerHTML = `<div class="info-value" style="color:var(--neon-purple)">Error: ${data.error}</div>`;
@@ -95,7 +111,7 @@ function renderDeviceList(devices) {
         const name = (dev.name && dev.name !== dev.ip) ? dev.name : "Unknown Device";
         const portsStr = dev.ports.join(',');
         return `
-            <div class="info-item device-item" data-ip="${dev.ip}" data-name="${name}" data-ports="${portsStr}">
+            <div class="info-item device-item" data-ip="${dev.ip}" data-name="${name}" data-mac="${dev.mac}" data-ports="${portsStr}">
                 <div style="display:flex; flex-direction:column">
                     <span class="info-value" style="font-size:0.9rem">${name}</span>
                     <span class="info-label">${dev.ip}</span>
@@ -106,7 +122,7 @@ function renderDeviceList(devices) {
     }).join('');
 
     ui.scanList.querySelectorAll('.device-item').forEach(item => {
-        item.onclick = () => openDeviceModal(item.dataset.ip, item.dataset.name, item.dataset.ports);
+        item.onclick = () => openDeviceModal(item.dataset.ip, item.dataset.name, item.dataset.mac, item.dataset.ports);
     });
 }
 
@@ -147,8 +163,20 @@ function setupTracerouteTool() {
         ui.traceBtn.addEventListener('click', () => {
             const host = ui.traceHost.value || "8.8.8.8";
             ui.traceResult.innerText = `Starting trace to ${host}...\n`;
+            ui.traceBtn.style.display = 'none';
+            ui.traceStopBtn.style.display = 'block';
             setLoading(ui.traceResult, true, `Tracing ${host}...`);
             CyberTools.traceroute(host);
+        });
+    }
+
+    if (ui.traceStopBtn) {
+        ui.traceStopBtn.addEventListener('click', () => {
+            CyberTools.cancel('traceroute');
+            ui.traceBtn.style.display = 'block';
+            ui.traceStopBtn.style.display = 'none';
+            setLoading(ui.traceResult, false);
+            ui.traceResult.innerText += "\n[Trace Aborted by User]";
         });
     }
 
@@ -159,7 +187,10 @@ function setupTracerouteTool() {
             return;
         }
         
+        ui.traceBtn.style.display = 'block';
+        ui.traceStopBtn.style.display = 'none';
         setLoading(ui.traceResult, false);
+        
         if (data.error) ui.traceResult.innerText += "Error: " + data.error;
         else if (data.done) {
             ui.traceResult.innerText = "Trace complete:\n" + data.result;
@@ -171,8 +202,28 @@ function setupPortScanTool() {
     if (ui.portBtn) {
         ui.portBtn.addEventListener('click', () => {
             const host = ui.portHost.value || "192.168.1.1";
+            let ports = [21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5900, 8080];
+            
+            if (ui.portRange.value) {
+                try {
+                    ports = ui.portRange.value.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p));
+                } catch(e) { console.error("Invalid port range"); }
+            }
+
+            ui.portBtn.style.display = 'none';
+            ui.portStopBtn.style.display = 'block';
             setLoading(ui.portResult, true, `Scanning ports on ${host}...`);
-            CyberTools.scanPorts(host);
+            CyberTools.scanPorts(host, ports);
+        });
+    }
+
+    if (ui.portStopBtn) {
+        ui.portStopBtn.addEventListener('click', () => {
+            CyberTools.cancel('portScan');
+            ui.portBtn.style.display = 'block';
+            ui.portStopBtn.style.display = 'none';
+            setLoading(ui.portResult, false);
+            ui.portResult.innerText = "Scan Aborted.";
         });
     }
 
@@ -182,11 +233,14 @@ function setupPortScanTool() {
             return;
         }
 
+        ui.portBtn.style.display = 'block';
+        ui.portStopBtn.style.display = 'none';
         setLoading(ui.portResult, false);
+        
         if (data.error) ui.portResult.innerText = "Error: " + data.error;
         else if (data.done) {
             if (data.ports.length === 0) {
-                ui.portResult.innerText = "No common ports found open.";
+                ui.portResult.innerText = "No open ports found.";
             } else {
                 ui.portResult.innerText = "Open Ports:\n" + data.ports.map(p => `:${p}`).join(", ");
             }
@@ -240,10 +294,11 @@ function setupPublicIpReveal() {
     }
 }
 
-export function openDeviceModal(ip, name, portsStr) {
+export function openDeviceModal(ip, name, mac, portsStr) {
     currentModalIp = ip;
     ui.modalName.innerText = name;
     ui.modalIp.innerText = ip;
+    ui.modalMac.innerText = mac ? `MAC: ${mac}` : "MAC: Unknown";
 
     const ports = portsStr ? portsStr.split(',').map(p => parseInt(p)) : [];
     ui.actionBrowser.style.display = (ports.includes(80) || ports.includes(443)) ? 'flex' : 'none';

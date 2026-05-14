@@ -20,18 +20,24 @@ export const CyberTools = {
         if (window.Android && typeof window.Android.traceroute === 'function') {
             window.Android.traceroute(host, 'onTraceResult');
         } else {
-            // Fallback / Mock if not yet implemented in bridge
             console.warn("Traceroute not supported by bridge yet.");
             if (window.onTraceResult) window.onTraceResult({ error: "Traceroute not supported by bridge" });
         }
     },
 
-    scanPorts: (host) => {
+    scanPorts: (host, ports) => {
         if (window.Android && typeof window.Android.scanPorts === 'function') {
-            window.Android.scanPorts(host, 'onPortScanResult');
+            const portsJson = JSON.stringify(ports);
+            window.Android.scanPorts(host, portsJson, 'onPortScanResult');
         } else {
             console.warn("Port Scan not supported by bridge yet.");
             if (window.onPortScanResult) window.onPortScanResult({ error: "Port Scan not supported by bridge" });
+        }
+    },
+
+    cancel: (taskName) => {
+        if (window.Android && typeof window.Android.cancelTask === 'function') {
+            window.Android.cancelTask(taskName);
         }
     }
 };

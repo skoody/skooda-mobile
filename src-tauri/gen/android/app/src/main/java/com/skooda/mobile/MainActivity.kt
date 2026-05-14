@@ -46,6 +46,13 @@ import java.net.Socket
 import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
+import java.net.NetworkInterface
+import java.util.Collections
+import java.util.Scanner
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
@@ -375,15 +382,21 @@ class MainActivity : TauriActivity(), SensorEventListener {
 
     class WebAppInterface(private val mContext: Context, private val webView: WebView) {
         private val executor = Executors.newFixedThreadPool(20)
+        private val scanExecutor = Executors.newFixedThreadPool(64)
+        private val activeTasks = ConcurrentHashMap<String, Future<*>>()
+
+        @JavascriptInterface
+        fun cancelTask(taskName: String) {
+            activeTasks[taskName]?.cancel(true)
+            activeTasks.remove(taskName)
+        }
 
         @JavascriptInterface
         fun getAppVersion(): String {
             return try {
                 val pInfo = mContext.packageManager.getPackageInfo(mContext.packageName, 0)
                 pInfo.versionName ?: "0.0.0"
-            } catch (e: Exception) {
-                "0.0.0"
-            }
+            } catch (e: Exception) { "0.0.0" }
         }
 
         @JavascriptInterface
@@ -415,7 +428,7 @@ class MainActivity : TauriActivity(), SensorEventListener {
             executor.execute {
                 try {
                     val start = System.currentTimeMillis()
-                    val reachable = InetAddress.getByName(host).isReachable(3000)
+                    val reachable = InetAddress.getByName(host).isReachable(2000)
                     val time = System.currentTimeMillis() - start
                     val result = if (reachable) "Reply from $host: time=${time}ms" else "Request timed out."
                     postToJS(callback, JSONObject().put("result", result).toString())
@@ -441,47 +454,80 @@ class MainActivity : TauriActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun scanNetwork(callback: String) {
-            executor.execute {
+            cancelTask("netScan")
+            val future = executor.submit {
                 try {
                     val results = JSONArray()
                     val cm = mContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                     val lp = cm.getLinkProperties(cm.activeNetwork)
-                    val ip = lp?.linkAddresses?.firstOrNull { it.address.address.size == 4 }?.address?.hostAddress
-                    if (ip != null) {
+                    val wifiManager = mContext.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                    
+                    val ip = lp?.linkAddresses?.firstOrNull { it.address.address.size == 4 }?.address?.hostAddress 
+                             ?: String.format("%d.%d.%d.%d", (wifiManager.connectionInfo.ipAddress and 0xff), (wifiManager.connectionInfo.ipAddress shr 8 and 0xff), (wifiManager.connectionInfo.ipAddress shr 16 and 0xff), (wifiManager.connectionInfo.ipAddress shr 24 and 0xff))
+
+                    if (ip != "0.0.0.0") {
                         val prefix = ip.substringBeforeLast(".")
-                        val subExec = Executors.newFixedThreadPool(40)
                         val completed = AtomicInteger(0)
+                        val arpMap = getArpTable()
+                        
                         for (i in 1..254) {
-                            subExec.execute {
+                            if (Thread.currentThread().isInterrupted) break
+                            scanExecutor.execute {
                                 try {
                                     val testIp = "$prefix.$i"
                                     val addr = InetAddress.getByName(testIp)
-                                    if (addr.isReachable(400)) {
+                                    if (addr.isReachable(300)) {
                                         val device = JSONObject()
                                         device.put("ip", testIp)
-                                        device.put("name", addr.canonicalHostName)
+                                        device.put("name", if (testIp == ip) "This Device" else addr.canonicalHostName)
+                                        device.put("mac", arpMap[testIp] ?: "Unknown")
+                                        
                                         val ports = JSONArray()
-                                        intArrayOf(22, 80, 443).forEach { port -> if (isPortOpen(testIp, port)) ports.put(port) }
+                                        val commonPorts = intArrayOf(21, 22, 23, 80, 443, 445, 3389, 5900, 8080)
+                                        commonPorts.forEach { port -> if (isPortOpen(testIp, port, 150)) ports.put(port) }
                                         device.put("ports", ports)
                                         synchronized(results) { results.put(device) }
                                     }
                                 } catch (e: Exception) {}
                                 val done = completed.incrementAndGet()
-                                if (done % 5 == 0 || done == 254) postToJS(callback, JSONObject().put("progress", done * 100 / 254).toString())
+                                if (done % 10 == 0 || done == 254) postToJS(callback, JSONObject().put("progress", done * 100 / 254).toString())
                             }
                         }
-                        subExec.shutdown()
-                        subExec.awaitTermination(15, java.util.concurrent.TimeUnit.SECONDS)
+                        
+                        var waitCount = 0
+                        while(completed.get() < 254 && waitCount < 100 && !Thread.currentThread().isInterrupted) {
+                            Thread.sleep(100)
+                            waitCount++
+                        }
+                        
                         postToJS(callback, JSONObject().put("devices", results).put("done", true).toString())
-                    } else postToJS(callback, JSONObject().put("error", "No WiFi IP found").toString())
+                    } else postToJS(callback, JSONObject().put("error", "No Network IP found").toString())
                 } catch (e: Exception) { postToJS(callback, JSONObject().put("error", e.message).toString()) }
+                finally { activeTasks.remove("netScan") }
             }
+            activeTasks["netScan"] = future
         }
 
-        private fun isPortOpen(ip: String, port: Int): Boolean {
+        private fun getArpTable(): Map<String, String> {
+            val map = mutableMapOf<String, String>()
+            try {
+                val reader = File("/proc/net/arp").bufferedReader()
+                reader.readLine() // Skip header
+                reader.forEachLine { line ->
+                    val parts = line.split("\\s+".toRegex()).filter { it.isNotBlank() }
+                    if (parts.size >= 4) {
+                        map[parts[0]] = parts[3].uppercase()
+                    }
+                }
+                reader.close()
+            } catch (e: Exception) {}
+            return map
+        }
+
+        private fun isPortOpen(ip: String, port: Int, timeout: Int = 200): Boolean {
             return try {
                 val socket = Socket()
-                socket.connect(InetSocketAddress(ip, port), 200)
+                socket.connect(InetSocketAddress(ip, port), timeout)
                 socket.close()
                 true
             } catch (e: Exception) { false }
@@ -489,20 +535,24 @@ class MainActivity : TauriActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun traceroute(host: String, callback: String) {
-            executor.execute {
+            cancelTask("traceroute")
+            val future = executor.submit {
                 try {
                     val result = StringBuilder()
                     val inetHost = InetAddress.getByName(host).hostAddress
+                    val ipRegex = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})")
+                    
                     for (ttl in 1..30) {
+                        if (Thread.currentThread().isInterrupted) break
                         val process = Runtime.getRuntime().exec("ping -c 1 -t $ttl $host")
                         val reader = process.inputStream.bufferedReader()
                         var line: String?
                         var ipFound: String? = null
                         
                         while (reader.readLine().also { line = it } != null) {
-                            if (line!!.contains("from", ignoreCase = true)) {
-                                // Handles "64 bytes from 1.2.3.4..." and "From 1.2.3.4..."
-                                ipFound = line!!.lowercase().substringAfter("from ").trim().split(" ")[0].replace(":", "")
+                            val matcher = ipRegex.matcher(line!!)
+                            if (matcher.find()) {
+                                ipFound = matcher.group(1)
                                 break
                             }
                         }
@@ -520,28 +570,47 @@ class MainActivity : TauriActivity(), SensorEventListener {
                     postToJS(callback, JSONObject().put("result", result.toString()).put("done", true).toString())
                 } catch (e: Exception) {
                     postToJS(callback, JSONObject().put("error", e.message).toString())
-                }
+                } finally { activeTasks.remove("traceroute") }
             }
+            activeTasks["traceroute"] = future
         }
 
         @JavascriptInterface
-        fun scanPorts(host: String, callback: String) {
-            executor.execute {
+        fun scanPorts(host: String, portsJson: String, callback: String) {
+            cancelTask("portScan")
+            val future = executor.submit {
                 try {
-                    val commonPorts = intArrayOf(21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5900, 8080)
+                    val portArray = JSONArray(portsJson)
+                    val commonPorts = mutableListOf<Int>()
+                    for (i in 0 until portArray.length()) commonPorts.add(portArray.getInt(i))
+                    
                     val openPorts = JSONArray()
                     val total = commonPorts.size
-                    for ((index, port) in commonPorts.withIndex()) {
-                        if (isPortOpen(host, port)) {
-                            openPorts.put(port)
+                    val completed = AtomicInteger(0)
+                    
+                    commonPorts.forEach { port ->
+                        if (Thread.currentThread().isInterrupted) return@forEach
+                        scanExecutor.execute {
+                            if (isPortOpen(host, port, 300)) {
+                                synchronized(openPorts) { openPorts.put(port) }
+                            }
+                            val done = completed.incrementAndGet()
+                            postToJS(callback, JSONObject().put("progress", done * 100 / total).toString())
                         }
-                        postToJS(callback, JSONObject().put("progress", (index + 1) * 100 / total).toString())
                     }
+                    
+                    var waitCount = 0
+                    while(completed.get() < total && waitCount < 100 && !Thread.currentThread().isInterrupted) {
+                        Thread.sleep(100)
+                        waitCount++
+                    }
+                    
                     postToJS(callback, JSONObject().put("ports", openPorts).put("done", true).toString())
                 } catch (e: Exception) {
                     postToJS(callback, JSONObject().put("error", e.message).toString())
-                }
+                } finally { activeTasks.remove("portScan") }
             }
+            activeTasks["portScan"] = future
         }
 
         @JavascriptInterface
