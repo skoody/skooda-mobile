@@ -11,6 +11,10 @@ let distanceLine = null;
 let distanceLabel = null;
 let isAutoCenter = true;
 let isAutoRotate = false;
+let isRoutingMode = false;
+let routingStartMarker = null;
+let routingEndMarker = null;
+let routingPolyline = null;
 
 export function initMap() {
     const mapEl = document.getElementById('map');
@@ -71,48 +75,76 @@ export function initMap() {
             filter = 'brightness(1.6) contrast(1.1) saturate(1.1)';
         } else if (mode === 1) {
             url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-        } else {
+        } else if (mode === 2) {
             url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
         }
 
-        const CustomTileLayer = L.TileLayer.extend({
-            createTile: function(coords, done) {
-                const tile = document.createElement('img');
-                L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
-                L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+        if (mode === 3) {
+            const MBTilesTileLayer = L.TileLayer.extend({
+                createTile: function(coords, done) {
+                    const tile = document.createElement('img');
+                    L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+                    L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+                    tile.alt = '';
+                    tile.setAttribute('role', 'presentation');
 
-                if (this.options.crossOrigin || this.options.crossOrigin === '') {
-                    tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+                    const mbtilesPath = localStorage.getItem('mbtiles_path') || 'map.mbtiles';
+
+                    window.__TAURI__.core.invoke("get_mbtiles_tile", {
+                        path: mbtilesPath,
+                        z: coords.z,
+                        x: coords.x,
+                        y: coords.y
+                    }).then(base64Data => {
+                        tile.src = "data:image/png;base64," + base64Data;
+                    }).catch(err => {
+                        tile.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><rect width='256' height='256' fill='%23222'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23666'>Offline Map</text></svg>";
+                    });
+
+                    return tile;
                 }
-                tile.alt = '';
-                tile.setAttribute('role', 'presentation');
+            });
+            currentTiles = new MBTilesTileLayer('', { maxZoom: 20 }).addTo(map);
+        } else {
+            const CustomTileLayer = L.TileLayer.extend({
+                createTile: function(coords, done) {
+                    const tile = document.createElement('img');
+                    L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+                    L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
 
-                const tileUrl = this.getTileUrl(coords);
-                const key = `${mode}_${coords.z}_${coords.x}_${coords.y}`;
-
-                getCachedTile(key).then(cachedBlob => {
-                    if (cachedBlob) {
-                        const objectURL = URL.createObjectURL(cachedBlob);
-                        tile.src = objectURL;
-                    } else {
-                        fetch(tileUrl)
-                            .then(res => res.blob())
-                            .then(blob => {
-                                cacheTile(key, blob);
-                                const objectURL = URL.createObjectURL(blob);
-                                tile.src = objectURL;
-                            })
-                            .catch(() => {
-                                tile.src = tileUrl;
-                            });
+                    if (this.options.crossOrigin || this.options.crossOrigin === '') {
+                        tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
                     }
-                });
+                    tile.alt = '';
+                    tile.setAttribute('role', 'presentation');
 
-                return tile;
-            }
-        });
+                    const tileUrl = this.getTileUrl(coords);
+                    const key = `${mode}_${coords.z}_${coords.x}_${coords.y}`;
 
-        currentTiles = new CustomTileLayer(url, { maxZoom: 20 }).addTo(map);
+                    getCachedTile(key).then(cachedBlob => {
+                        if (cachedBlob) {
+                            const objectURL = URL.createObjectURL(cachedBlob);
+                            tile.src = objectURL;
+                        } else {
+                            fetch(tileUrl)
+                                .then(res => res.blob())
+                                .then(blob => {
+                                    cacheTile(key, blob);
+                                    const objectURL = URL.createObjectURL(blob);
+                                    tile.src = objectURL;
+                                })
+                                .catch(() => {
+                                    tile.src = tileUrl;
+                                });
+                        }
+                    });
+
+                    return tile;
+                }
+            });
+            currentTiles = new CustomTileLayer(url, { maxZoom: 20 }).addTo(map);
+        }
+
         const pane = document.querySelector('.leaflet-tile-pane');
         if (pane) pane.style.filter = filter;
     };
@@ -247,9 +279,9 @@ export function initMap() {
             btn.innerHTML = '🌓';
             L.DomEvent.on(btn, 'click', (e) => {
                 L.DomEvent.stopPropagation(e);
-                mapThemeMode = (mapThemeMode + 1) % 3;
+                mapThemeMode = (mapThemeMode + 1) % 4;
                 setTiles(mapThemeMode);
-                const icons = ['🌑', '☀️', '🌍'];
+                const icons = ['🌑', '☀️', '🌍', '📦'];
                 btn.innerHTML = icons[mapThemeMode];
             });
             return btn;
@@ -276,8 +308,91 @@ export function initMap() {
         }
     });
 
+    const RoutingToggle = L.Control.extend({
+        options: { position: 'bottomright' },
+        onAdd: function () {
+            const btn = L.DomUtil.create('button', 'map-btn');
+            btn.id = 'map-routing-toggle';
+            btn.innerHTML = '🔀';
+            btn.style.opacity = '0.5';
+            L.DomEvent.on(btn, 'click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                isRoutingMode = !isRoutingMode;
+                btn.style.opacity = isRoutingMode ? '1' : '0.5';
+                if (!isRoutingMode) {
+                    clearRouting();
+                } else {
+                    alert("A* Routing Mode Active. Click two points on the map to calculate offline route.");
+                }
+            });
+            return btn;
+        }
+    });
+
     map.addControl(new ThemeToggle());
     map.addControl(new RotateToggle());
+    map.addControl(new RoutingToggle());
+
+    function clearRouting() {
+        if (routingStartMarker) map.removeLayer(routingStartMarker);
+        if (routingEndMarker) map.removeLayer(routingEndMarker);
+        if (routingPolyline) map.removeLayer(routingPolyline);
+        routingStartMarker = null;
+        routingEndMarker = null;
+        routingPolyline = null;
+    }
+
+    function calculateOfflineRoute() {
+        if (!routingStartMarker || !routingEndMarker) return;
+        const start = routingStartMarker.getLatLng();
+        const end = routingEndMarker.getLatLng();
+
+        window.__TAURI__.core.invoke("find_shortest_path", {
+            graphJson: "",
+            startLat: start.lat,
+            startLon: start.lng,
+            endLat: end.lat,
+            endLon: end.lng
+        }).then(pathCoords => {
+            if (routingPolyline) map.removeLayer(routingPolyline);
+            routingPolyline = L.polyline(pathCoords, { color: 'var(--neon-cyan)', weight: 5, dashArray: '5, 10' }).addTo(map);
+            map.fitBounds(routingPolyline.getBounds());
+        }).catch(err => {
+            console.error("Routing error:", err);
+            alert("Routing failed: " + err);
+        });
+    }
+
+    map.on('click', (e) => {
+        if (!isRoutingMode) return;
+        if (!routingStartMarker) {
+            routingStartMarker = L.marker(e.latlng, {
+                icon: L.divIcon({
+                    className: 'routing-start-icon',
+                    html: '<div style="background:var(--neon-red); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--neon-red);"></div>',
+                    iconSize: [12, 12]
+                })
+            }).addTo(map);
+        } else if (!routingEndMarker) {
+            routingEndMarker = L.marker(e.latlng, {
+                icon: L.divIcon({
+                    className: 'routing-end-icon',
+                    html: '<div style="background:var(--neon-green); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--neon-green);"></div>',
+                    iconSize: [12, 12]
+                })
+            }).addTo(map);
+            calculateOfflineRoute();
+        } else {
+            clearRouting();
+            routingStartMarker = L.marker(e.latlng, {
+                icon: L.divIcon({
+                    className: 'routing-start-icon',
+                    html: '<div style="background:var(--neon-red); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--neon-red);"></div>',
+                    iconSize: [12, 12]
+                })
+            }).addTo(map);
+        }
+    });
 }
 
 export function addTacticalMarker(lat, lng, save = false) {

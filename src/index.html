@@ -337,6 +337,9 @@
           <button class="cyber-subnav-btn" data-cyber-tab="cyber-ssl">
             <i>🛡️</i><span>SSL Audit</span>
           </button>
+          <button class="cyber-subnav-btn" data-cyber-tab="cyber-sniffer">
+            <i>📡</i><span>Probe Sniffer</span>
+          </button>
         </div>
 
         <!-- Tab 1: Network Discovery -->
@@ -493,6 +496,33 @@
               <button id="start-ssl-audit" class="btn primary" style="width:100%; margin-top:15px;">Audit Certificate</button>
 
               <div id="ssl-result" class="ssl-audit-box">Ready...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Probe Sniffer -->
+        <div id="cyber-sniffer" class="cyber-tab-content">
+          <div class="tool-card">
+            <div class="card-info">
+              <h3>Passive WiFi Probe Sniffer</h3>
+              <p class="tool-desc">Monitor WiFi Probe Requests and Beacons to identify nearby devices.</p>
+              
+              <div style="display: flex; gap: 15px; flex-direction: column; align-items: center; margin-top: 15px;">
+                <div style="position: relative; width: 180px; height: 180px; border-radius: 50%; border: 2px solid var(--neon-cyan); background: rgba(0,0,0,0.4); box-shadow: 0 0 15px rgba(0,255,242,0.2); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                  <div id="radar-sweep" style="position: absolute; width: 50%; height: 50%; top: 0; left: 50%; background: linear-gradient(90deg, rgba(0,255,242,0.15) 0%, transparent 100%); transform-origin: left bottom; animation: sweep 3s linear infinite; display: none;"></div>
+                  <canvas id="radar-canvas" width="180" height="180" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                  <div style="color: var(--neon-cyan); font-size: 0.8rem; z-index: 10; font-weight: bold;" id="radar-status-label">IDLE</div>
+                </div>
+
+                <div style="display: flex; gap: 8px; width: 100%;">
+                  <button id="start-sniffer" class="btn primary" style="flex: 1;">Start Sniffing</button>
+                  <button id="stop-sniffer" class="btn secondary" style="flex: 1; display: none;">Stop</button>
+                </div>
+              </div>
+
+              <div id="sniffer-results" class="wifi-networks-list" style="margin-top: 15px; max-height: 250px; overflow-y: auto;">
+                <div class="wifi-item" style="justify-content: center; color: var(--text-dim);">Ready to sniff...</div>
+              </div>
             </div>
           </div>
         </div>
@@ -705,6 +735,13 @@
         <div class="info-item" style="padding: 15px 0;">
           <span class="info-label">Benachrichtigungen</span>
           <button id="settings-notif-btn" class="btn mini">Prüfen</button>
+        </div>
+        <div class="info-item" style="flex-direction: column; align-items: flex-start; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 15px; width: 100%;">
+          <span class="info-label" style="color: var(--neon-cyan)">🔒 Device Integrity (HIDS)</span>
+          <div id="hids-status" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.4; width: 100%; font-family: monospace;">
+            Status: Unknown
+          </div>
+          <button id="hids-check-btn" class="btn mini" style="margin-top: 8px; width: 100%;">Run HIDS Scan</button>
         </div>
       </div>
       <div class="action-list">

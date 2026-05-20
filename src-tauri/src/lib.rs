@@ -14,6 +14,9 @@ use std::fs;
 use rusqlite::{params, Connection};
 use sha2::{Sha256, Digest};
 
+mod mbtiles;
+mod routing;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct ChatEvent {
     message: String,
@@ -483,6 +486,54 @@ async fn get_chat_history(room: String, state: State<'_, ChatState>) -> Result<V
     Ok(history)
 }
 
+fn strip_exif_jpeg(input: &[u8]) -> Vec<u8> {
+    if input.len() < 4 || input[0] != 0xFF || input[1] != 0xD8 {
+        return input.to_vec();
+    }
+    let mut output = Vec::with_capacity(input.len());
+    output.push(0xFF);
+    output.push(0xD8);
+    let mut i = 2;
+    while i < input.len() - 1 {
+        if input[i] == 0xFF {
+            let marker = input[i + 1];
+            if marker == 0xD8 {
+                i += 2;
+                continue;
+            }
+            if marker == 0xD9 || marker == 0xDA {
+                output.extend_from_slice(&input[i..]);
+                break;
+            }
+            if i + 3 < input.len() {
+                let len = ((input[i + 2] as usize) << 8) | (input[i + 3] as usize);
+                if marker == 0xE1 {
+                    i += 2 + len;
+                } else {
+                    if i + 2 + len <= input.len() {
+                        output.extend_from_slice(&input[i..i + 2 + len]);
+                    }
+                    i += 2 + len;
+                }
+            } else {
+                output.extend_from_slice(&input[i..]);
+                break;
+            }
+        } else {
+            output.push(input[i]);
+            i += 1;
+        }
+    }
+    output
+}
+
+#[tauri::command]
+async fn strip_image_metadata(base64_in: String) -> Result<String, String> {
+    let bytes = BASE64_STANDARD.decode(base64_in).map_err(|e| e.to_string())?;
+    let clean_bytes = strip_exif_jpeg(&bytes);
+    Ok(BASE64_STANDARD.encode(clean_bytes))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -530,7 +581,10 @@ pub fn run() {
             encrypt_group_message,
             decrypt_group_message,
             save_to_history,
-            get_chat_history
+            get_chat_history,
+            mbtiles::get_mbtiles_tile,
+            routing::find_shortest_path,
+            strip_image_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

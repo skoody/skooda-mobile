@@ -75,6 +75,7 @@ export function initCyber() {
     setupPublicIpReveal();
     setupWifiScanTool();
     setupSslAuditTool();
+    setupProbeSnifferTool();
 }
 
 function setupSubtabs() {
@@ -810,4 +811,172 @@ export function openDeviceModal(ip, name, mac, portsStr) {
     checkShodan(ip, shodanBox);
 
     ui.deviceModal.classList.add('active');
+}
+
+function setupProbeSnifferTool() {
+    const startBtn = getEl('start-sniffer');
+    const stopBtn = getEl('stop-sniffer');
+    const resultsDiv = getEl('sniffer-results');
+    const statusLabel = getEl('radar-status-label');
+    const canvas = document.getElementById('radar-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let sweepAngle = 0;
+    let animationId = null;
+    let detectedProbes = [];
+
+    function drawRadar() {
+        ctx.clearRect(0, 0, 180, 180);
+        const cx = 90;
+        const cy = 90;
+        const r = 85;
+
+        ctx.strokeStyle = 'rgba(0, 255, 242, 0.2)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 3; i++) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(cx - r, cy);
+        ctx.lineTo(cx + r, cy);
+        ctx.moveTo(cx, cy - r);
+        ctx.lineTo(cx, cy + r);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(sweepAngle);
+        const gradient = ctx.createLinearGradient(0, 0, r, 0);
+        gradient.addColorStop(0, 'rgba(0, 255, 242, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 255, 242, 0)');
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(r, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        const now = Date.now();
+        detectedProbes.forEach(probe => {
+            const age = now - probe.timestamp;
+            if (age < 6000) {
+                const alpha = 1.0 - (age / 6000);
+                ctx.fillStyle = `rgba(0, 255, 242, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(cx + probe.x, cy + probe.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = `rgba(0, 255, 242, ${alpha * 0.7})`;
+                ctx.font = '8px monospace';
+                ctx.fillText(probe.ssid, cx + probe.x + 6, cy + probe.y + 3);
+            }
+        });
+
+        sweepAngle += 0.03;
+        animationId = requestAnimationFrame(drawRadar);
+    }
+
+    window.onProbeSnifferUpdate = (data) => {
+        try {
+            const payload = JSON.parse(data);
+            if (payload.error) {
+                resultsDiv.innerHTML = `<div class="wifi-item" style="color:var(--neon-red); justify-content:center;">Error: ${payload.error}</div>`;
+                return;
+            }
+
+            const probes = payload.probes || [];
+            resultsDiv.innerHTML = '';
+
+            const now = Date.now();
+            probes.forEach(probe => {
+                let existing = detectedProbes.find(p => p.mac === probe.mac);
+                if (existing) {
+                    existing.timestamp = now;
+                    existing.rssi = probe.rssi;
+                } else {
+                    const angle = Math.random() * Math.PI * 2;
+                    const normalizedRssi = Math.min(Math.max((probe.rssi + 100) / 60, 0.1), 1.0);
+                    const radius = 80 * (1 - normalizedRssi);
+                    detectedProbes.push({
+                        mac: probe.mac,
+                        ssid: probe.ssid,
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius,
+                        timestamp: now,
+                        rssi: probe.rssi
+                    });
+                }
+
+                const div = document.createElement('div');
+                div.className = 'wifi-item';
+                div.style.padding = '8px 12px';
+                div.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+                        <span style="font-family:monospace; color:var(--text-color); font-size:0.85rem;">${probe.ssid || 'Hidden/Probe'}</span>
+                        <span style="font-size:0.7rem; color:var(--text-dim); font-family:monospace;">MAC: ${probe.mac} [${probe.type}]</span>
+                    </div>
+                    <span style="color:var(--neon-cyan); font-family:monospace; font-size:0.8rem;">${probe.rssi} dBm</span>
+                `;
+                resultsDiv.appendChild(div);
+            });
+
+            detectedProbes = detectedProbes.filter(p => now - p.timestamp < 6000);
+        } catch (e) {
+            console.error("Parse error on probe update:", e);
+        }
+    };
+
+    startBtn.onclick = () => {
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+        statusLabel.innerHTML = 'SCANNING';
+        resultsDiv.innerHTML = '<div class="wifi-item" style="justify-content:center; color: var(--text-dim);">Listening for packets...</div>';
+        
+        detectedProbes = [];
+        sweepAngle = 0;
+        drawRadar();
+
+        if (window.Android && window.Android.startProbeSniffer) {
+            window.Android.startProbeSniffer('onProbeSnifferUpdate');
+        } else {
+            let count = 0;
+            window.snifferInterval = setInterval(() => {
+                const sampleMacs = ["00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF", "50:C7:BF:12:34:56", "24:F5:A2:88:99:00"];
+                const sampleSsids = ["Tactical_Comms", "Home_WLAN", "Public_Transit", "Starbucks_Guest"];
+                const mockProbes = [];
+                for(let i=0; i<2; i++) {
+                    mockProbes.push({
+                        mac: sampleMacs[Math.floor(Math.random()*sampleMacs.length)],
+                        ssid: sampleSsids[Math.floor(Math.random()*sampleSsids.length)],
+                        rssi: -40 - Math.floor(Math.random()*50),
+                        type: Math.random() > 0.5 ? "Probe Request" : "Beacon Frame"
+                    });
+                }
+                window.onProbeSnifferUpdate(JSON.stringify({ probes: mockProbes }));
+            }, 3000);
+        }
+    };
+
+    stopBtn.onclick = () => {
+        stopBtn.style.display = 'none';
+        startBtn.style.display = 'block';
+        statusLabel.innerHTML = 'IDLE';
+        
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        ctx.clearRect(0, 0, 180, 180);
+
+        if (window.Android && window.Android.stopProbeSniffer) {
+            window.Android.stopProbeSniffer();
+        } else {
+            clearInterval(window.snifferInterval);
+        }
+    };
 }

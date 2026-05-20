@@ -1200,6 +1200,50 @@ class MainActivity : TauriActivity(), SensorEventListener {
             }
         }
 
+        private val meshtasticBleManager = MeshtasticBleManager(mContext) { cb, data -> postToJS(cb, data) }
+        private val integrityManager = IntegrityManager(mContext)
+        private val probeSniffer = ProbeSniffer(mContext) { cb, data -> postToJS(cb, data) }
+
+        @JavascriptInterface
+        fun startMeshtasticScan(callback: String) {
+            meshtasticBleManager.startScan(callback)
+        }
+
+        @JavascriptInterface
+        fun stopMeshtasticScan() {
+            meshtasticBleManager.stopScan()
+        }
+
+        @JavascriptInterface
+        fun connectMeshtastic(address: String, callback: String) {
+            meshtasticBleManager.connect(address, callback)
+        }
+
+        @JavascriptInterface
+        fun disconnectMeshtastic() {
+            meshtasticBleManager.disconnect()
+        }
+
+        @JavascriptInterface
+        fun sendMeshtasticMessage(hexPayload: String, callback: String) {
+            meshtasticBleManager.sendMessage(hexPayload, callback)
+        }
+
+        @JavascriptInterface
+        fun checkSystemIntegrity(): String {
+            return integrityManager.checkIntegrity()
+        }
+
+        @JavascriptInterface
+        fun startProbeSniffer(callback: String) {
+            probeSniffer.startSniffer(callback)
+        }
+
+        @JavascriptInterface
+        fun stopProbeSniffer() {
+            probeSniffer.stopSniffer()
+        }
+
         private fun postToJS(callback: String, data: String) {
             Handler(Looper.getMainLooper()).post {
                 webView.evaluateJavascript("if(window['$callback']){window['$callback']($data)}", null)

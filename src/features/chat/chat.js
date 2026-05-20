@@ -263,7 +263,15 @@ export function initChat() {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = async () => {
-                const base64 = reader.result.split(',')[1];
+                let base64 = reader.result.split(',')[1];
+                if (file.type.startsWith('image/') || file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.png')) {
+                    try {
+                        const clean = await window.__TAURI__.core.invoke("strip_image_metadata", { base64In: base64 });
+                        base64 = clean;
+                    } catch (err) {
+                        console.error("EXIF metadata stripping failed:", err);
+                    }
+                }
                 window.lastFileBase64 = base64;
                 await sendChatMessage(`FILE:${file.name}|${base64}`, false);
             };
@@ -341,6 +349,34 @@ export function initChat() {
 
     getEl('settings-close').onclick = () => settingsModal.classList.remove('active');
     getEl('settings-notif-btn').onclick = () => sendPushNotification("Test", "Benachrichtigungen funktionieren!");
+
+    const hidsCheckBtn = getEl('hids-check-btn');
+    if (hidsCheckBtn) {
+        hidsCheckBtn.onclick = () => {
+            const hidsStatus = getEl('hids-status');
+            if (hidsStatus) hidsStatus.innerHTML = "Scanning integrity...";
+            if (window.Android && window.Android.checkSystemIntegrity) {
+                try {
+                    const resultJson = window.Android.checkSystemIntegrity();
+                    const result = JSON.parse(resultJson);
+                    let html = `<span style="color: ${result.rooted ? 'var(--neon-red)' : 'var(--neon-green)'}">SYSTEM ROOTED: ${result.rooted}</span><br>`;
+                    html += `SU Binary: <span style="color: ${result.su_binary ? 'var(--neon-red)' : 'var(--neon-green)'}">${result.su_binary}</span><br>`;
+                    html += `Test Keys: <span style="color: ${result.test_keys ? 'var(--neon-red)' : 'var(--neon-green)'}">${result.test_keys}</span><br>`;
+                    html += `SU Exec: <span style="color: ${result.su_exec ? 'var(--neon-red)' : 'var(--neon-green)'}">${result.su_exec}</span><br>`;
+                    html += `Xposed: <span style="color: ${result.xposed ? 'var(--neon-red)' : 'var(--neon-green)'}">${result.xposed}</span><br>`;
+                    html += `Magisk: <span style="color: ${result.magisk ? 'var(--neon-red)' : 'var(--neon-green)'}">${result.magisk}</span>`;
+                    hidsStatus.innerHTML = html;
+                } catch (err) {
+                    hidsStatus.innerHTML = `<span style="color: var(--neon-red)">Error: ${err.message}</span>`;
+                }
+            } else {
+                setTimeout(() => {
+                    hidsStatus.innerHTML = `<span style="color: var(--neon-green)">SYSTEM ROOTED: false</span><br>` +
+                        `SU Binary: false<br>Test Keys: false<br>SU Exec: false<br>Xposed: false<br>Magisk: false (Simulated)`;
+                }, 1000);
+            }
+        };
+    }
 
     // Connect on start
     setTimeout(connectChat, 1000);
