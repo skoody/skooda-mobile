@@ -4,34 +4,17 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use futures_util::{StreamExt, SinkExt};
 use std::sync::Arc;
 use serde::{Serialize, Deserialize};
-use ed25519_dalek::{SigningKey, Signer};
-use x25519_dalek::StaticSecret;
+use ed25519_dalek::{SigningKey, Signer, Signature, Verifier, VerifyingKey};
+use x25519_dalek::{StaticSecret, PublicKey};
 use chacha20poly1305::{aead::{Aead, KeyInit}, XChaCha20Poly1305, XNonce};
 use base64::{prelude::BASE64_STANDARD, Engine};
 use rand::RngCore;
 use rand::rngs::OsRng;
 use std::fs;
 use rusqlite::{params, Connection};
-use uuid::Uuid;
+use sha2::{Sha256, Digest};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct ChatMessage {
-    #[serde(default)]
-    msg_type: String,
-    sender: String,
-    room: String,
-    text: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    encrypted: Option<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    signature: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pubkey: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    msg_id: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 struct ChatEvent {
     message: String,
 }
@@ -41,12 +24,134 @@ pub struct ChatState {
     current_url: Arc<Mutex<String>>,
     signing_key: SigningKey,
     encryption_secret: StaticSecret,
-    db: Arc<Mutex<Connection>>,
+    db: Arc<Mutex<Option<Connection>>>,
+}
+
+fn kdf(chain_key: &[u8; 32], label: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(chain_key);
+    hasher.update(label);
+    hasher.finalize().into()
 }
 
 #[tauri::command]
 async fn get_identity(state: State<'_, ChatState>) -> Result<String, String> {
     Ok(BASE64_STANDARD.encode(state.signing_key.verifying_key().to_bytes()))
+}
+
+#[tauri::command]
+async fn get_my_x25519_pubkey(state: State<'_, ChatState>) -> Result<String, String> {
+    let pubkey = PublicKey::from(&state.encryption_secret);
+    Ok(BASE64_STANDARD.encode(pubkey.to_bytes()))
+}
+
+#[tauri::command]
+async fn derive_shared_secret(peer_pubkey_b64: String, state: State<'_, ChatState>) -> Result<String, String> {
+    let peer_bytes: [u8; 32] = BASE64_STANDARD.decode(peer_pubkey_b64)
+        .map_err(|e| e.to_string())?
+        .try_into()
+        .map_err(|_| "Invalid public key length".to_string())?;
+    
+    let peer_pub = PublicKey::from(peer_bytes);
+    let shared = state.encryption_secret.diffie_hellman(&peer_pub);
+    Ok(BASE64_STANDARD.encode(shared.to_bytes()))
+}
+
+#[tauri::command]
+async fn encrypt_pairwise(shared_secret_b64: String, plaintext: String) -> Result<serde_json::Value, String> {
+    let key_bytes: [u8; 32] = BASE64_STANDARD.decode(shared_secret_b64)
+        .map_err(|e| e.to_string())?
+        .try_into()
+        .map_err(|_| "Invalid key length".to_string())?;
+
+    let cipher = XChaCha20Poly1305::new(chacha20poly1305::Key::from_slice(&key_bytes));
+    let mut nonce = [0u8; 24];
+    OsRng.fill_bytes(&mut nonce);
+    
+    let ciphertext = cipher.encrypt(XNonce::from_slice(&nonce), plaintext.as_bytes())
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({
+        "ciphertext": BASE64_STANDARD.encode(ciphertext),
+        "nonce": BASE64_STANDARD.encode(nonce)
+    }))
+}
+
+#[tauri::command]
+async fn decrypt_pairwise(shared_secret_b64: String, encrypted_json: serde_json::Value) -> Result<String, String> {
+    let key_bytes: [u8; 32] = BASE64_STANDARD.decode(shared_secret_b64)
+        .map_err(|e| e.to_string())?
+        .try_into()
+        .map_err(|_| "Invalid key length".to_string())?;
+
+    let ciphertext_b64 = encrypted_json.get("ciphertext").ok_or("Missing ciphertext")?
+        .as_str().ok_or("Invalid ciphertext type")?;
+    let nonce_b64 = encrypted_json.get("nonce").ok_or("Missing nonce")?
+        .as_str().ok_or("Invalid nonce type")?;
+
+    let ciphertext = BASE64_STANDARD.decode(ciphertext_b64).map_err(|e| e.to_string())?;
+    let nonce = BASE64_STANDARD.decode(nonce_b64).map_err(|e| e.to_string())?;
+
+    let cipher = XChaCha20Poly1305::new(chacha20poly1305::Key::from_slice(&key_bytes));
+    let decrypted = cipher.decrypt(XNonce::from_slice(&nonce), ciphertext.as_slice())
+        .map_err(|e| e.to_string())?;
+
+    String::from_utf8(decrypted).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn open_secure_database(passphrase: String, state: State<'_, ChatState>, app: AppHandle) -> Result<(), String> {
+    let mut db_lock = state.db.lock().await;
+    if db_lock.is_some() {
+        return Ok(());
+    }
+
+    let data_dir = app.path().app_data_dir().unwrap();
+    if !data_dir.exists() {
+        fs::create_dir_all(&data_dir).unwrap();
+    }
+    let db_path = data_dir.join("chat_secure_v2.db");
+
+    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    
+    // Set SQLCipher encryption key
+    conn.execute(&format!("PRAGMA key = '{}';", passphrase.replace("'", "''")), [])
+        .map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY,
+            room TEXT,
+            sender TEXT,
+            content TEXT,
+            is_me INTEGER,
+            timestamp DATETIME
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS my_sender_keys (
+            room TEXT PRIMARY KEY,
+            chain_key BLOB,
+            signing_key_seed BLOB
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS peer_sender_keys (
+            room TEXT,
+            peer_id TEXT,
+            chain_key BLOB,
+            verify_key BLOB,
+            PRIMARY KEY(room, peer_id)
+        )",
+        [],
+    ).map_err(|e| e.to_string())?;
+
+    *db_lock = Some(conn);
+    Ok(())
 }
 
 #[tauri::command]
@@ -141,89 +246,203 @@ async fn send_chat_message(message: String, is_binary: bool, state: State<'_, Ch
     }
 }
 
-// --- NEW E2EE COMMANDS ---
+// --- UPGRADED SENDER KEY E2EE COMMANDS ---
 
 #[tauri::command]
-async fn process_message(
-    room: String,
-    sender: String,
-    text: String,
-    is_system: bool,
-    state: State<'_, ChatState>
-) -> Result<String, String> {
-    let msg_id = Uuid::new_v4().to_string();
-    let mut msg_type = "chat".to_string();
-    let mut display_text = text.clone();
+async fn generate_and_store_sender_key(room: String, state: State<'_, ChatState>) -> Result<serde_json::Value, String> {
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
 
-    if text.starts_with("FILE:") {
-        msg_type = "file".to_string();
-        if let Some(pos) = text.find('|') {
-            display_text = text[5..pos].to_string();
-        }
-    }
+    let mut chain_key = [0u8; 32];
+    OsRng.fill_bytes(&mut chain_key);
 
-    let mut msg = ChatMessage {
-        msg_type,
-        sender,
-        room: room.clone(),
-        text: display_text,
-        encrypted: None,
-        signature: None,
-        pubkey: Some(BASE64_STANDARD.encode(state.signing_key.verifying_key().to_bytes())),
-        msg_id: Some(msg_id),
-    };
+    let mut seed = [0u8; 32];
+    OsRng.fill_bytes(&mut seed);
 
-    if !is_system {
-        // Simple E2EE: Key derived from room name
-        let mut key = [0u8; 32];
-        let room_bytes = room.as_bytes();
-        for (i, &b) in room_bytes.iter().enumerate().take(32) { key[i] = b; }
-        
-        let cipher = XChaCha20Poly1305::new(&key.into());
-        let mut nonce_bytes = [0u8; 24];
-        OsRng.fill_bytes(&mut nonce_bytes);
-        let nonce = XNonce::from_slice(&nonce_bytes);
+    let signing_key = SigningKey::from_bytes(&seed);
+    let verify_key = signing_key.verifying_key().to_bytes();
 
-        let ciphertext = cipher.encrypt(nonce, text.as_bytes()).map_err(|e| e.to_string())?;
-        
-        msg.encrypted = Some(serde_json::json!({
-            "data": BASE64_STANDARD.encode(ciphertext),
-            "nonce": BASE64_STANDARD.encode(nonce_bytes),
-        }));
-        msg.text = "[Encrypted Content]".to_string();
-    }
+    db.execute(
+        "INSERT OR REPLACE INTO my_sender_keys (room, chain_key, signing_key_seed) VALUES (?1, ?2, ?3)",
+        params![room, chain_key.to_vec(), seed.to_vec()],
+    ).map_err(|e| e.to_string())?;
 
-    // Sign original text
-    let signature = state.signing_key.sign(text.as_bytes());
-    msg.signature = Some(BASE64_STANDARD.encode(signature.to_bytes()));
-
-    Ok(serde_json::to_string(&msg).unwrap())
+    Ok(serde_json::json!({
+        "chain_key": BASE64_STANDARD.encode(chain_key),
+        "verify_key": BASE64_STANDARD.encode(verify_key)
+    }))
 }
 
 #[tauri::command]
-async fn decrypt_message(
+async fn store_peer_sender_key(
     room: String,
-    encrypted_json: serde_json::Value,
-    _state: State<'_, ChatState>
-) -> Result<String, String> {
-    let data_b64 = encrypted_json.get("data").and_then(|v| v.as_str()).ok_or("No data")?;
-    let nonce_b64 = encrypted_json.get("nonce").and_then(|v| v.as_str()).ok_or("No nonce")?;
-    
-    let ciphertext = BASE64_STANDARD.decode(data_b64).map_err(|e| e.to_string())?;
-    let nonce_bytes = BASE64_STANDARD.decode(nonce_b64).map_err(|e| e.to_string())?;
-    
-    let mut key = [0u8; 32];
-    let room_bytes = room.as_bytes();
-    for (i, &b) in room_bytes.iter().enumerate().take(32) { key[i] = b; }
-    
-    let cipher = XChaCha20Poly1305::new(&key.into());
+    peer_id: String,
+    chain_key_b64: String,
+    verify_key_b64: String,
+    state: State<'_, ChatState>
+) -> Result<(), String> {
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
+
+    let chain_key = BASE64_STANDARD.decode(chain_key_b64).map_err(|e| e.to_string())?;
+    let verify_key = BASE64_STANDARD.decode(verify_key_b64).map_err(|e| e.to_string())?;
+
+    db.execute(
+        "INSERT OR REPLACE INTO peer_sender_keys (room, peer_id, chain_key, verify_key) VALUES (?1, ?2, ?3, ?4)",
+        params![room, peer_id, chain_key, verify_key],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_my_sender_key(room: String, state: State<'_, ChatState>) -> Result<serde_json::Value, String> {
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
+
+    let row = db.query_row(
+        "SELECT chain_key, signing_key_seed FROM my_sender_keys WHERE room = ?1",
+        params![room],
+        |r| Ok((r.get::<_, Vec<u8>>(0)?, r.get::<_, Vec<u8>>(1)?))
+    );
+
+    let (chain_key, seed) = match row {
+        Ok(data) => (data.0, data.1),
+        Err(_) => {
+            let mut ck = [0u8; 32];
+            OsRng.fill_bytes(&mut ck);
+            let mut sd = [0u8; 32];
+            OsRng.fill_bytes(&mut sd);
+            db.execute(
+                "INSERT INTO my_sender_keys (room, chain_key, signing_key_seed) VALUES (?1, ?2, ?3)",
+                params![room, ck.to_vec(), sd.to_vec()],
+            ).map_err(|e| e.to_string())?;
+            (ck.to_vec(), sd.to_vec())
+        }
+    };
+
+    let signing_key = SigningKey::from_bytes(&seed.try_into().unwrap());
+    let verify_key = signing_key.verifying_key().to_bytes().to_vec();
+
+    Ok(serde_json::json!({
+        "chain_key": BASE64_STANDARD.encode(chain_key),
+        "verify_key": BASE64_STANDARD.encode(verify_key)
+    }))
+}
+
+#[tauri::command]
+async fn encrypt_group_message(room: String, text: String, state: State<'_, ChatState>) -> Result<serde_json::Value, String> {
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
+
+    let row = db.query_row(
+        "SELECT chain_key, signing_key_seed FROM my_sender_keys WHERE room = ?1",
+        params![room],
+        |r| Ok((r.get::<_, Vec<u8>>(0)?, r.get::<_, Vec<u8>>(1)?))
+    );
+
+    let (chain_key, seed) = match row {
+        Ok(data) => (
+            data.0.try_into().map_err(|_| "Invalid key size").unwrap(),
+            data.1.try_into().map_err(|_| "Invalid seed size").unwrap()
+        ),
+        Err(_) => {
+            // Generate keys automatically if they don't exist
+            let mut ck = [0u8; 32];
+            OsRng.fill_bytes(&mut ck);
+            let mut sd = [0u8; 32];
+            OsRng.fill_bytes(&mut sd);
+            db.execute(
+                "INSERT INTO my_sender_keys (room, chain_key, signing_key_seed) VALUES (?1, ?2, ?3)",
+                params![room, ck.to_vec(), sd.to_vec()],
+            ).map_err(|e| e.to_string())?;
+            (ck, sd)
+        }
+    };
+
+    // 1. Derive message key: SHA256(chain_key + b"msg")
+    let msg_key = kdf(&chain_key, b"msg");
+
+    // 2. Ratchet chain key: SHA256(chain_key + b"next")
+    let next_chain_key = kdf(&chain_key, b"next");
+
+    // Save ratcheted chain key
+    db.execute(
+        "UPDATE my_sender_keys SET chain_key = ?1 WHERE room = ?2",
+        params![next_chain_key.to_vec(), room],
+    ).map_err(|e| e.to_string())?;
+
+    // 3. Encrypt message
+    let cipher = XChaCha20Poly1305::new(&msg_key.into());
+    let mut nonce_bytes = [0u8; 24];
+    OsRng.fill_bytes(&mut nonce_bytes);
     let nonce = XNonce::from_slice(&nonce_bytes);
-    
+
+    let ciphertext = cipher.encrypt(nonce, text.as_bytes()).map_err(|e| e.to_string())?;
+
+    // 4. Sign payload using Ed25519 key derived from seed
+    let signing_key = SigningKey::from_bytes(&seed);
+    let signature = signing_key.sign(&ciphertext);
+
+    Ok(serde_json::json!({
+        "ciphertext": BASE64_STANDARD.encode(ciphertext),
+        "nonce": BASE64_STANDARD.encode(nonce_bytes),
+        "signature": BASE64_STANDARD.encode(signature.to_bytes())
+    }))
+}
+
+#[tauri::command]
+async fn decrypt_group_message(
+    room: String,
+    sender_id: String,
+    payload: serde_json::Value,
+    state: State<'_, ChatState>
+) -> Result<String, String> {
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
+
+    let (chain_key, verify_key_bytes) = db.query_row(
+        "SELECT chain_key, verify_key FROM peer_sender_keys WHERE room = ?1 AND peer_id = ?2",
+        params![room, sender_id],
+        |r| Ok((r.get::<_, Vec<u8>>(0)?, r.get::<_, Vec<u8>>(1)?))
+    ).map_err(|_| "No sender key stored for this peer".to_string())?;
+
+    let chain_key_arr: [u8; 32] = chain_key.try_into().map_err(|_| "Invalid key size")?;
+    let verify_key = VerifyingKey::from_bytes(
+        &verify_key_bytes.try_into().map_err(|_| "Invalid verify key size")?
+    ).map_err(|e| e.to_string())?;
+
+    let ciphertext_b64 = payload.get("ciphertext").and_then(|v| v.as_str()).ok_or("Missing ciphertext")?;
+    let nonce_b64 = payload.get("nonce").and_then(|v| v.as_str()).ok_or("Missing nonce")?;
+    let signature_b64 = payload.get("signature").and_then(|v| v.as_str()).ok_or("Missing signature")?;
+
+    let ciphertext = BASE64_STANDARD.decode(ciphertext_b64).map_err(|e| e.to_string())?;
+    let nonce_bytes = BASE64_STANDARD.decode(nonce_b64).map_err(|e| e.to_string())?;
+    let signature_bytes = BASE64_STANDARD.decode(signature_b64).map_err(|e| e.to_string())?;
+
+    // 1. Verify signature
+    let signature = Signature::from_slice(&signature_bytes).map_err(|e| e.to_string())?;
+    verify_key.verify(&ciphertext, &signature).map_err(|e| e.to_string())?;
+
+    // 2. Derive message key
+    let msg_key = kdf(&chain_key_arr, b"msg");
+
+    // 3. Ratchet and save chain key
+    let next_chain_key = kdf(&chain_key_arr, b"next");
+    db.execute(
+        "UPDATE peer_sender_keys SET chain_key = ?1 WHERE room = ?2 AND peer_id = ?3",
+        params![next_chain_key.to_vec(), room, sender_id],
+    ).map_err(|e| e.to_string())?;
+
+    // 4. Decrypt
+    let cipher = XChaCha20Poly1305::new(&msg_key.into());
+    let nonce = XNonce::from_slice(&nonce_bytes);
     let plaintext = cipher.decrypt(nonce, ciphertext.as_slice()).map_err(|e| e.to_string())?;
+
     Ok(String::from_utf8(plaintext).map_err(|e| e.to_string())?)
 }
 
-// --- DB COMMANDS ---
+// --- DB HISTORY COMMANDS ---
 
 #[tauri::command]
 async fn save_to_history(
@@ -233,7 +452,8 @@ async fn save_to_history(
     is_me: bool,
     state: State<'_, ChatState>
 ) -> Result<(), String> {
-    let db = state.db.lock().await;
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
     db.execute(
         "INSERT INTO history (room, sender, content, is_me, timestamp) VALUES (?1, ?2, ?3, ?4, CURRENT_TIMESTAMP)",
         params![room, sender, text, if is_me { 1 } else { 0 }],
@@ -243,7 +463,9 @@ async fn save_to_history(
 
 #[tauri::command]
 async fn get_chat_history(room: String, state: State<'_, ChatState>) -> Result<Vec<serde_json::Value>, String> {
-    let db = state.db.lock().await;
+    let db_lock = state.db.lock().await;
+    let db = db_lock.as_ref().ok_or("Database not initialized")?;
+    
     let mut stmt = db.prepare("SELECT sender, content, is_me, timestamp FROM history WHERE room = ?1 ORDER BY id ASC").map_err(|e| e.to_string())?;
     let rows = stmt.query_map(params![room], |row| {
         Ok(serde_json::json!({
@@ -269,7 +491,7 @@ pub fn run() {
             let data_dir = app.path().app_data_dir().unwrap();
             if !data_dir.exists() { fs::create_dir_all(&data_dir).unwrap(); }
 
-            // 1. Identity Persistence
+            // Identity Persistence
             let seed_path = data_dir.join("identity.seed");
             let seed = if seed_path.exists() {
                 fs::read(&seed_path).unwrap().try_into().unwrap()
@@ -283,27 +505,12 @@ pub fn run() {
             let signing_key = SigningKey::from_bytes(&seed);
             let encryption_secret = StaticSecret::from(seed);
 
-            // 2. Database Initialization
-            let db_path = data_dir.join("chat_v1.db");
-            let conn = Connection::open(db_path).unwrap();
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS history (
-                    id INTEGER PRIMARY KEY,
-                    room TEXT,
-                    sender TEXT,
-                    content TEXT,
-                    is_me INTEGER,
-                    timestamp DATETIME
-                )",
-                [],
-            ).unwrap();
-
             app.manage(ChatState {
                 tx: Arc::new(Mutex::new(None)),
                 current_url: Arc::new(Mutex::new(String::new())),
                 signing_key,
                 encryption_secret,
-                db: Arc::new(Mutex::new(conn)),
+                db: Arc::new(Mutex::new(None)),
             });
 
             Ok(())
@@ -312,8 +519,16 @@ pub fn run() {
             connect_chat, 
             send_chat_message,
             get_identity,
-            process_message,
-            decrypt_message,
+            get_my_x25519_pubkey,
+            derive_shared_secret,
+            encrypt_pairwise,
+            decrypt_pairwise,
+            open_secure_database,
+            get_my_sender_key,
+            generate_and_store_sender_key,
+            store_peer_sender_key,
+            encrypt_group_message,
+            decrypt_group_message,
             save_to_history,
             get_chat_history
         ])

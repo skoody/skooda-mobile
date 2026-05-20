@@ -1,6 +1,7 @@
 import { getEl } from '../../core/ui.js';
-import { showCategories } from '../../core/navigation.js';
-import { CyberTools } from './cyber-utils.js';
+use_default_wifi_handler();
+
+function use_default_wifi_handler() {}
 
 // UI Elements
 const ui = {
@@ -32,10 +33,39 @@ const ui = {
     actionPing: getEl('action-ping'),
     actionBrowser: getEl('action-browser'),
     actionClose: getEl('action-close'),
-    publicIp: getEl('public-ip')
+    publicIp: getEl('public-ip'),
+    wifiBtn: getEl('start-wifi-scan'),
+    wifiResult: getEl('wifi-scan-result'),
+    sslBtn: getEl('start-ssl-audit'),
+    sslHost: getEl('ssl-host'),
+    sslPort: getEl('ssl-port'),
+    sslResult: getEl('ssl-result')
 };
 
 let currentModalIp = "";
+
+const PORT_EXPLANATIONS = {
+    21: "FTP (File Transfer Protocol) - Cleartext file transfer, legacy.",
+    22: "SSH (Secure Shell) - Remote administration, encrypted.",
+    23: "Telnet - Highly insecure, cleartext remote access.",
+    25: "SMTP (Simple Mail Transfer Protocol) - Email routing.",
+    53: "DNS (Domain Name System) - Name resolution.",
+    80: "HTTP (Hypertext Transfer Protocol) - Unencrypted web server.",
+    110: "POP3 (Post Office Protocol v3) - Email retrieval.",
+    111: "RPCBind - Port mapper service, potential recon target.",
+    135: "Microsoft RPC - Remote procedure call locator.",
+    139: "NetBIOS Session Service - Windows file/printer sharing.",
+    143: "IMAP (Internet Message Access Protocol) - Email access.",
+    443: "HTTPS (HTTP Secure) - Encrypted web traffic.",
+    445: "Microsoft-DS (SMB) - High risk, SMB file sharing.",
+    993: "IMAPS (IMAP Secure) - Encrypted email retrieval.",
+    995: "POP3S (POP3 Secure) - Encrypted email retrieval.",
+    1723: "PPTP VPN - Point-to-Point Tunneling Protocol.",
+    3306: "MySQL Database - Database listener.",
+    3389: "RDP (Remote Desktop) - Windows remote desktop.",
+    5900: "VNC (Virtual Network Computing) - Remote desktop.",
+    8080: "HTTP Alternative - Common web server port."
+};
 
 export function initCyber() {
     setupNetworkScanner();
@@ -45,11 +75,10 @@ export function initCyber() {
     setupPortScanTool();
     setupModalHandlers();
     setupPublicIpReveal();
+    setupWifiScanTool();
+    setupSslAuditTool();
 }
 
-/**
- * Helper to update loading state
- */
 function setLoading(el, isLoading, text = "Scanning...") {
     if (!el) return;
     if (isLoading) {
@@ -68,13 +97,13 @@ function setupNetworkScanner() {
             ui.scanStopBtn.style.display = 'block';
             if (ui.scanProgCont) ui.scanProgCont.style.display = 'block';
             if (ui.scanProgBar) ui.scanProgBar.style.width = '0%';
-            CyberTools.scanNetwork();
+            import('./cyber-utils.js').then(m => m.CyberTools.scanNetwork());
         });
     }
 
     if (ui.scanStopBtn) {
         ui.scanStopBtn.addEventListener('click', () => {
-            CyberTools.cancel('netScan');
+            import('./cyber-utils.js').then(m => m.CyberTools.cancel('netScan'));
             resetScanUI();
         });
     }
@@ -131,7 +160,7 @@ function setupPingTool() {
         ui.pingBtn.addEventListener('click', () => {
             const host = ui.pingHost.value || "8.8.8.8";
             setLoading(ui.pingResult, true, `Pinging ${host}...`);
-            CyberTools.ping(host);
+            import('./cyber-utils.js').then(m => m.CyberTools.ping(host));
         });
     }
 
@@ -142,12 +171,16 @@ function setupPingTool() {
     };
 }
 
+fn_lookup();
+
+function fn_lookup() {}
+
 function setupDnsTool() {
     if (ui.dnsBtn) {
         ui.dnsBtn.addEventListener('click', () => {
             const host = ui.dnsHost.value || "google.com";
             setLoading(ui.dnsResult, true, `Resolving ${host}...`);
-            CyberTools.dnsLookup(host);
+            import('./cyber-utils.js').then(m => m.CyberTools.dnsLookup(host));
         });
     }
 
@@ -166,13 +199,13 @@ function setupTracerouteTool() {
             ui.traceBtn.style.display = 'none';
             ui.traceStopBtn.style.display = 'block';
             setLoading(ui.traceResult, true, `Tracing ${host}...`);
-            CyberTools.traceroute(host);
+            import('./cyber-utils.js').then(m => m.CyberTools.traceroute(host));
         });
     }
 
     if (ui.traceStopBtn) {
         ui.traceStopBtn.addEventListener('click', () => {
-            CyberTools.cancel('traceroute');
+            import('./cyber-utils.js').then(m => m.CyberTools.cancel('traceroute'));
             ui.traceBtn.style.display = 'block';
             ui.traceStopBtn.style.display = 'none';
             setLoading(ui.traceResult, false);
@@ -213,13 +246,13 @@ function setupPortScanTool() {
             ui.portBtn.style.display = 'none';
             ui.portStopBtn.style.display = 'block';
             setLoading(ui.portResult, true, `Scanning ports on ${host}...`);
-            CyberTools.scanPorts(host, ports);
+            import('./cyber-utils.js').then(m => m.CyberTools.scanPorts(host, ports));
         });
     }
 
     if (ui.portStopBtn) {
         ui.portStopBtn.addEventListener('click', () => {
-            CyberTools.cancel('portScan');
+            import('./cyber-utils.js').then(m => m.CyberTools.cancel('portScan'));
             ui.portBtn.style.display = 'block';
             ui.portStopBtn.style.display = 'none';
             setLoading(ui.portResult, false);
@@ -242,7 +275,12 @@ function setupPortScanTool() {
             if (data.ports.length === 0) {
                 ui.portResult.innerText = "No open ports found.";
             } else {
-                ui.portResult.innerText = "Open Ports:\n" + data.ports.map(p => `:${p}`).join(", ");
+                let text = "Open Ports:\n";
+                data.ports.forEach(p => {
+                    const desc = PORT_EXPLANATIONS[p] || "Unknown Service";
+                    text += `:${p} - ${desc}\n`;
+                });
+                ui.portResult.innerText = text;
             }
         }
     };
@@ -259,7 +297,6 @@ function setupModalHandlers() {
 
     ui.actionPing.addEventListener('click', () => {
         ui.deviceModal.classList.remove('active');
-        // Navigate to Cyber tools and trigger ping
         const cyberId = 'cyber-toolset';
         document.querySelectorAll('.sub-tool-container').forEach(c => c.style.display = 'none');
         getEl(cyberId).style.display = 'block';
@@ -294,6 +331,119 @@ function setupPublicIpReveal() {
     }
 }
 
+function setupWifiScanTool() {
+    if (ui.wifiBtn) {
+        ui.wifiBtn.addEventListener('click', () => {
+            setLoading(ui.wifiResult, true, "Scanning WiFi networks...");
+            ui.wifiResult.innerHTML = "";
+            import('./cyber-utils.js').then(m => m.CyberTools.scanWifi());
+        });
+    }
+
+    window.onWifiScanResult = (data) => {
+        setLoading(ui.wifiResult, false);
+        if (data.error) {
+            ui.wifiResult.innerHTML = `<div class="info-value" style="color:var(--neon-purple)">Error: ${data.error}</div>`;
+            return;
+        }
+
+        if (data.results && data.results.length > 0) {
+            ui.wifiResult.innerHTML = data.results.map(res => {
+                const rssiPercent = Math.min(100, Math.max(0, 2 * (res.rssi + 100)));
+                let rssiColor = "var(--neon-green)";
+                if (res.rssi < -80) rssiColor = "var(--neon-purple)";
+                else if (res.rssi < -70) rssiColor = "var(--neon-orange)";
+                
+                return `
+                    <div class="info-item" style="flex-direction: column; align-items: flex-start; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05)">
+                        <div style="display:flex; justify-content:space-between; width:100%">
+                            <span class="info-value" style="font-weight:bold">${res.ssid || 'Hidden SSID'}</span>
+                            <span style="color: ${rssiColor}; font-weight:bold">${res.rssi} dBm</span>
+                        </div>
+                        <div class="info-label" style="font-size:0.8rem; margin: 3px 0;">BSSID: ${res.bssid} | Channel: ${res.channel} (${res.frequency} MHz)</div>
+                        <div class="info-label" style="font-size:0.75rem; color:var(--text-dim)">Security: ${res.capabilities}</div>
+                        <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:5px;">
+                            <div style="width:${rssiPercent}%; height:100%; background:${rssiColor}; border-radius:2px;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            ui.wifiResult.innerHTML = '<div class="info-value">No wireless networks found.</div>';
+        }
+    };
+}
+
+function setupSslAuditTool() {
+    if (ui.sslBtn) {
+        ui.sslBtn.addEventListener('click', () => {
+            const host = ui.sslHost.value.trim() || "google.com";
+            const port = parseInt(ui.sslPort.value) || 443;
+            setLoading(ui.sslResult, true, `Auditing SSL of ${host}:${port}...`);
+            import('./cyber-utils.js').then(m => m.CyberTools.auditSsl(host, port));
+        });
+    }
+
+    window.onSslAuditResult = (data) => {
+        setLoading(ui.sslResult, false);
+        if (data.error) {
+            ui.sslResult.innerText = "Error: " + data.error;
+            return;
+        }
+
+        if (data.cert) {
+            const c = data.cert;
+            ui.sslResult.innerHTML = `
+<div style="color:var(--neon-green); font-weight:bold; margin-bottom:5px;">SSL Certificate Valid</div>
+<strong>Subject:</strong> ${c.subject}
+<strong>Issuer:</strong> ${c.issuer}
+<strong>Valid From:</strong> ${c.validFrom}
+<strong>Valid To:</strong> ${c.validTo}
+<strong>Protocol:</strong> ${c.protocol}
+<strong>Cipher Suite:</strong> ${c.cipherSuite}
+<strong>Signature Algorithm:</strong> ${c.sigAlgName}
+<strong>Serial Number:</strong> ${c.serialNumber}
+            `;
+        }
+    };
+}
+
+async function checkShodan(ip, containerEl) {
+    const key = localStorage.getItem('shodan_api_key');
+    if (!key) return;
+    
+    const parts = ip.split('.').map(Number);
+    if (parts[0] === 10 || 
+        (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || 
+        (parts[0] === 192 && parts[1] === 168) || 
+        ip === '127.0.0.1') {
+        return; 
+    }
+    
+    containerEl.innerHTML += `<div class="info-label" style="margin-top: 10px; color: var(--neon-cyan)">Querying Shodan...</div>`;
+    try {
+        const response = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${key}`);
+        if (!response.ok) throw new Error("Status " + response.status);
+        const data = await response.json();
+        
+        let shodanHtml = `
+            <div style="margin-top: 10px; padding: 10px; background: rgba(0,242,255,0.05); border: 1px solid var(--neon-cyan); border-radius: 6px; text-align: left;">
+                <div style="font-weight: bold; color: var(--neon-cyan); margin-bottom: 5px;">Shodan Intelligence</div>
+                <div style="font-size: 0.8rem;">
+                    <div><strong>ISP:</strong> ${data.isp || 'Unknown'}</div>
+                    <div><strong>Org:</strong> ${data.org || 'Unknown'}</div>
+                    <div><strong>Country:</strong> ${data.country_name || 'Unknown'}</div>
+                    <div><strong>OS:</strong> ${data.os || 'Unknown'}</div>
+                    ${data.vulns ? `<div><strong>Vulnerabilities:</strong> <span style="color: var(--neon-orange)">${data.vulns.join(', ')}</span></div>` : ''}
+                </div>
+            </div>
+        `;
+        containerEl.innerHTML += shodanHtml;
+    } catch(e) {
+        containerEl.innerHTML += `<div class="info-label" style="color: var(--neon-purple)">Shodan Query Failed: ${e.message}</div>`;
+    }
+}
+
 export function openDeviceModal(ip, name, mac, portsStr) {
     currentModalIp = ip;
     ui.modalName.innerText = name;
@@ -302,6 +452,18 @@ export function openDeviceModal(ip, name, mac, portsStr) {
 
     const ports = portsStr ? portsStr.split(',').map(p => parseInt(p)) : [];
     ui.actionBrowser.style.display = (ports.includes(80) || ports.includes(443)) ? 'flex' : 'none';
+
+    // Query Shodan if key is available
+    const detailsContainer = ui.deviceModal.querySelector('.cyber-list') || ui.deviceModal.querySelector('.action-list');
+    
+    // Clear old Shodan info from modal if any
+    const oldShodan = ui.deviceModal.querySelector('.shodan-container');
+    if (oldShodan) oldShodan.remove();
+    
+    const shodanBox = document.createElement('div');
+    shodanBox.className = 'shodan-container';
+    detailsContainer.parentNode.insertBefore(shodanBox, detailsContainer);
+    checkShodan(ip, shodanBox);
 
     ui.deviceModal.classList.add('active');
 }

@@ -56,6 +56,39 @@ import java.util.Scanner
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
+// Keystore, Encryption & Security
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLSocket
+import javax.net.ssl.SSLSocketFactory
+
+// WiFi scan & analysis
+import android.net.wifi.ScanResult
+import android.content.BroadcastReceiver
+
+// UDP & WebSockets P2P Server
+import org.java_websocket.server.WebSocketServer
+import org.java_websocket.WebSocket
+import org.java_websocket.handshake.ClientHandshake
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetSocketAddress as JavaInetSocketAddress
+
+// TensorFlow Lite
+import org.tensorflow.lite.task.vision.detector.ObjectDetector
+import org.tensorflow.lite.task.vision.detector.Detection
+import org.tensorflow.lite.support.image.TensorImage
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+
 class MainActivity : TauriActivity(), SensorEventListener {
     private var webViewInstance: WebView? = null
     private val handler = Handler(Looper.getMainLooper())
@@ -380,6 +413,230 @@ class MainActivity : TauriActivity(), SensorEventListener {
         return cores
     }
 
+    private var localWsServer: LocalWebSocketServer? = null
+    private var udpSocket: DatagramSocket? = null
+    private var udpReceiveThread: Thread? = null
+    private var udpBroadcastThread: Thread? = null
+    private var isUdpRunning = false
+
+    @Volatile
+    private var detectorInstance: ObjectDetector? = null
+
+    inner class LocalWebSocketServer(port: Int) : WebSocketServer(InetSocketAddress(port)) {
+        private val connectionsList = java.util.concurrent.CopyOnWriteArrayList<WebSocket>()
+
+        override fun onOpen(conn: WebSocket, handshake: ClientHandshake) {
+            connectionsList.add(conn)
+            runOnUiThread {
+                webViewInstance?.evaluateJavascript(
+                    "if(window.onP2PConnection){window.onP2PConnection({event:'open', remote:'${conn.remoteSocketAddress}'})}", 
+                    null
+                )
+            }
+        }
+
+        override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) {
+            connectionsList.remove(conn)
+            runOnUiThread {
+                webViewInstance?.evaluateJavascript(
+                    "if(window.onP2PConnection){window.onP2PConnection({event:'close', remote:'${conn.remoteSocketAddress}'})}", 
+                    null
+                )
+            }
+        }
+
+        override fun onMessage(conn: WebSocket, message: String) {
+            for (c in connectionsList) {
+                if (c != conn) {
+                    try { c.send(message) } catch(e: Exception) {}
+                }
+            }
+            runOnUiThread {
+                webViewInstance?.evaluateJavascript(
+                    "if(window.onP2PMessage){window.onP2PMessage($message)}", 
+                    null
+                )
+            }
+        }
+
+        override fun onError(conn: WebSocket?, ex: Exception) {
+            ex.printStackTrace()
+        }
+
+        override fun onStart() {
+            runOnUiThread {
+                webViewInstance?.evaluateJavascript(
+                    "if(window.onP2PStatus){window.onP2PStatus({status:'started', port:8080})}", 
+                    null
+                )
+            }
+        }
+
+        fun stopServer() {
+            try {
+                this.stop()
+            } catch(e: Exception) {}
+        }
+    }
+
+    fun startUdpServer(userHandle: String, isHost: Boolean) {
+        if (isUdpRunning) return
+        isUdpRunning = true
+
+        udpReceiveThread = Thread {
+            try {
+                udpSocket = DatagramSocket(8888)
+                udpSocket?.broadcast = true
+                val buffer = ByteArray(2048)
+                while (isUdpRunning) {
+                    val packet = DatagramPacket(buffer, buffer.size)
+                    udpSocket?.receive(packet)
+                    val message = String(packet.data, 0, packet.length).trim()
+                    if (message.startsWith("SKOODA_DISCOVERY:")) {
+                        val payload = message.substring("SKOODA_DISCOVERY:".length)
+                        runOnUiThread {
+                            webViewInstance?.evaluateJavascript(
+                                "if(window.onP2PPeerDiscovered){window.onP2PPeerDiscovered($payload)}", 
+                                null
+                            )
+                        }
+                    }
+                }
+            } catch(e: Exception) {
+                e.printStackTrace()
+            } finally {
+                try { udpSocket?.close() } catch(e: Exception) {}
+            }
+        }
+        udpReceiveThread?.start()
+
+        udpBroadcastThread = Thread {
+            try {
+                val socket = DatagramSocket()
+                socket.broadcast = true
+                while (isUdpRunning) {
+                    val localIp = getLocalIpAddress()
+                    if (localIp != null) {
+                        val obj = JSONObject()
+                        obj.put("name", userHandle)
+                        obj.put("ip", localIp)
+                        obj.put("is_host", isHost)
+                        val msg = "SKOODA_DISCOVERY:" + obj.toString()
+                        val packet = DatagramPacket(msg.toByteArray(), msg.length, InetAddress.getByName("255.255.255.255"), 8888)
+                        socket.send(packet)
+                    }
+                    Thread.sleep(5000)
+                }
+            } catch(e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        udpBroadcastThread?.start()
+    }
+
+    fun stopUdpServer() {
+        isUdpRunning = false
+        try { udpSocket?.close() } catch(e: Exception) {}
+        udpReceiveThread?.interrupt()
+        udpBroadcastThread?.interrupt()
+    }
+
+    private fun getLocalIpAddress(): String? {
+        try {
+            val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
+            for (intf in interfaces) {
+                val addrs = Collections.list(intf.inetAddresses)
+                for (addr in addrs) {
+                    if (!addr.isLoopbackAddress) {
+                        val sAddr = addr.hostAddress
+                        val isIPv4 = sAddr.indexOf(':') < 0
+                        if (isIPv4) return sAddr
+                    }
+                }
+            }
+        } catch (ex: Exception) {}
+        return null
+    }
+
+    fun startP2PHost(userHandle: String) {
+        try {
+            localWsServer?.stopServer()
+            localWsServer = LocalWebSocketServer(8080)
+            localWsServer?.start()
+
+            stopUdpServer()
+            startUdpServer(userHandle, true)
+        } catch(e: Exception) {
+            runOnUiThread {
+                webViewInstance?.evaluateJavascript(
+                    "if(window.onP2PStatus){window.onP2PStatus({error:'${e.message}'})}", 
+                    null
+                )
+            }
+        }
+    }
+
+    fun startP2PClient(userHandle: String) {
+        try {
+            localWsServer?.stopServer()
+            localWsServer = null
+            
+            stopUdpServer()
+            startUdpServer(userHandle, false)
+        } catch(e: Exception) {
+            runOnUiThread {
+                webViewInstance?.evaluateJavascript(
+                    "if(window.onP2PStatus){window.onP2PStatus({error:'${e.message}'})}", 
+                    null
+                )
+            }
+        }
+    }
+
+    fun stopP2P() {
+        try {
+            localWsServer?.stopServer()
+            localWsServer = null
+            stopUdpServer()
+        } catch(e: Exception) {}
+    }
+
+    fun createDetector(): ObjectDetector? {
+        return try {
+            val baseOptions = org.tensorflow.lite.task.core.BaseOptions.builder()
+                .useGpu()
+                .build()
+            val options = ObjectDetector.ObjectDetectorOptions.builder()
+                .setBaseOptions(baseOptions)
+                .setMaxResults(5)
+                .setScoreThreshold(0.35f)
+                .build()
+            ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
+        } catch (e: Exception) {
+            try {
+                val baseOptions = org.tensorflow.lite.task.core.BaseOptions.builder()
+                    .useNnapi()
+                    .build()
+                val options = ObjectDetector.ObjectDetectorOptions.builder()
+                    .setBaseOptions(baseOptions)
+                    .setMaxResults(5)
+                    .setScoreThreshold(0.35f)
+                    .build()
+                ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
+            } catch (e2: Exception) {
+                try {
+                    val options = ObjectDetector.ObjectDetectorOptions.builder()
+                        .setMaxResults(5)
+                        .setScoreThreshold(0.35f)
+                        .build()
+                    ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
+                } catch(e3: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
     class WebAppInterface(private val mContext: Context, private val webView: WebView) {
         private val executor = Executors.newFixedThreadPool(20)
         private val scanExecutor = Executors.newFixedThreadPool(64)
@@ -392,11 +649,83 @@ class MainActivity : TauriActivity(), SensorEventListener {
         }
 
         @JavascriptInterface
+        fun getDatabasePassphrase(): String {
+            try {
+                val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+                val alias = "SkoodaDbPassphraseKey"
+                
+                if (!keyStore.containsAlias(alias)) {
+                    val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+                    val spec = KeyGenParameterSpec.Builder(
+                        alias,
+                        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                    )
+                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        .build()
+                    keyGenerator.init(spec)
+                    keyGenerator.generateKey()
+                }
+
+                val sharedPrefs = mContext.getSharedPreferences("skooda_secure_prefs", Context.MODE_PRIVATE)
+                val encryptedKeyB64 = sharedPrefs.getString("encrypted_db_key", null)
+                val ivB64 = sharedPrefs.getString("db_key_iv", null)
+
+                if (encryptedKeyB64 == null || ivB64 == null) {
+                    val randomBytes = ByteArray(32)
+                    SecureRandom().nextBytes(randomBytes)
+                    val rawKeyStr = Base64.encodeToString(randomBytes, Base64.NO_WRAP)
+
+                    val secretKey = keyStore.getKey(alias, null) as SecretKey
+                    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                    cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+                    val iv = cipher.iv
+                    val encryptedBytes = cipher.doFinal(rawKeyStr.toByteArray(Charsets.UTF_8))
+
+                    sharedPrefs.edit().apply {
+                        putString("encrypted_db_key", Base64.encodeToString(encryptedBytes, Base64.NO_WRAP))
+                        putString("db_key_iv", Base64.encodeToString(iv, Base64.NO_WRAP))
+                        apply()
+                    }
+                    return rawKeyStr
+                } else {
+                    val secretKey = keyStore.getKey(alias, null) as SecretKey
+                    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                    val iv = Base64.decode(ivB64, Base64.NO_WRAP)
+                    val spec = GCMParameterSpec(128, iv)
+                    cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
+                    
+                    val encryptedBytes = Base64.decode(encryptedKeyB64, Base64.NO_WRAP)
+                    val decryptedBytes = cipher.doFinal(encryptedBytes)
+                    return String(decryptedBytes, Charsets.UTF_8)
+                }
+            } catch (e: Exception) {
+                val fallbackId = Settings.Secure.getString(mContext.contentResolver, Settings.Secure.ANDROID_ID) ?: "skoodadefaultpassphrase123"
+                return fallbackId.padEnd(32, '0').substring(0, 32)
+            }
+        }
+
+        @JavascriptInterface
         fun getAppVersion(): String {
             return try {
                 val pInfo = mContext.packageManager.getPackageInfo(mContext.packageName, 0)
                 pInfo.versionName ?: "0.0.0"
             } catch (e: Exception) { "0.0.0" }
+        }
+
+        @JavascriptInterface
+        fun startP2PHost(userHandle: String) {
+            (mContext as? MainActivity)?.startP2PHost(userHandle)
+        }
+
+        @JavascriptInterface
+        fun startP2PClient(userHandle: String) {
+            (mContext as? MainActivity)?.startP2PClient(userHandle)
+        }
+
+        @JavascriptInterface
+        fun stopP2P() {
+            (mContext as? MainActivity)?.stopP2P()
         }
 
         @JavascriptInterface
@@ -703,6 +1032,172 @@ class MainActivity : TauriActivity(), SensorEventListener {
                     }
                 }
             } catch (e: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun startWifiScan(callback: String) {
+            executor.execute {
+                try {
+                    val wifiManager = mContext.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                    if (ActivityCompat.checkSelfPermission(mContext, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        postToJS(callback, JSONObject().put("error", "Location permission denied").toString())
+                        return@execute
+                    }
+
+                    val wifiReceiver = object : BroadcastReceiver() {
+                        override fun onReceive(context: Context, intent: Intent) {
+                            try {
+                                val results = wifiManager.scanResults
+                                val jsonArr = JSONArray()
+                                for (res in results) {
+                                    val obj = JSONObject()
+                                    obj.put("ssid", res.SSID)
+                                    obj.put("bssid", res.BSSID)
+                                    obj.put("rssi", res.level)
+                                    obj.put("frequency", res.frequency)
+                                    
+                                    val channel = when {
+                                        res.frequency in 2412..2484 -> (res.frequency - 2407) / 5
+                                        res.frequency in 5170..5825 -> (res.frequency - 5000) / 5
+                                        else -> 0
+                                    }
+                                    obj.put("channel", channel)
+                                    obj.put("capabilities", res.capabilities)
+                                    jsonArr.put(obj)
+                                }
+                                postToJS(callback, JSONObject().put("results", jsonArr).put("done", true).toString())
+                            } catch (e: Exception) {
+                                postToJS(callback, JSONObject().put("error", e.message).toString())
+                            } finally {
+                                mContext.unregisterReceiver(this)
+                            }
+                        }
+                    }
+
+                    mContext.registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+                    val success = wifiManager.startScan()
+                    if (!success) {
+                        mContext.unregisterReceiver(wifiReceiver)
+                        val results = wifiManager.scanResults
+                        val jsonArr = JSONArray()
+                        for (res in results) {
+                            val obj = JSONObject()
+                            obj.put("ssid", res.SSID)
+                            obj.put("bssid", res.BSSID)
+                            obj.put("rssi", res.level)
+                            obj.put("frequency", res.frequency)
+                            val channel = when {
+                                res.frequency in 2412..2484 -> (res.frequency - 2407) / 5
+                                res.frequency in 5170..5825 -> (res.frequency - 5000) / 5
+                                else -> 0
+                            }
+                            obj.put("channel", channel)
+                            obj.put("capabilities", res.capabilities)
+                            jsonArr.put(obj)
+                        }
+                        postToJS(callback, JSONObject().put("results", jsonArr).put("done", true).put("cached", true).toString())
+                    }
+                } catch (e: Exception) {
+                    postToJS(callback, JSONObject().put("error", e.message).toString())
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun checkSslCert(host: String, port: Int, callback: String) {
+            executor.execute {
+                var socket: Socket? = null
+                try {
+                    val factory = SSLSocketFactory.getDefault()
+                    socket = factory.createSocket()
+                    socket.connect(InetSocketAddress(host, port), 4000)
+                    val sslSocket = socket as SSLSocket
+                    sslSocket.soTimeout = 4000
+                    sslSocket.startHandshake()
+                    
+                    val certs = sslSocket.session.peerCertificates
+                    if (certs.isNotEmpty() && certs[0] is X509Certificate) {
+                        val cert = certs[0] as X509Certificate
+                        val res = JSONObject()
+                        res.put("subject", cert.subjectDN.name)
+                        res.put("issuer", cert.issuerDN.name)
+                        res.put("validFrom", cert.notBefore.toString())
+                        res.put("validTo", cert.notAfter.toString())
+                        res.put("cipherSuite", sslSocket.session.cipherSuite)
+                        res.put("protocol", sslSocket.session.protocol)
+                        res.put("serialNumber", cert.serialNumber.toString(16))
+                        res.put("sigAlgName", cert.sigAlgName)
+                        
+                        postToJS(callback, JSONObject().put("cert", res).put("done", true).toString())
+                    } else {
+                        postToJS(callback, JSONObject().put("error", "No X509 certificates found").toString())
+                    }
+                } catch (e: Exception) {
+                    postToJS(callback, JSONObject().put("error", e.message).toString())
+                } finally {
+                    try { socket?.close() } catch(e: Exception) {}
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun detectObjects(base64Image: String, callback: String) {
+            executor.execute {
+                try {
+                    val cleanBase64 = base64Image.substringAfter("base64,")
+                    val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+                    val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                    
+                    if (bitmap == null) {
+                        postToJS(callback, JSONObject().put("error", "Failed to decode image").toString())
+                        return@execute
+                    }
+
+                    val main = mContext as? MainActivity
+                    if (main == null) {
+                        postToJS(callback, JSONObject().put("error", "MainActivity context unavailable").toString())
+                        return@execute
+                    }
+
+                    var detector = main.createDetector() // Lazily build or fallback automatically
+                    if (detector == null) {
+                        postToJS(callback, JSONObject().put("error", "Detector initialization failed").toString())
+                        return@execute
+                    }
+
+                    val image = TensorImage.fromBitmap(bitmap)
+                    val results = detector.detect(image)
+
+                    val jsonResults = JSONArray()
+                    results?.forEach { detection ->
+                        val obj = JSONObject()
+                        val box = JSONObject()
+                        box.put("left", detection.boundingBox.left.toDouble())
+                        box.put("top", detection.boundingBox.top.toDouble())
+                        box.put("right", detection.boundingBox.right.toDouble())
+                        box.put("bottom", detection.boundingBox.bottom.toDouble())
+                        obj.put("boundingBox", box)
+
+                        val categories = JSONArray()
+                        detection.categories.forEach { cat ->
+                            val catObj = JSONObject()
+                            catObj.put("label", cat.label)
+                            catObj.put("score", cat.score.toDouble())
+                            categories.put(catObj)
+                        }
+                        obj.put("categories", categories)
+                        jsonResults.put(obj)
+                    }
+
+                    val response = JSONObject()
+                    response.put("detections", jsonResults)
+                    response.put("done", true)
+                    postToJS(callback, response.toString())
+
+                } catch (e: Exception) {
+                    postToJS(callback, JSONObject().put("error", e.message).toString())
+                }
+            }
         }
 
         private fun postToJS(callback: String, data: String) {

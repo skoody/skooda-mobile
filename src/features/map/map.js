@@ -28,6 +28,39 @@ export function initMap() {
         zoomAnimation: true
     }).setView([51.505, -0.09], 13);
 
+    const dbName = "SkoodaMapTiles";
+    const storeName = "tiles";
+    let db = null;
+
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(storeName)) {
+            database.createObjectStore(storeName);
+        }
+    };
+    request.onsuccess = (e) => {
+        db = e.target.result;
+    };
+
+    const getCachedTile = (key) => {
+        return new Promise((resolve) => {
+            if (!db) { resolve(null); return; }
+            const transaction = db.transaction([storeName], "readonly");
+            const store = transaction.objectStore(storeName);
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    };
+
+    const cacheTile = (key, data) => {
+        if (!db) return;
+        const transaction = db.transaction([storeName], "readwrite");
+        const store = transaction.objectStore(storeName);
+        store.put(data, key);
+    };
+
     const setTiles = (mode) => {
         if (currentTiles) map.removeLayer(currentTiles);
         let url = '';
@@ -42,7 +75,44 @@ export function initMap() {
             url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
         }
 
-        currentTiles = L.tileLayer(url, { maxZoom: 20 }).addTo(map);
+        const CustomTileLayer = L.TileLayer.extend({
+            createTile: function(coords, done) {
+                const tile = document.createElement('img');
+                L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+                L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+
+                if (this.options.crossOrigin || this.options.crossOrigin === '') {
+                    tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+                }
+                tile.alt = '';
+                tile.setAttribute('role', 'presentation');
+
+                const tileUrl = this.getTileUrl(coords);
+                const key = `${mode}_${coords.z}_${coords.x}_${coords.y}`;
+
+                getCachedTile(key).then(cachedBlob => {
+                    if (cachedBlob) {
+                        const objectURL = URL.createObjectURL(cachedBlob);
+                        tile.src = objectURL;
+                    } else {
+                        fetch(tileUrl)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                cacheTile(key, blob);
+                                const objectURL = URL.createObjectURL(blob);
+                                tile.src = objectURL;
+                            })
+                            .catch(() => {
+                                tile.src = tileUrl;
+                            });
+                    }
+                });
+
+                return tile;
+            }
+        });
+
+        currentTiles = new CustomTileLayer(url, { maxZoom: 20 }).addTo(map);
         const pane = document.querySelector('.leaflet-tile-pane');
         if (pane) pane.style.filter = filter;
     };

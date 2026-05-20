@@ -382,6 +382,28 @@
             <div id="port-scan-result" class="console-box">Ready...</div>
           </div>
         </div>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>WiFi Channel Analyzer</h3>
+            <p class="tool-desc">Scan wireless networks and analyze channels</p>
+            <button id="start-wifi-scan" class="btn primary" style="width: 100%;">Scan WiFi</button>
+            <div id="wifi-scan-result" class="cyber-list" style="margin-top: 10px;"></div>
+          </div>
+        </div>
+
+        <div class="tool-card">
+          <div class="card-info">
+            <h3>SSL/TLS Certificate Auditor</h3>
+            <p class="tool-desc">Inspect SSL certificates of a host</p>
+            <div class="input-group">
+              <input type="text" id="ssl-host" placeholder="google.com" class="cyber-input" />
+              <input type="number" id="ssl-port" placeholder="443" class="cyber-input" style="width: 70px;" value="443" />
+              <button id="start-ssl-audit" class="btn primary">Audit</button>
+            </div>
+            <div id="ssl-result" class="console-box" style="margin-top: 10px; font-size: 0.8rem; white-space: pre-wrap; font-family: monospace;">Ready...</div>
+          </div>
+        </div>
       </div>
 
       <div id="qr-toolset" class="sub-tool-container" style="display: none;">
@@ -483,6 +505,7 @@
         <div class="chat-rooms">
           <button id="btn-lobby" class="chat-room-btn active">Public Lobby</button>
           <button id="btn-private" class="chat-room-btn">Private Room</button>
+          <button id="btn-p2p" class="chat-room-btn" style="border-color: var(--neon-purple); color: var(--neon-purple);">P2P Mode</button>
         </div>
 
         <!-- Room Setup (Private) -->
@@ -491,6 +514,19 @@
           <p style="font-size: 0.7rem; color: var(--text-dim);">Enter a Room-ID to join or create a private encrypted session.</p>
           <input type="text" id="room-id-input" class="cyber-input" placeholder="Room-ID (e.g. skooda-123)">
           <button id="join-room-btn" class="btn primary full-width">Join / Create</button>
+        </div>
+
+        <!-- P2P Setup -->
+        <div id="p2p-setup" class="room-setup" style="display: none;">
+          <h3 style="font-size: 0.9rem; color: var(--neon-purple);">P2P Offline Server</h3>
+          <p style="font-size: 0.7rem; color: var(--text-dim);">Communicate locally over WiFi without internet. One device acts as host, others join.</p>
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button id="p2p-host-btn" class="btn primary" style="flex: 1; font-size: 0.75rem;">Start Host</button>
+            <button id="p2p-client-btn" class="btn" style="flex: 1; font-size: 0.75rem;">Scan & Join</button>
+          </div>
+          <button id="p2p-stop-btn" class="btn danger full-width" style="display: none; font-size: 0.75rem;">Stop P2P</button>
+          <div id="p2p-status-info" style="font-size: 0.7rem; margin-top: 10px; color: var(--neon-cyan);">Status: Inactive</div>
+          <div id="p2p-peers-list" style="font-size: 0.7rem; margin-top: 5px; color: var(--text-dim);">Found Hosts: None</div>
         </div>
 
         <!-- Chat Window -->
@@ -562,6 +598,10 @@
         <div class="info-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
           <span class="info-label">Benutzername</span>
           <input type="text" id="settings-username" class="cyber-input" style="width: 100%;" placeholder="Username...">
+        </div>
+        <div class="info-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <span class="info-label">Shodan API Key</span>
+          <input type="text" id="settings-shodan" class="cyber-input" style="width: 100%;" placeholder="Shodan API Key...">
         </div>
         <div class="info-item" style="padding: 15px 0;">
           <span class="info-label">Chat Sounds</span>

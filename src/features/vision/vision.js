@@ -9,6 +9,7 @@ let detectionCanvas = document.createElement('canvas');
 let dCtx = detectionCanvas.getContext('2d', { alpha: false });
 detectionCanvas.width = 320;
 detectionCanvas.height = 320;
+let isDetecting = false;
 
 const espVideo = getEl('esp-video');
 const espCanvas = getEl('esp-canvas');
@@ -70,17 +71,19 @@ export async function startESP() {
 
     if (espStatus) espStatus.innerText = 'Lade GPU KI...';
     try {
-        if (!espModel) {
-            const { ObjectDetector, FilesetResolver } = await import('../../lib/mediapipe/vision_bundle.mjs');
-            const vision = await FilesetResolver.forVisionTasks('../../lib/mediapipe');
-            espModel = await ObjectDetector.createFromOptions(vision, {
-                baseOptions: {
-                    modelAssetPath: 'models/mediapipe/detector.tflite',
-                    delegate: 'GPU'
-                },
-                runningMode: 'VIDEO',
-                scoreThreshold: 0.5
-            });
+        if (!window.Android || !window.Android.detectObjects) {
+            if (!espModel) {
+                const { ObjectDetector, FilesetResolver } = await import('../../lib/mediapipe/vision_bundle.mjs');
+                const vision = await FilesetResolver.forVisionTasks('../../lib/mediapipe');
+                espModel = await ObjectDetector.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: 'models/mediapipe/detector.tflite',
+                        delegate: 'GPU'
+                    },
+                    runningMode: 'VIDEO',
+                    scoreThreshold: 0.5
+                });
+            }
         }
         if (espStatus) espStatus.innerText = 'ESP AKTIV';
 
@@ -132,16 +135,49 @@ function detectFrame() {
 }
 
 function detectLogic() {
-    if (!espVideo || !espModel) return;
+    if (!espVideo) return;
 
     if (espCanvas.width !== espVideo.clientWidth) {
         espCanvas.width = espVideo.clientWidth;
         espCanvas.height = espVideo.clientHeight;
     }
 
-    dCtx.drawImage(espVideo, 0, 0, 320, 320);
-    const detections = espModel.detectForVideo(detectionCanvas, performance.now()).detections;
-    drawDetections(detections);
+    if (window.Android && window.Android.detectObjects) {
+        if (isDetecting) return;
+        isDetecting = true;
+
+        dCtx.drawImage(espVideo, 0, 0, 320, 320);
+        const dataUrl = detectionCanvas.toDataURL('image/jpeg', 0.6);
+
+        window.onNativeObjectsDetected = (res) => {
+            isDetecting = false;
+            if (res.detections) {
+                const mappedDetections = res.detections.map(det => {
+                    const box = det.boundingBox;
+                    return {
+                        boundingBox: {
+                            originX: box.left,
+                            originY: box.top,
+                            width: box.right - box.left,
+                            height: box.bottom - box.top
+                        },
+                        categories: det.categories.map(cat => ({
+                            categoryName: cat.label,
+                            score: cat.score
+                        }))
+                    };
+                });
+                drawDetections(mappedDetections);
+            }
+        };
+
+        window.Android.detectObjects(dataUrl, 'onNativeObjectsDetected');
+    } else {
+        if (!espModel) return;
+        dCtx.drawImage(espVideo, 0, 0, 320, 320);
+        const detections = espModel.detectForVideo(detectionCanvas, performance.now()).detections;
+        drawDetections(detections);
+    }
 }
 
 function drawDetections(detections) {

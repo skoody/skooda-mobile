@@ -9,6 +9,13 @@ const privateSetup = getEl('private-setup');
 const roomIdInput = getEl('room-id-input');
 const joinRoomBtn = getEl('join-room-btn');
 const onlineDisplay = getEl('online-count');
+const btnP2p = getEl('btn-p2p');
+const p2pSetup = getEl('p2p-setup');
+const p2pHostBtn = getEl('p2p-host-btn');
+const p2pClientBtn = getEl('p2p-client-btn');
+const p2pStopBtn = getEl('p2p-stop-btn');
+const p2pStatusInfo = getEl('p2p-status-info');
+const p2pPeersList = getEl('p2p-peers-list');
 
 export let currentRoom = 'lobby';
 export let socketConnected = false;
@@ -22,7 +29,121 @@ let offlineQueue = [];
 let typingTimeout;
 const GITHUB_REPO = "skoody/skooda-mobile";
 
+const peerKeys = {};
+
+let localSocket = null;
+const discoveredHosts = {};
+
+export async function processIncomingChatMessage(msgData) {
+    if (msgData.room === currentRoom) {
+        let text = msgData.text;
+        if (msgData.encrypted) {
+            try {
+                text = await window.__TAURI__.core.invoke("decrypt_group_message", { 
+                    room: msgData.room, 
+                    sender_id: msgData.sender,
+                    encrypted_json: msgData.encrypted 
+                });
+            } catch(e) { text = "[Decryption Error: " + e + "]"; }
+        }
+        if (msgData.msg_type === 'file') {
+            appendMsg(msgData.sender, `<div class="loading-media">Lade Datei: ${msgData.text || text}...</div>`, msgData.sender === userHandle);
+        } else {
+            appendMsg(msgData.sender, text, msgData.sender === userHandle);
+        }
+
+        if (msgData.sender !== userHandle) {
+            playChatSound();
+            sendPushNotification(msgData.sender, text);
+        }
+    }
+}
+
+function connectToLocalHost(ip) {
+    p2pStatusInfo.innerText = `Status: Connecting to ws://${ip}:8080 ...`;
+    try {
+        localSocket = new WebSocket(`ws://${ip}:8080`);
+        localSocket.onopen = () => {
+            socketConnected = true;
+            p2pStatusInfo.innerText = `Status: Connected to local host ${ip}`;
+            appendMsg("System", `Verbunden mit lokalem Mesh-Server auf ${ip}`, true);
+            sendHandshake();
+        };
+        localSocket.onmessage = async (event) => {
+            let msgData;
+            try { msgData = JSON.parse(event.data); } catch(e) { return; }
+            processIncomingChatMessage(msgData);
+        };
+        localSocket.onclose = () => {
+            socketConnected = false;
+            p2pStatusInfo.innerText = "Status: Connection closed.";
+        };
+        localSocket.onerror = (e) => {
+            p2pStatusInfo.innerText = `Status: Connection error.`;
+        };
+    } catch(e) {
+        p2pStatusInfo.innerText = `Status: Failed to connect: ${e.message}`;
+    }
+}
+
+window.onP2PPeerDiscovered = (peer) => {
+    if (peer.is_host && !discoveredHosts[peer.ip]) {
+        discoveredHosts[peer.ip] = peer;
+        const btnJoin = document.createElement('button');
+        btnJoin.className = "btn mini primary";
+        btnJoin.style.marginTop = "5px";
+        btnJoin.innerText = `Join ${peer.name} (${peer.ip})`;
+        btnJoin.onclick = () => connectToLocalHost(peer.ip);
+        p2pPeersList.innerHTML = "Found Hosts: <br>";
+        p2pPeersList.appendChild(btnJoin);
+    }
+};
+
+window.onP2PMessage = (msgData) => {
+    processIncomingChatMessage(msgData);
+};
+
+window.onP2PConnection = (data) => {
+    console.log("P2P Client connection event:", data);
+    if (data.event === 'open') {
+        p2pStatusInfo.innerText = `Status: Client connected: ${data.remote}`;
+    } else {
+        p2pStatusInfo.innerText = `Status: Client disconnected: ${data.remote}`;
+    }
+};
+
+window.onP2PStatus = (data) => {
+    if (data.error) {
+        p2pStatusInfo.innerText = `Status: Error: ${data.error}`;
+    } else if (data.status === 'started') {
+        p2pStatusInfo.innerText = `Status: Local host running on port ${data.port}`;
+    }
+};
+
+export async function sendHandshake() {
+    try {
+        const my_x25519 = await window.__TAURI__.core.invoke("get_my_x25519_pubkey");
+        const my_identity = await window.__TAURI__.core.invoke("get_identity");
+        const handshakeMsg = {
+            msg_type: "handshake",
+            sender: userHandle,
+            room: currentRoom,
+            x25519_pubkey: my_x25519,
+            ed25519_pubkey: my_identity
+        };
+        await window.__TAURI__.core.invoke("send_chat_message", { message: JSON.stringify(handshakeMsg) });
+    } catch(e) { console.error("Handshake error:", e); }
+}
+
 export function initChat() {
+    let passphrase = "skoodadefaultpassphrase123";
+    if (window.Android && window.Android.getDatabasePassphrase) {
+        passphrase = window.Android.getDatabasePassphrase();
+    }
+    window.__TAURI__.core.invoke("open_secure_database", { passphrase })
+        .then(() => console.log("Secure database unlocked."))
+        .catch(e => console.error("Failed to unlock database:", e));
+
     if (sendChatBtn) sendChatBtn.onclick = () => sendChatMessage();
     if (chatInput) {
         chatInput.onkeypress = (e) => {
@@ -38,11 +159,14 @@ export function initChat() {
         btnLobby.onclick = () => {
             btnLobby.classList.add('active');
             btnPrivate.classList.remove('active');
+            if (btnP2p) btnP2p.classList.remove('active');
             privateSetup.style.display = 'none';
+            if (p2pSetup) p2pSetup.style.display = 'none';
             if (currentRoom === 'lobby') return;
             currentRoom = 'lobby';
             chatWindow.innerHTML = '';
             sendChatMessage(`System: ${userHandle} joined lobby`, true);
+            sendHandshake();
         };
     }
 
@@ -50,7 +174,19 @@ export function initChat() {
         btnPrivate.onclick = () => {
             btnPrivate.classList.add('active');
             btnLobby.classList.remove('active');
+            if (btnP2p) btnP2p.classList.remove('active');
             privateSetup.style.display = 'block';
+            if (p2pSetup) p2pSetup.style.display = 'none';
+        };
+    }
+
+    if (btnP2p) {
+        btnP2p.onclick = () => {
+            btnP2p.classList.add('active');
+            btnLobby.classList.remove('active');
+            btnPrivate.classList.remove('active');
+            privateSetup.style.display = 'none';
+            if (p2pSetup) p2pSetup.style.display = 'block';
         };
     }
 
@@ -60,9 +196,57 @@ export function initChat() {
             if (!newRoom) return;
             currentRoom = newRoom;
             privateSetup.style.display = 'none';
+            if (p2pSetup) p2pSetup.style.display = 'none';
             chatWindow.innerHTML = '';
             loadHistory();
             sendChatMessage(`System: ${userHandle} joined ${newRoom}`, true);
+            sendHandshake();
+        };
+    }
+
+    if (p2pHostBtn) {
+        p2pHostBtn.onclick = () => {
+            if (window.Android && window.Android.startP2PHost) {
+                window.Android.startP2PHost(userHandle);
+                p2pStatusInfo.innerText = "Status: Hosting local chat server...";
+                p2pHostBtn.style.display = 'none';
+                p2pClientBtn.style.display = 'none';
+                p2pStopBtn.style.display = 'block';
+            } else {
+                p2pStatusInfo.innerText = "Status: Native host mode not available.";
+            }
+        };
+    }
+
+    if (p2pClientBtn) {
+        p2pClientBtn.onclick = () => {
+            if (window.Android && window.Android.startP2PClient) {
+                window.Android.startP2PClient(userHandle);
+                p2pStatusInfo.innerText = "Status: Scanning for local hosts...";
+                p2pHostBtn.style.display = 'none';
+                p2pClientBtn.style.display = 'none';
+                p2pStopBtn.style.display = 'block';
+            } else {
+                p2pStatusInfo.innerText = "Status: Native scan mode not available.";
+            }
+        };
+    }
+
+    if (p2pStopBtn) {
+        p2pStopBtn.onclick = () => {
+            if (window.Android && window.Android.stopP2P) {
+                window.Android.stopP2P();
+            }
+            if (localSocket) {
+                try { localSocket.close(); } catch(e) {}
+                localSocket = null;
+            }
+            p2pStatusInfo.innerText = "Status: Inactive";
+            p2pPeersList.innerText = "Found Hosts: None";
+            p2pHostBtn.style.display = 'inline-block';
+            p2pClientBtn.style.display = 'inline-block';
+            p2pStopBtn.style.display = 'none';
+            connectChat();
         };
     }
 
@@ -135,6 +319,8 @@ export function initChat() {
     getEl('chat-settings-btn').onclick = () => {
         settingsUser.value = userHandle;
         settingsSounds.checked = localStorage.getItem('skooda_chat_sounds') !== 'false';
+        const settingsShodan = getEl('settings-shodan');
+        if (settingsShodan) settingsShodan.value = localStorage.getItem('shodan_api_key') || '';
         settingsModal.classList.add('active');
     };
 
@@ -145,6 +331,10 @@ export function initChat() {
             localStorage.setItem('skooda_chat_handle', userHandle);
         }
         localStorage.setItem('skooda_chat_sounds', settingsSounds.checked);
+        const settingsShodan = getEl('settings-shodan');
+        if (settingsShodan) {
+            localStorage.setItem('shodan_api_key', settingsShodan.value.trim());
+        }
         settingsModal.classList.remove('active');
         appendMsg("System", "Einstellungen gespeichert.", true, true);
     };
@@ -194,27 +384,59 @@ export async function connectChat() {
                     return;
                 }
 
-                if (msgData.room === currentRoom) {
-                    let text = msgData.text;
-                    if (msgData.encrypted) {
-                        try {
-                            text = await window.__TAURI__.core.invoke("decrypt_message", { 
-                                room: msgData.room, 
-                                encrypted_json: msgData.encrypted 
-                            });
-                        } catch(e) { text = "[Decryption Error]"; }
-                    }
-                    if (msgData.msg_type === 'file') {
-                        appendMsg(msgData.sender, `<div class="loading-media">Lade Datei: ${msgData.text}...</div>`, msgData.sender === userHandle);
-                    } else {
-                        appendMsg(msgData.sender, text, msgData.sender === userHandle);
-                    }
-
+                if (msgData.msg_type === 'handshake' && msgData.room === currentRoom) {
                     if (msgData.sender !== userHandle) {
-                        playChatSound();
-                        sendPushNotification(msgData.sender, text);
+                        if (!peerKeys[msgData.sender]) {
+                            peerKeys[msgData.sender] = { x25519: msgData.x25519_pubkey, ed25519: msgData.ed25519_pubkey };
+                            sendHandshake();
+                        }
+                        try {
+                            const mySenderKey = await window.__TAURI__.core.invoke("get_my_sender_key", { room: currentRoom });
+                            const sharedSecret = await window.__TAURI__.core.invoke("derive_shared_secret", { peer_pubkey: msgData.x25519_pubkey });
+                            const encryptedPayload = await window.__TAURI__.core.invoke("encrypt_pairwise", {
+                                shared_secret_b64: sharedSecret,
+                                plaintext: JSON.stringify(mySenderKey)
+                            });
+                            const keyExchangeMsg = {
+                                msg_type: "key_exchange",
+                                sender: userHandle,
+                                recipient: msgData.sender,
+                                room: currentRoom,
+                                encrypted_key: encryptedPayload
+                            };
+                            await window.__TAURI__.core.invoke("send_chat_message", { message: JSON.stringify(keyExchangeMsg) });
+                        } catch(e) { console.error("Key exchange generation failed:", e); }
                     }
+                    return;
                 }
+
+                if (msgData.msg_type === 'key_exchange' && msgData.room === currentRoom) {
+                    if (msgData.recipient === userHandle) {
+                        try {
+                            const peerInfo = peerKeys[msgData.sender];
+                            if (!peerInfo) {
+                                console.warn("Received key exchange from unknown peer: " + msgData.sender);
+                                return;
+                            }
+                            const sharedSecret = await window.__TAURI__.core.invoke("derive_shared_secret", { peer_pubkey: peerInfo.x25519 });
+                            const decryptedStr = await window.__TAURI__.core.invoke("decrypt_pairwise", {
+                                shared_secret_b64: sharedSecret,
+                                encrypted_json: msgData.encrypted_key
+                            });
+                            const peerSenderKey = JSON.parse(decryptedStr);
+                            await window.__TAURI__.core.invoke("store_peer_sender_key", {
+                                room: currentRoom,
+                                peer_id: msgData.sender,
+                                chain_key_b64: peerSenderKey.chain_key,
+                                verify_key_b64: peerSenderKey.verify_key
+                            });
+                            console.log("Successfully stored peer sender key for " + msgData.sender);
+                        } catch(e) { console.error("Key exchange decryption failed:", e); }
+                    }
+                    return;
+                }
+
+                processIncomingChatMessage(msgData);
             });
 
             window.__TAURI__.event.listen("chat-binary", (event) => {
@@ -241,6 +463,7 @@ export async function connectChat() {
                     if (chatWindow.innerHTML === '' || chatWindow.children.length < 5) {
                         loadHistory();
                     }
+                    sendHandshake();
                 } else if (status.includes("Disconnected") || status.includes("Error")) {
                     socketConnected = false;
                     setTimeout(() => {
@@ -389,20 +612,39 @@ export async function sendChatMessage(text = null, isSystem = false) {
 
     if (!text) chatInput.value = "";
     try {
-        const processed = await window.__TAURI__.core.invoke("process_message", { 
-            room: currentRoom, 
-            sender: userHandle, 
-            text: content, 
-            is_system: isSystem 
-        });
-        
-        const msgData = JSON.parse(processed);
-        if (msgData.msg_type === 'file' && window.lastFileBase64) {
-            await window.__TAURI__.core.invoke("send_chat_message", { message: processed, is_binary: false });
-            await window.__TAURI__.core.invoke("send_chat_message", { message: window.lastFileBase64, is_binary: true });
-            window.lastFileBase64 = null;
+        let msgPayload;
+        if (isSystem || content.startsWith("System:")) {
+            msgPayload = {
+                msg_type: "text",
+                sender: userHandle,
+                room: currentRoom,
+                text: content,
+                is_system: true
+            };
         } else {
-            await window.__TAURI__.core.invoke("send_chat_message", { message: processed, is_binary: false });
+            const encryptedJson = await window.__TAURI__.core.invoke("encrypt_group_message", {
+                room: currentRoom,
+                text: content
+            });
+            msgPayload = {
+                msg_type: content.startsWith("FILE:") ? "file" : (content.startsWith("VOICE:") ? "voice" : (content.startsWith("LOC:") ? "loc" : "text")),
+                sender: userHandle,
+                room: currentRoom,
+                encrypted: encryptedJson
+            };
+        }
+
+        const payloadStr = JSON.stringify(msgPayload);
+        if (localSocket && localSocket.readyState === WebSocket.OPEN) {
+            localSocket.send(payloadStr);
+        } else {
+            if (msgPayload.msg_type === 'file' && window.lastFileBase64) {
+                await window.__TAURI__.core.invoke("send_chat_message", { message: payloadStr, is_binary: false });
+                await window.__TAURI__.core.invoke("send_chat_message", { message: window.lastFileBase64, is_binary: true });
+                window.lastFileBase64 = null;
+            } else {
+                await window.__TAURI__.core.invoke("send_chat_message", { message: payloadStr, is_binary: false });
+            }
         }
     } catch (e) {
         console.error("Send Error", e);
