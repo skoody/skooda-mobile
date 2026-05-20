@@ -315,93 +315,185 @@
 
       <!-- Cyber Tools (Untermenü) -->
       <div id="cyber-toolset" class="sub-tool-container" style="display: none;">
-        <button class="back-btn">← Back to Tools</button>
-
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>IP Scanner</h3>
-            <p class="tool-desc">Discover devices & open ports</p>
-            <div id="scan-progress-container" class="progress-bg" style="display: none; margin-bottom: 10px;">
-              <div id="scan-progress-bar" class="progress-bar orange" style="width: 0%"></div>
-            </div>
-            <div class="btn-group">
-              <button id="start-net-scan" class="btn primary">Start Network Scan</button>
-              <button id="stop-net-scan" class="btn secondary" style="display: none;">Abort</button>
-            </div>
-            <div id="scan-list" class="cyber-list"></div>
+        <div class="cyber-header-wrapper">
+          <button class="back-btn">← Back to Tools</button>
+          <div class="cyber-title-box">
+            <h2>Tactical Suite</h2>
+            <div id="public-ip" class="public-ip-badge">Reveal Public IP</div>
           </div>
         </div>
 
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>Ping Tool</h3>
-            <div class="input-group">
-              <input type="text" id="ping-host" placeholder="8.8.8.8" class="cyber-input" />
-              <button id="start-ping" class="btn primary">Ping</button>
-            </div>
-            <div id="ping-result" class="console-box">Ready...</div>
-          </div>
+        <!-- Sub-Navigation -->
+        <div class="cyber-subnav">
+          <button class="cyber-subnav-btn active" data-cyber-tab="cyber-netscan">
+            <i>🔍</i><span>Discovery</span>
+          </button>
+          <button class="cyber-subnav-btn" data-cyber-tab="cyber-diagnostics">
+            <i>💻</i><span>Console</span>
+          </button>
+          <button class="cyber-subnav-btn" data-cyber-tab="cyber-wifi">
+            <i>📶</i><span>WiFi Spectrum</span>
+          </button>
+          <button class="cyber-subnav-btn" data-cyber-tab="cyber-ssl">
+            <i>🛡️</i><span>SSL Audit</span>
+          </button>
         </div>
 
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>DNS Lookup</h3>
-            <div class="input-group">
-              <input type="text" id="dns-host" placeholder="google.com" class="cyber-input" />
-              <button id="start-dns" class="btn primary">Lookup</button>
-            </div>
-            <div id="dns-result" class="console-box">...</div>
-          </div>
-        </div>
+        <!-- Tab 1: Network Discovery -->
+        <div id="cyber-netscan" class="cyber-tab-content active">
+          <div class="tool-card">
+            <div class="card-info">
+              <div class="card-header-flex">
+                <h3>Subnet Discovery</h3>
+                <span class="badge" id="netscan-status">Idle</span>
+              </div>
+              <p class="tool-desc">Sweep local subnet for active IP addresses, open ports and MAC vendors.</p>
+              
+              <div id="scan-progress-container" class="progress-bg" style="display: none; margin: 15px 0 10px;">
+                <div id="scan-progress-bar" class="progress-bar orange" style="width: 0%"></div>
+              </div>
 
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>Traceroute</h3>
-            <div class="input-group">
-              <input type="text" id="trace-host" placeholder="8.8.8.8" class="cyber-input" />
               <div class="btn-group">
-                <button id="start-trace" class="btn primary">Trace</button>
-                <button id="stop-trace" class="btn secondary" style="display: none;">Abort</button>
+                <button id="start-net-scan" class="btn primary">Start Subnet Scan</button>
+                <button id="stop-net-scan" class="btn secondary" style="display: none;">Abort Scan</button>
+              </div>
+
+              <div id="scan-list" class="device-grid-list" style="margin-top: 15px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Diagnostic Console -->
+        <div id="cyber-diagnostics" class="cyber-tab-content">
+          <div class="tool-card">
+            <div class="card-info">
+              <h3>Diagnostic Console</h3>
+              <p class="tool-desc">Execute diagnostics (Ping, DNS lookup, Traceroute, Port scans) in a virtual CLI terminal.</p>
+              
+              <div class="diag-selectors">
+                <label class="diag-radio">
+                  <input type="radio" name="diag-type" value="ping" checked />
+                  <span>Ping</span>
+                </label>
+                <label class="diag-radio">
+                  <input type="radio" name="diag-type" value="dns" />
+                  <span>DNS</span>
+                </label>
+                <label class="diag-radio">
+                  <input type="radio" name="diag-type" value="trace" />
+                  <span>Trace</span>
+                </label>
+                <label class="diag-radio">
+                  <input type="radio" name="diag-type" value="port" />
+                  <span>Port Scan</span>
+                </label>
+              </div>
+
+              <div class="diag-inputs">
+                <!-- Host Inputs -->
+                <div class="input-wrapper" id="ping-host-wrapper">
+                  <span class="input-prefix">IP/Host:</span>
+                  <input type="text" id="ping-host" placeholder="8.8.8.8" class="cyber-input-field" />
+                </div>
+                <div class="input-wrapper" id="dns-host-wrapper" style="display:none;">
+                  <span class="input-prefix">Domain:</span>
+                  <input type="text" id="dns-host" placeholder="google.com" class="cyber-input-field" />
+                </div>
+                <div class="input-wrapper" id="trace-host-wrapper" style="display:none;">
+                  <span class="input-prefix">IP/Host:</span>
+                  <input type="text" id="trace-host" placeholder="8.8.8.8" class="cyber-input-field" />
+                </div>
+                <div class="input-wrapper" id="port-host-wrapper" style="display:none;">
+                  <span class="input-prefix">IP/Host:</span>
+                  <input type="text" id="port-host" placeholder="192.168.1.1" class="cyber-input-field" />
+                </div>
+                
+                <!-- Ports Input (visible only for port scan) -->
+                <div class="input-wrapper" id="port-range-wrapper" style="display:none;">
+                  <span class="input-prefix">Ports:</span>
+                  <input type="text" id="port-range" placeholder="22,80,443" class="cyber-input-field" value="22,80,443" />
+                </div>
+              </div>
+
+              <div class="btn-group" style="margin-top:15px;">
+                <button id="start-ping" class="btn primary btn-diag-run">Run Ping</button>
+                <button id="start-dns" class="btn primary btn-diag-run" style="display:none;">Run DNS</button>
+                <button id="start-trace" class="btn primary btn-diag-run" style="display:none;">Run Trace</button>
+                <button id="start-port-scan" class="btn primary btn-diag-run" style="display:none;">Run Port Scan</button>
+
+                <button id="stop-trace" class="btn secondary btn-diag-stop" style="display:none;">Abort Trace</button>
+                <button id="stop-port-scan" class="btn secondary btn-diag-stop" style="display:none;">Abort Port Scan</button>
+              </div>
+
+              <!-- Terminal Output Box -->
+              <div class="terminal-container">
+                <div class="terminal-header">
+                  <span class="terminal-dot red"></span>
+                  <span class="terminal-dot yellow"></span>
+                  <span class="terminal-dot green"></span>
+                  <span class="terminal-title">tactical_diagnostics.sh</span>
+                </div>
+                <!-- Divs with standard IDs to prevent breaking JS -->
+                <div id="ping-result" class="terminal-output">Ready...</div>
+                <div id="dns-result" class="terminal-output" style="display:none;">Ready...</div>
+                <div id="trace-result" class="terminal-output" style="display:none;">Ready...</div>
+                <div id="port-scan-result" class="terminal-output" style="display:none;">Ready...</div>
+              </div>
+
+              <!-- Port Scan Visual Matrix -->
+              <div id="port-matrix-container" style="display:none; margin-top:15px;">
+                <h4 style="font-size:0.8rem; margin-bottom:5px; color:var(--text-dim);">Port Status Matrix</h4>
+                <div class="port-matrix" id="port-matrix-grid"></div>
               </div>
             </div>
-            <div id="trace-result" class="console-box">Ready...</div>
           </div>
         </div>
 
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>Single Port Scan</h3>
-            <div class="input-group">
-              <input type="text" id="port-host" placeholder="192.168.1.1" class="cyber-input" />
-              <input type="text" id="port-range" placeholder="21,22,80,443" class="cyber-input" style="width: 100px;" />
-              <div class="btn-group">
-                <button id="start-port-scan" class="btn primary">Scan</button>
-                <button id="stop-port-scan" class="btn secondary" style="display: none;">Abort</button>
+        <!-- Tab 3: WiFi Channel Analyzer -->
+        <div id="cyber-wifi" class="cyber-tab-content">
+          <div class="tool-card">
+            <div class="card-info">
+              <h3>WiFi Channel Analyzer</h3>
+              <p class="tool-desc">Real-time spectrum analysis of nearby wireless networks & channel overlap.</p>
+              
+              <button id="start-wifi-scan" class="btn primary" style="width: 100%; margin-bottom:15px;">Scan WiFi Spectrum</button>
+
+              <!-- Dynamic Spectrum Graph -->
+              <div class="spectrum-graph-wrapper">
+                <div class="spectrum-tabs">
+                  <button class="spectrum-tab-btn active" id="band-24-btn">2.4 GHz Band</button>
+                  <button class="spectrum-tab-btn" id="band-5-btn">5 GHz Band</button>
+                </div>
+                <canvas id="wifi-spectrum-canvas" class="spectrum-canvas"></canvas>
               </div>
+
+              <div id="wifi-scan-result" class="wifi-networks-list"></div>
             </div>
-            <div id="port-scan-result" class="console-box">Ready...</div>
           </div>
         </div>
 
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>WiFi Channel Analyzer</h3>
-            <p class="tool-desc">Scan wireless networks and analyze channels</p>
-            <button id="start-wifi-scan" class="btn primary" style="width: 100%;">Scan WiFi</button>
-            <div id="wifi-scan-result" class="cyber-list" style="margin-top: 10px;"></div>
-          </div>
-        </div>
+        <!-- Tab 4: SSL Auditor -->
+        <div id="cyber-ssl" class="cyber-tab-content">
+          <div class="tool-card">
+            <div class="card-info">
+              <h3>SSL/TLS Certificate Auditor</h3>
+              <p class="tool-desc">Perform SSL handshakes to inspect certificates, protocols, and cipher strength.</p>
+              
+              <div class="input-group" style="display: flex; gap: 8px;">
+                <div class="input-wrapper" style="flex:1;">
+                  <span class="input-prefix">Host:</span>
+                  <input type="text" id="ssl-host" placeholder="google.com" class="cyber-input-field" style="width:100%;" />
+                </div>
+                <div class="input-wrapper" style="width:100px;">
+                  <span class="input-prefix">Port:</span>
+                  <input type="number" id="ssl-port" placeholder="443" class="cyber-input-field" style="width:100%;" value="443" />
+                </div>
+              </div>
 
-        <div class="tool-card">
-          <div class="card-info">
-            <h3>SSL/TLS Certificate Auditor</h3>
-            <p class="tool-desc">Inspect SSL certificates of a host</p>
-            <div class="input-group">
-              <input type="text" id="ssl-host" placeholder="google.com" class="cyber-input" />
-              <input type="number" id="ssl-port" placeholder="443" class="cyber-input" style="width: 70px;" value="443" />
-              <button id="start-ssl-audit" class="btn primary">Audit</button>
+              <button id="start-ssl-audit" class="btn primary" style="width:100%; margin-top:15px;">Audit Certificate</button>
+
+              <div id="ssl-result" class="ssl-audit-box">Ready...</div>
             </div>
-            <div id="ssl-result" class="console-box" style="margin-top: 10px; font-size: 0.8rem; white-space: pre-wrap; font-family: monospace;">Ready...</div>
           </div>
         </div>
       </div>
