@@ -12,7 +12,7 @@ export PATH=$PWD/.bin:$PATH
 # Cargo Linker Settings
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
 
-echo "🚀 Starte APK Build v0.8.3 (Professional Cyber Tools Upgrade)..."
+echo "🚀 Starte APK Build v0.8.4 (Professional Cyber Tools Upgrade)..."
 npx tauri android build --apk --ci
 cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk skooda-mobile.apk
 echo "✅ Build fertig: skooda-mobile.apk"
