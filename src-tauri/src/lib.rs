@@ -43,6 +43,23 @@ async fn get_identity(state: State<'_, ChatState>) -> Result<String, String> {
 }
 
 #[tauri::command]
+async fn sign_payload(state: State<'_, ChatState>, msg: String) -> Result<String, String> {
+    let signature = state.signing_key.sign(msg.as_bytes());
+    Ok(BASE64_STANDARD.encode(signature.to_bytes()))
+}
+
+#[tauri::command]
+async fn verify_payload(msg: String, signature_b64: String, pubkey_b64: String) -> Result<bool, String> {
+    let pubkey_bytes = BASE64_STANDARD.decode(pubkey_b64).map_err(|e| e.to_string())?;
+    let pubkey = VerifyingKey::from_bytes(&pubkey_bytes.try_into().map_err(|_| "Invalid public key bytes length".to_string())?).map_err(|e| e.to_string())?;
+    
+    let signature_bytes = BASE64_STANDARD.decode(signature_b64).map_err(|e| e.to_string())?;
+    let signature = Signature::from_slice(&signature_bytes).map_err(|e| e.to_string())?;
+    
+    Ok(pubkey.verify(msg.as_bytes(), &signature).is_ok())
+}
+
+#[tauri::command]
 async fn get_my_x25519_pubkey(state: State<'_, ChatState>) -> Result<String, String> {
     let pubkey = PublicKey::from(&state.encryption_secret);
     Ok(BASE64_STANDARD.encode(pubkey.to_bytes()))
@@ -570,6 +587,8 @@ pub fn run() {
             connect_chat, 
             send_chat_message,
             get_identity,
+            sign_payload,
+            verify_payload,
             get_my_x25519_pubkey,
             derive_shared_secret,
             encrypt_pairwise,
@@ -583,6 +602,7 @@ pub fn run() {
             save_to_history,
             get_chat_history,
             mbtiles::get_mbtiles_tile,
+            mbtiles::get_mbtiles_info,
             routing::find_shortest_path,
             strip_image_metadata
         ])

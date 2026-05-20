@@ -37,6 +37,10 @@ const discoveredHosts = {};
 export async function processIncomingChatMessage(msgData) {
     if (msgData.room === currentRoom) {
         let text = msgData.text;
+        let secType = msgData.encrypted ? 'e2ee' : 'clear';
+        if (localSocket) secType = 'p2p';
+        if (msgData.is_system) secType = 'system';
+
         if (msgData.encrypted) {
             try {
                 text = await window.__TAURI__.core.invoke("decrypt_group_message", { 
@@ -47,9 +51,9 @@ export async function processIncomingChatMessage(msgData) {
             } catch(e) { text = "[Decryption Error: " + e + "]"; }
         }
         if (msgData.msg_type === 'file') {
-            appendMsg(msgData.sender, `<div class="loading-media">Lade Datei: ${msgData.text || text}...</div>`, msgData.sender === userHandle);
+            appendMsg(msgData.sender, `<div class="loading-media">Lade Datei: ${msgData.text || text}...</div>`, msgData.sender === userHandle, false, secType);
         } else {
-            appendMsg(msgData.sender, text, msgData.sender === userHandle);
+            appendMsg(msgData.sender, text, msgData.sender === userHandle, false, secType);
         }
 
         if (msgData.sender !== userHandle) {
@@ -66,7 +70,7 @@ function connectToLocalHost(ip) {
         localSocket.onopen = () => {
             socketConnected = true;
             p2pStatusInfo.innerText = `Status: Connected to local host ${ip}`;
-            appendMsg("System", `Verbunden mit lokalem Mesh-Server auf ${ip}`, true);
+            appendMsg("System", `Verbunden mit lokalem Mesh-Server auf ${ip}`, true, false, 'system');
             sendHandshake();
         };
         localSocket.onmessage = async (event) => {
@@ -145,6 +149,48 @@ export function initChat() {
         .catch(e => console.error("Failed to unlock database:", e));
 
     if (sendChatBtn) sendChatBtn.onclick = () => sendChatMessage();
+
+    // Keys Modal
+    const keysModal = getEl('chat-keys-modal');
+    const chatKeysBtn = getEl('chat-keys-btn');
+    const keysClose = getEl('keys-close');
+    const chatKeysList = getEl('chat-keys-list');
+
+    if (chatKeysBtn) {
+        chatKeysBtn.onclick = () => {
+            if (chatKeysList) {
+                let html = "";
+                const peers = Object.keys(peerKeys);
+                if (peers.length === 0) {
+                    html = '<div style="color: var(--text-dim);">No active E2EE peer sessions.</div>';
+                } else {
+                    html = '<table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.7rem;">';
+                    html += '<tr style="border-bottom: 1px solid var(--border-color); color: var(--neon-cyan);"><th style="text-align: left; padding: 4px;">Peer</th><th style="text-align: left; padding: 4px;">X25519 Key (Pub)</th></tr>';
+                    peers.forEach(peer => {
+                        const keyInfo = peerKeys[peer];
+                        const x25519Short = keyInfo.x25519 ? keyInfo.x25519.substring(0, 20) + "..." : "None";
+                        html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 6px 4px; font-weight: bold; color: var(--neon-purple);">${peer}</td><td style="padding: 6px 4px; word-break: break-all; color: var(--text-dim);">${x25519Short}</td></tr>`;
+                    });
+                    html += '</table>';
+                }
+                chatKeysList.innerHTML = html;
+            }
+            if (keysModal) keysModal.classList.add('active');
+        };
+    }
+
+    if (keysClose) {
+        keysClose.onclick = () => {
+            if (keysModal) keysModal.classList.remove('active');
+        };
+    }
+
+    const retrySyncBtn = getEl('chat-retry-sync');
+    if (retrySyncBtn) {
+        retrySyncBtn.onclick = () => {
+            processOfflineQueue();
+        };
+    }
     if (chatInput) {
         chatInput.onkeypress = (e) => {
             if (e.key === 'Enter') sendChatMessage();
@@ -528,12 +574,15 @@ export async function loadHistory() {
     try {
         const history = await window.__TAURI__.core.invoke("get_chat_history", { room: currentRoom });
         history.forEach(m => {
-            appendMsg(m.sender, m.text, m.isMe, true);
+            let secType = 'e2ee';
+            if (m.sender === 'System') secType = 'system';
+            else if (localSocket) secType = 'p2p';
+            appendMsg(m.sender, m.text, m.isMe, true, secType);
         });
     } catch (e) { console.error("History Error", e); }
 }
 
-export function appendMsg(sender, text, isMe, skipSave = false) {
+export function appendMsg(sender, text, isMe, skipSave = false, securityType = 'e2ee') {
     const div = document.createElement("div");
     div.className = `chat-bubble ${isMe ? "sent" : "received"}`;
     
@@ -547,12 +596,18 @@ export function appendMsg(sender, text, isMe, skipSave = false) {
         
         if (isImg) {
             contentHtml += `<div class="file-msg">
-                <img src="data:image/auto;base64,${data}" style="max-width: 100%; border-radius: 8px; margin-top: 5px; border: 1px solid var(--neon-cyan);">
+                <img src="data:image/auto;base64,${data}" style="max-width: 100%; border-radius: 8px; margin-top: 5px; border: 1px solid var(--neon-cyan); cursor: pointer; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);" onclick="window.open('data:image/auto;base64,${data}')">
                 <div style="font-size: 0.7rem; margin-top: 5px;">📎 ${meta}</div>
                 <button class="btn mini btn-download" data-name="${meta}" data-data="${data}">Save</button>
             </div>`;
         } else {
-            contentHtml += `<div class="file-msg">📎 ${meta} <button class="btn mini btn-download" data-name="${meta}" data-data="${data}" style="margin-left: 10px;">Save</button></div>`;
+            contentHtml += `<div class="file-msg">
+                <div style="display: flex; align-items: center; gap: 8px; margin: 5px 0;">
+                    <span style="font-size: 1.5rem;">📄</span>
+                    <span style="font-size: 0.75rem; word-break: break-all;">${meta}</span>
+                </div>
+                <button class="btn mini btn-download" data-name="${meta}" data-data="${data}">Save File</button>
+            </div>`;
         }
     } else if (text.startsWith("VOICE:")) {
         const data = text.substring(6);
@@ -564,7 +619,20 @@ export function appendMsg(sender, text, isMe, skipSave = false) {
         contentHtml += `<div class="text">${text}</div>`;
     }
     
-    contentHtml += `<span class="signed-badge">🛡️ VERIFIED</span>`;
+    let badgeHtml = "";
+    if (securityType === 'e2ee') {
+        badgeHtml = `<span class="signed-badge" style="border-color: var(--neon-green); color: var(--neon-green); background: rgba(0, 255, 85, 0.1);">🔒 E2EE SECURE</span>`;
+    } else if (securityType === 'p2p') {
+        badgeHtml = `<span class="signed-badge" style="border-color: var(--neon-cyan); color: var(--neon-cyan); background: rgba(0, 242, 255, 0.1);">🛜 P2P MODE</span>`;
+    } else if (securityType === 'lora') {
+        badgeHtml = `<span class="signed-badge" style="border-color: var(--neon-purple); color: var(--neon-purple); background: rgba(162, 0, 255, 0.1);">📡 LORA MESH</span>`;
+    } else if (securityType === 'system') {
+        badgeHtml = `<span class="signed-badge" style="border-color: var(--text-dim); color: var(--text-dim); background: rgba(255, 255, 255, 0.05);">⚙️ SYSTEM</span>`;
+    } else {
+        badgeHtml = `<span class="signed-badge" style="border-color: var(--neon-red); color: var(--neon-red); background: rgba(255, 0, 85, 0.1);">⚠️ CLEAR</span>`;
+    }
+    
+    contentHtml += badgeHtml;
     
     div.innerHTML = contentHtml;
     
@@ -627,10 +695,23 @@ function showTypingIndicator(sender) {
     window.typingTimer = setTimeout(() => indicator.innerText = '', 3000);
 }
 
+function updateOfflineQueueBanner() {
+    const banner = getEl('chat-offline-banner');
+    const textEl = getEl('offline-banner-text');
+    if (!banner || !textEl) return;
+    if (offlineQueue.length > 0) {
+        textEl.innerText = `⚠️ Offline: ${offlineQueue.length} queued messages`;
+        banner.style.display = 'flex';
+    } else {
+        banner.style.display = 'none';
+    }
+}
+
 async function processOfflineQueue() {
     while (offlineQueue.length > 0 && socketConnected) {
         const msg = offlineQueue.shift();
         await sendChatMessage(msg.text, msg.isSystem);
+        updateOfflineQueueBanner();
     }
 }
 
@@ -642,7 +723,8 @@ export async function sendChatMessage(text = null, isSystem = false) {
 
     if (!socketConnected) {
         offlineQueue.push({ text: content, isSystem });
-        appendMsg("System", "Offline. Nachricht wird gesendet, sobald Verbindung steht.", false);
+        updateOfflineQueueBanner();
+        appendMsg("System", "Offline. Nachricht wird gesendet, sobald Verbindung steht.", false, false, 'system');
         return;
     }
 
@@ -685,6 +767,7 @@ export async function sendChatMessage(text = null, isSystem = false) {
     } catch (e) {
         console.error("Send Error", e);
         offlineQueue.push({ text: content, isSystem });
+        updateOfflineQueueBanner();
     }
 }
 

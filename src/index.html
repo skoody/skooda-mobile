@@ -263,12 +263,35 @@
               <button id="fullscreen-map" class="map-top-btn" title="Toggle Fullscreen">⛶</button>
               <button id="clear-route" class="map-top-btn" title="Clear Route">🗑️</button>
             </div>
-            <div class="map-overlay-stats">
-              <div id="map-coords">GPS: Scanning...</div>
-              <div id="map-speed">SPD: 0.0 km/h</div>
-              <div id="map-alt">ALT: 0 m</div>
-              <div id="map-acc">ACC: -- m</div>
-              <button id="map-theme-toggle" class="map-theme-btn">🌓 Toggle Theme</button>
+            <div class="map-overlay-stats" style="max-height: 250px; overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 5px;">
+                <span id="map-heading" style="font-weight: bold; color: var(--neon-cyan);">HDG: 0° N</span>
+                <span id="map-speed">SPD: 0.0 km/h</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px;">
+                <span id="map-alt">ALT: 0 m</span>
+                <span id="map-acc">ACC: -- m</span>
+              </div>
+              
+              <!-- Trail & GPX controls -->
+              <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                  <button id="btn-trail-rec" class="btn mini" style="flex: 1; font-size: 0.62rem; padding: 4px 6px; border-color: var(--neon-red); color: var(--neon-red); background: transparent;">🔴 Start Rec</button>
+                  <button id="btn-gpx-export" class="btn mini" style="font-size: 0.62rem; padding: 4px 6px; background: transparent;">Export GPX</button>
+                  <button id="btn-gpx-import" class="btn mini" style="font-size: 0.62rem; padding: 4px 6px; background: transparent;">Import GPX</button>
+                  <input type="file" id="map-gpx-input" accept=".gpx,.json" style="display: none;">
+                </div>
+                <div id="route-export-container" style="display: none; margin-bottom: 5px; width: 100%;">
+                  <button id="btn-route-export" class="btn mini primary" style="font-size: 0.62rem; padding: 4px 6px; width: 100%;">Export Route GPX</button>
+                </div>
+              </div>
+
+              <!-- MBTiles Metadata Inspector -->
+              <div id="mbtiles-inspector" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px; font-size: 0.62rem; color: var(--text-dim); font-family: monospace; line-height: 1.3;">
+                <div>MBTiles: <span id="inspect-mbtiles-name">None</span></div>
+                <div>Zoom: <span id="inspect-mbtiles-zoom">--</span></div>
+                <div>Size: <span id="inspect-mbtiles-size">--</span></div>
+              </div>
             </div>
             <button id="center-map" class="map-btn">🎯</button>
           </div>
@@ -281,8 +304,17 @@
         <div class="tool-card full-row no-pad">
           <div class="esp-container">
             <video id="esp-video" autoplay playsinline muted></video>
+            <img id="esp-mjpeg" style="display: none; width: 100%; height: 100%; object-fit: cover;" crossorigin="anonymous">
             <canvas id="esp-canvas"></canvas>
             <div id="esp-reticle" class="esp-reticle"></div>
+            
+            <!-- Performance HUD Overlay -->
+            <div id="esp-hud" class="esp-hud-overlay" style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); border: 1px solid var(--border-color); border-radius: 4px; padding: 6px 8px; font-family: monospace; font-size: 0.65rem; color: var(--neon-cyan); pointer-events: none; z-index: 10; line-height: 1.4; display: none;">
+              <div>INF: <span id="esp-hud-inf">--</span> ms</div>
+              <div>FPS: <span id="esp-hud-fps">--</span></div>
+              <div>DEV: <span id="esp-hud-dev">Local/API</span></div>
+              <div>DET: <span id="esp-hud-det">0</span></div>
+            </div>
             
             <div class="esp-ui compact">
               <div class="esp-header">
@@ -291,13 +323,39 @@
                 <button id="esp-capture-btn" class="icon-btn mini" title="Capture Target">📸</button>
               </div>
               
+              <!-- Stream Source Configuration -->
+              <div class="esp-config-bar" style="padding: 5px 10px; background: rgba(0,0,0,0.4); border-top: 1px solid var(--border-color); font-size: 0.75rem;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <span style="color: var(--neon-cyan)">Source:</span>
+                  <select id="esp-source-select" class="cyber-input" style="padding: 2px 5px; font-size: 0.7rem; flex: 1;">
+                    <option value="local">Local Camera</option>
+                    <option value="ip">IP Camera (MJPEG)</option>
+                  </select>
+                  <div id="esp-ip-url-container" style="display: none; align-items: center; flex: 2;">
+                    <input type="text" id="esp-ip-url" class="cyber-input" style="width: 100%; padding: 2px 5px; font-size: 0.7rem;" placeholder="http://192.168.1.50:81/stream">
+                  </div>
+                </div>
+              </div>
+              
               <div class="esp-controls-row">
                 <div class="esp-filters mini">
                   <label><input type="checkbox" id="esp-filter-person" checked> P</label>
                   <label><input type="checkbox" id="esp-filter-car" checked> V</label>
                   <label><input type="checkbox" id="esp-filter-other"> O</label>
                 </div>
-                <div class="esp-sliders mini" id="esp-sliders" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem;">
+                  <span style="color: var(--neon-cyan)">Color:</span>
+                  <select id="esp-box-color" class="cyber-input" style="padding: 2px; font-size: 0.7rem;">
+                    <option value="#00f2ff">Cyan</option>
+                    <option value="#00ff44">Green</option>
+                    <option value="#ff0055">Pink</option>
+                    <option value="#ffd500">Yellow</option>
+                  </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem; flex: 1; margin-left: 5px;">
+                  <input type="text" id="esp-custom-filter" class="cyber-input" style="width: 100%; padding: 2px 5px; font-size: 0.7rem;" placeholder="Filter (z.B. cup)">
+                </div>
+                <div class="esp-sliders mini" id="esp-sliders" style="display: none; flex: 1;">
                   <div class="slider-mini">
                     <span>Z: <span id="esp-zoom-val">1x</span></span>
                     <input type="range" id="esp-zoom" min="1" max="5" step="0.1" value="1">
@@ -535,8 +593,32 @@
           <div class="card-info">
             <h3>QR Generator</h3>
             <input type="text" id="qr-input" placeholder="Enter text..." class="cyber-input" />
-            <div id="qr-code-result" class="qr-container"></div>
-            <div class="btn-group">
+            
+            <!-- Custom QR Options -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0; font-size: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="qr-sign-payload">
+                <span style="color: var(--neon-cyan)">🔒 Sign with Ed25519 Identity</span>
+              </label>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span>Color:</span>
+                <select id="qr-color" class="cyber-input" style="padding: 2px 5px; font-size: 0.7rem; flex: 1;">
+                  <option value="#00f2ff">Neon Cyan</option>
+                  <option value="#00ff44">Toxic Green</option>
+                  <option value="#ff0055">Hot Pink</option>
+                  <option value="#ffd500">Cyber Yellow</option>
+                </select>
+                <span>Size:</span>
+                <select id="qr-size-select" class="cyber-input" style="padding: 2px 5px; font-size: 0.7rem; flex: 1;">
+                  <option value="180">Small</option>
+                  <option value="256" selected>Medium</option>
+                  <option value="360">Large</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="qr-code-result" class="qr-container" style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 200px;"></div>
+            <div class="btn-group" style="margin-top: 10px;">
               <button id="qr-clear" class="btn secondary">Clear</button>
               <button id="qr-download" class="btn primary" style="display: none;">Download</button>
             </div>
@@ -546,6 +628,15 @@
         <div class="tool-card">
           <div class="card-info">
             <h3>QR Scanner</h3>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.75rem;">
+              <label style="display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="qr-batch-mode">
+                <span style="color: var(--neon-cyan)">Batch Scan Mode</span>
+              </label>
+              <button id="qr-clear-history" class="btn mini" style="padding: 2px 6px; font-size: 0.65rem; border-color: var(--neon-red); color: var(--neon-red); background: transparent;">Clear History</button>
+            </div>
+
             <div id="reader-container" class="qr-reader-container">
               <div id="reader" class="qr-reader"></div>
               <div class="scan-line"></div>
@@ -556,12 +647,30 @@
                 <span id="zoom-max">5x</span>
               </div>
             </div>
-            <div id="scan-result" class="scan-text">Ready...</div>
-            <div id="scanner-actions" class="btn-group" style="display: none;">
+            
+            <div id="scan-result" class="scan-text" style="font-family: monospace; font-size: 0.75rem; word-break: break-all; margin: 10px 0;">Ready...</div>
+            
+            <!-- Hex Viewer Panel -->
+            <div id="qr-hex-container" style="display: none; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px; margin-bottom: 10px; font-family: monospace; font-size: 0.65rem; color: var(--text-dim); max-height: 100px; overflow-y: auto; width: 100%;">
+              <div style="color: var(--neon-cyan); margin-bottom: 4px; font-weight: bold;">Hex View:</div>
+              <div id="qr-hex-view" style="word-break: break-all; line-height: 1.3;"></div>
+            </div>
+
+            <div id="scanner-actions" class="btn-group" style="display: none; margin-bottom: 10px;">
               <button id="qr-copy" class="btn secondary">Copy</button>
               <button id="qr-open" class="btn primary">Open</button>
             </div>
-            <button id="start-scan" class="btn primary full-width">Start Scanner</button>
+            
+            <button id="start-scan" class="btn primary full-width" style="margin-bottom: 15px;">Start Scanner</button>
+
+            <!-- Scan History List -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 10px; width: 100%;">
+              <h4 style="font-size: 0.8rem; color: var(--neon-cyan); margin-bottom: 8px;">Scan History Log</h4>
+              <div id="qr-scan-history-list" class="cyber-list" style="max-height: 200px; overflow-y: auto; font-size: 0.7rem; width: 100%;">
+                <div style="color: var(--text-dim); text-align: center; padding: 10px 0;">No items scanned yet.</div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -621,9 +730,16 @@
         <h1>Skooda Chat</h1>
         <div id="online-count" class="online-badge" style="margin-left: auto; font-size: 0.7rem; background: rgba(0,255,255,0.1); padding: 4px 8px; border-radius: 12px; border: 1px solid var(--neon-cyan); color: var(--neon-cyan);">0 Online</div>
         <button id="chat-settings-btn" class="icon-btn mini" style="margin-left: 10px;">⚙️</button>
+        <button id="chat-keys-btn" class="icon-btn mini" style="margin-left: 5px;" title="E2EE Keys">🔑</button>
       </header>
 
       <div class="chat-container">
+        <!-- Offline Sync Banner -->
+        <div id="chat-offline-banner" class="offline-sync-banner" style="display: none; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; border-radius: 8px; margin-bottom: 10px; font-size: 0.75rem; color: #ffaa00; font-family: monospace; width: 100%;">
+          <span id="offline-banner-text">⚠️ Offline: 0 queued messages</span>
+          <button id="chat-retry-sync" class="btn mini" style="padding: 2px 6px; font-size: 0.7rem; border-color: #ffaa00; color: #ffaa00; background: transparent;">Retry Sync</button>
+        </div>
+
         <div class="chat-rooms">
           <button id="btn-lobby" class="chat-room-btn active">Public Lobby</button>
           <button id="btn-private" class="chat-room-btn">Private Room</button>
@@ -747,6 +863,24 @@
       <div class="action-list">
         <button id="settings-save" class="action-item" style="color: var(--neon-cyan)">💾 Speichern</button>
         <button id="settings-close" class="action-item" style="color: var(--text-dim)">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT KEYS MODAL -->
+  <div id="chat-keys-modal" class="modal-overlay">
+    <div class="action-modal">
+      <div class="modal-title">E2EE Session & Key Inspector</div>
+      <div class="cyber-list" style="padding: 15px; max-height: 300px; overflow-y: auto; width: 100%;">
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px;">
+          Active Cryptographic Peer Keys (X25519) and Ratchet Status:
+        </div>
+        <div id="chat-keys-list" style="font-family: monospace; font-size: 0.72rem; width: 100%; word-break: break-all; line-height: 1.4;">
+          <div style="color: var(--text-dim);">No active E2EE peer sessions.</div>
+        </div>
+      </div>
+      <div class="action-list">
+        <button id="keys-close" class="action-item" style="color: var(--text-dim)">Schließen</button>
       </div>
     </div>
   </div>

@@ -16,6 +16,13 @@ let routingStartMarker = null;
 let routingEndMarker = null;
 let routingPolyline = null;
 
+// Trail & GPX State Variables
+let trailCoords = [];
+let trailPolyline = null;
+let isRecordingTrail = false;
+let importedPolylines = [];
+let lastSolvedRoutePoints = [];
+
 export function initMap() {
     const mapEl = document.getElementById('map');
     if (!mapEl) return;
@@ -151,6 +158,7 @@ export function initMap() {
 
     setTiles(mapThemeMode);
     loadMarkers();
+    inspectMBTiles();
 
     map.on('zoomend', () => {
         setTimeout(() => { map.invalidateSize(); }, 100);
@@ -169,7 +177,6 @@ export function initMap() {
     mapMarker = L.marker([0, 0], { icon: arrowIcon }).addTo(map);
     accuracyCircle = L.circle([0, 0], { className: 'accuracy-circle', radius: 0 }).addTo(map);
 
-    const coordsEl = getEl('map-coords');
     const speedEl = getEl('map-speed');
     const accEl = getEl('map-acc');
     const altEl = getEl('map-alt');
@@ -189,17 +196,27 @@ export function initMap() {
                 map.panTo(latlng, { animate: true, duration: 0.5 });
             }
 
+            // Track recording
+            if (isRecordingTrail) {
+                trailCoords.push(latlng);
+                if (trailPolyline) {
+                    trailPolyline.setLatLngs(trailCoords);
+                } else {
+                    trailPolyline = L.polyline(trailCoords, { color: '#ff3b30', weight: 4, dashArray: '5, 5' }).addTo(map);
+                }
+            }
+
             const kmh = speed ? (speed * 3.6).toFixed(1) : "0.0";
-            if (coordsEl) coordsEl.innerText = `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
             if (speedEl) speedEl.innerText = `SPD: ${kmh} km/h`;
             if (altEl) altEl.innerText = `ALT: ${altitude ? Math.round(altitude) : 0} m`;
             if (accEl) accEl.innerText = `ACC: ${Math.round(accuracy)} m`;
         }, (err) => {
-            if (coordsEl) coordsEl.innerText = "GPS Error: " + err.code;
+            console.error("GPS Watch error", err);
         }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     }
 
     map.on('click', (e) => {
+        if (isRoutingMode) return;
         addTacticalMarker(e.latlng.lat, e.latlng.lng, true);
         if (window.navigator.vibrate) window.navigator.vibrate(50);
     });
@@ -235,6 +252,11 @@ export function initMap() {
             distanceLine = null;
             distanceLabel = null;
             localStorage.removeItem('skooda_markers');
+
+            // Clear imported tracks
+            importedPolylines.forEach(p => map.removeLayer(p));
+            importedPolylines = [];
+
             if (window.navigator.vibrate) window.navigator.vibrate(50);
         };
     }
@@ -271,6 +293,84 @@ export function initMap() {
         };
     }
 
+    // Trail Recorder Button
+    const trailRecBtn = getEl('btn-trail-rec');
+    if (trailRecBtn) {
+        trailRecBtn.onclick = () => {
+            isRecordingTrail = !isRecordingTrail;
+            if (isRecordingTrail) {
+                trailCoords = [];
+                if (trailPolyline) map.removeLayer(trailPolyline);
+                trailPolyline = null;
+                trailRecBtn.innerText = '⏹️ Stop Rec';
+                trailRecBtn.style.color = 'var(--neon-green)';
+                trailRecBtn.style.borderColor = 'var(--neon-green)';
+            } else {
+                trailRecBtn.innerText = '🔴 Start Rec';
+                trailRecBtn.style.color = 'var(--neon-red)';
+                trailRecBtn.style.borderColor = 'var(--neon-red)';
+            }
+        };
+    }
+
+    // GPX Exporter Button
+    const gpxExportBtn = getEl('btn-gpx-export');
+    if (gpxExportBtn) {
+        gpxExportBtn.onclick = () => {
+            exportToGpx(trailCoords, 'trail-' + Date.now() + '.gpx');
+        };
+    }
+
+    // GPX Importer Buttons
+    const gpxImportBtn = getEl('btn-gpx-import');
+    const gpxInput = getEl('map-gpx-input');
+    if (gpxImportBtn && gpxInput) {
+        gpxImportBtn.onclick = () => gpxInput.click();
+        gpxInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const text = evt.target.result;
+                if (file.name.endsWith('.json')) {
+                    try {
+                        const coords = JSON.parse(text);
+                        drawImportedPolyline(coords);
+                    } catch(err) { alert("Invalid JSON trail format"); }
+                } else {
+                    // GPX XML Parser
+                    try {
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(text, "text/xml");
+                        const trkpts = xmlDoc.getElementsByTagName("trkpt");
+                        const pts = [];
+                        for (let i = 0; i < trkpts.length; i++) {
+                            const lat = parseFloat(trkpts[i].getAttribute("lat"));
+                            const lon = parseFloat(trkpts[i].getAttribute("lon"));
+                            if (!isNaN(lat) && !isNaN(lon)) {
+                                pts.push([lat, lon]);
+                            }
+                        }
+                        if (pts.length > 0) {
+                            drawImportedPolyline(pts);
+                        } else {
+                            alert("No GPS points found in GPX file");
+                        }
+                    } catch(err) { alert("Failed to parse GPX XML"); }
+                }
+            };
+            reader.readAsText(file);
+        };
+    }
+
+    // Route Export Button
+    const routeExportBtn = getEl('btn-route-export');
+    if (routeExportBtn) {
+        routeExportBtn.onclick = () => {
+            exportToGpx(lastSolvedRoutePoints, 'route-' + Date.now() + '.gpx');
+        };
+    }
+
     const ThemeToggle = L.Control.extend({
         options: { position: 'bottomright' },
         onAdd: function () {
@@ -283,6 +383,7 @@ export function initMap() {
                 setTiles(mapThemeMode);
                 const icons = ['🌑', '☀️', '🌍', '📦'];
                 btn.innerHTML = icons[mapThemeMode];
+                inspectMBTiles();
             });
             return btn;
         }
@@ -340,6 +441,9 @@ export function initMap() {
         routingStartMarker = null;
         routingEndMarker = null;
         routingPolyline = null;
+        lastSolvedRoutePoints = [];
+        const routeContainer = getEl('route-export-container');
+        if (routeContainer) routeContainer.style.display = 'none';
     }
 
     function calculateOfflineRoute() {
@@ -357,6 +461,10 @@ export function initMap() {
             if (routingPolyline) map.removeLayer(routingPolyline);
             routingPolyline = L.polyline(pathCoords, { color: 'var(--neon-cyan)', weight: 5, dashArray: '5, 10' }).addTo(map);
             map.fitBounds(routingPolyline.getBounds());
+            
+            lastSolvedRoutePoints = pathCoords;
+            const routeContainer = getEl('route-export-container');
+            if (routeContainer) routeContainer.style.display = 'block';
         }).catch(err => {
             console.error("Routing error:", err);
             alert("Routing failed: " + err);
@@ -393,6 +501,74 @@ export function initMap() {
             }).addTo(map);
         }
     });
+}
+
+function inspectMBTiles() {
+    const nameEl = getEl('inspect-mbtiles-name');
+    const zoomEl = getEl('inspect-mbtiles-zoom');
+    const sizeEl = getEl('inspect-mbtiles-size');
+    if (!nameEl || !zoomEl || !sizeEl) return;
+
+    if (mapThemeMode !== 3) {
+        nameEl.innerText = "None (Online Map)";
+        zoomEl.innerText = "--";
+        sizeEl.innerText = "--";
+        return;
+    }
+
+    const mbtilesPath = localStorage.getItem('mbtiles_path') || 'map.mbtiles';
+    const filename = mbtilesPath.substring(mbtilesPath.lastIndexOf('/') + 1);
+    nameEl.innerText = filename;
+
+    window.__TAURI__.core.invoke("get_mbtiles_info", { path: mbtilesPath })
+        .then(info => {
+            zoomEl.innerText = `${info.min_zoom ?? 0} - ${info.max_zoom ?? 20}`;
+            sizeEl.innerText = formatBytes(info.size_bytes);
+        })
+        .catch(err => {
+            zoomEl.innerText = "Error";
+            sizeEl.innerText = "Not Found";
+        });
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function drawImportedPolyline(coords) {
+    const p = L.polyline(coords, { color: 'var(--neon-purple)', weight: 4 }).addTo(map);
+    importedPolylines.push(p);
+    map.fitBounds(p.getBounds());
+}
+
+function exportToGpx(coords, filename) {
+    if (!coords || coords.length === 0) {
+        alert("No track coords to export.");
+        return;
+    }
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Skooda Mobile" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>Track</name>
+    <trkseg>`;
+    coords.forEach(p => {
+        const lat = Array.isArray(p) ? p[0] : (p.lat !== undefined ? p.lat : p[0]);
+        const lon = Array.isArray(p) ? p[1] : (p.lng !== undefined ? p.lng : p[1]);
+        xml += `\n      <trkpt lat="${lat}" lon="${lon}"></trkpt>`;
+    });
+    xml += `\n    </trkseg>
+  </trk>
+</gpx>`;
+    const blob = new Blob([xml], { type: 'application/gpx+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
 }
 
 export function addTacticalMarker(lat, lng, save = false) {
@@ -479,6 +655,21 @@ export function updateMapHeading(sensors) {
 
     const diff = ((rawHeading - smoothedHeading + 180) % 360) - 180;
     smoothedHeading += diff * 0.15;
+
+    // Update Heading Dashboard HUD Text
+    const headingEl = getEl('map-heading');
+    if (headingEl) {
+        let deg = Math.round((smoothedHeading + 360) % 360);
+        let dir = "N";
+        if (deg >= 22.5 && deg < 67.5) dir = "NE";
+        else if (deg >= 67.5 && deg < 112.5) dir = "E";
+        else if (deg >= 112.5 && deg < 157.5) dir = "SE";
+        else if (deg >= 157.5 && deg < 202.5) dir = "S";
+        else if (deg >= 202.5 && deg < 247.5) dir = "SW";
+        else if (deg >= 247.5 && deg < 292.5) dir = "W";
+        else if (deg >= 292.5 && deg < 337.5) dir = "NW";
+        headingEl.innerText = `HDG: ${deg}° ${dir}`;
+    }
 
     const mapDiv = getCached('map');
     if (mapDiv && isAutoRotate) {
