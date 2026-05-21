@@ -34,6 +34,7 @@ const sourceSelect = getEl('esp-source-select');
 const ipUrlContainer = getEl('esp-ip-url-container');
 const ipUrlInput = getEl('esp-ip-url');
 const boxColorSelect = getEl('esp-box-color');
+const engineSelect = getEl('esp-engine-select');
 const espHud = getEl('esp-hud');
 
 export function initVision() {
@@ -84,6 +85,24 @@ export function initVision() {
         };
     }
 
+    if (engineSelect) {
+        engineSelect.value = localStorage.getItem('esp_engine_pref') || 'web';
+        if (!window.Android) {
+            engineSelect.style.display = 'none';
+            const engineLabel = engineSelect.previousElementSibling;
+            if (engineLabel && engineLabel.innerText.includes('Engine')) {
+                engineLabel.style.display = 'none';
+            }
+        }
+        engineSelect.onchange = (e) => {
+            localStorage.setItem('esp_engine_pref', e.target.value);
+            if (espActive) {
+                stopESP();
+                startESP();
+            }
+        };
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (document.hidden && espActive) {
             stopESP();
@@ -95,7 +114,7 @@ export function initVision() {
 export async function startESP() {
     if (espActive) { stopESP(); return; }
     espActive = true;
-    useNativeDetection = true;
+    useNativeDetection = engineSelect ? (engineSelect.value === 'native') : false;
     if (toggleEspBtn) toggleEspBtn.innerText = 'Stoppe ESP';
     
     const isIp = sourceSelect && sourceSelect.value === 'ip';

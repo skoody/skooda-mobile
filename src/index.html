@@ -325,13 +325,20 @@
               
               <!-- Stream Source Configuration -->
               <div class="esp-config-bar" style="padding: 5px 10px; background: rgba(0,0,0,0.4); border-top: 1px solid var(--border-color); font-size: 0.75rem;">
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                   <span style="color: var(--neon-cyan)">Source:</span>
-                  <select id="esp-source-select" class="cyber-input" style="padding: 2px 5px; font-size: 0.7rem; flex: 1;">
+                  <select id="esp-source-select" class="cyber-input" style="padding: 2px 5px; font-size: 0.7rem; flex: 1; min-width: 80px;">
                     <option value="local">Local Camera</option>
                     <option value="ip">IP Camera (MJPEG)</option>
                   </select>
-                  <div id="esp-ip-url-container" style="display: none; align-items: center; flex: 2;">
+                  
+                  <span style="color: var(--neon-cyan)">Engine:</span>
+                  <select id="esp-engine-select" class="cyber-input" style="padding: 2px 5px; font-size: 0.7rem; flex: 1; min-width: 80px;">
+                    <option value="web">Web (WebGL)</option>
+                    <option value="native">Native (Android)</option>
+                  </select>
+                  
+                  <div id="esp-ip-url-container" style="display: none; align-items: center; flex: 2; min-width: 150px;">
                     <input type="text" id="esp-ip-url" class="cyber-input" style="width: 100%; padding: 2px 5px; font-size: 0.7rem;" placeholder="http://192.168.1.50:81/stream">
                   </div>
                 </div>
