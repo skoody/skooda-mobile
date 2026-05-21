@@ -143,7 +143,7 @@ export async function startESP() {
         if (!window.Android || !window.Android.detectObjects) {
             if (!espModel) {
                 const { ObjectDetector, FilesetResolver } = await import('../../lib/mediapipe/vision_bundle.mjs');
-                const vision = await FilesetResolver.forVisionTasks('../../lib/mediapipe');
+                const vision = await FilesetResolver.forVisionTasks('lib/mediapipe');
                 espModel = await ObjectDetector.createFromOptions(vision, {
                     baseOptions: {
                         modelAssetPath: 'models/mediapipe/detector.tflite',
