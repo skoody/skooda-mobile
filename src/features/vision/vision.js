@@ -16,6 +16,7 @@ let lastFrameTime = performance.now();
 let frameCount = 0;
 let fps = 0;
 let inferenceTime = 0;
+let lastTimestamp = 0;
 
 const espVideo = getEl('esp-video');
 const espMjpeg = getEl('esp-mjpeg');
@@ -144,14 +145,28 @@ export async function startESP() {
             if (!espModel) {
                 const { ObjectDetector, FilesetResolver } = await import('../../lib/mediapipe/vision_bundle.mjs');
                 const vision = await FilesetResolver.forVisionTasks('lib/mediapipe');
-                espModel = await ObjectDetector.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: 'models/mediapipe/detector.tflite',
-                        delegate: 'GPU'
-                    },
-                    runningMode: 'VIDEO',
-                    scoreThreshold: 0.5
-                });
+                try {
+                    espModel = await ObjectDetector.createFromOptions(vision, {
+                        baseOptions: {
+                            modelAssetPath: 'models/mediapipe/detector.tflite',
+                            delegate: 'GPU'
+                        },
+                        runningMode: 'VIDEO',
+                        scoreThreshold: 0.5
+                    });
+                    console.log("MediaPipe initialized with GPU delegate");
+                } catch (gpuErr) {
+                    console.warn("MediaPipe GPU delegate failed, falling back to CPU:", gpuErr);
+                    espModel = await ObjectDetector.createFromOptions(vision, {
+                        baseOptions: {
+                            modelAssetPath: 'models/mediapipe/detector.tflite',
+                            delegate: 'CPU'
+                        },
+                        runningMode: 'VIDEO',
+                        scoreThreshold: 0.5
+                    });
+                    console.log("MediaPipe initialized with CPU delegate");
+                }
             }
         }
         if (espStatus) espStatus.innerText = 'ESP AKTIV';
@@ -197,14 +212,26 @@ export function stopESP() {
 
 function detectFrameCallback(now, metadata) {
     if (!espActive) return;
-    detectLogic();
-    vfcId = espVideo.requestVideoFrameCallback(detectFrameCallback);
+    try {
+        detectLogic();
+    } catch (e) {
+        console.error("detectLogic error in callback:", e);
+    }
+    if (espActive && espVideo && 'requestVideoFrameCallback' in espVideo) {
+        vfcId = espVideo.requestVideoFrameCallback(detectFrameCallback);
+    }
 }
 
 function detectFrame() {
     if (!espActive) return;
-    detectLogic();
-    espReqId = requestAnimationFrame(detectFrame);
+    try {
+        detectLogic();
+    } catch (e) {
+        console.error("detectLogic error in animation frame:", e);
+    }
+    if (espActive) {
+        espReqId = requestAnimationFrame(detectFrame);
+    }
 }
 
 function calculateFps() {
@@ -224,12 +251,20 @@ function detectLogic() {
     const sourceEl = isIp ? espMjpeg : espVideo;
     if (!sourceEl) return;
 
-    if (isIp && (!espMjpeg.complete || espMjpeg.naturalWidth === 0)) {
-        return; // MJPEG not fully loaded yet
+    if (isIp) {
+        if (!espMjpeg.complete || espMjpeg.naturalWidth === 0 || espMjpeg.naturalHeight === 0) {
+            return; // MJPEG not fully loaded yet
+        }
+    } else {
+        if (espVideo.readyState < 2 || espVideo.videoWidth === 0 || espVideo.videoHeight === 0) {
+            return; // Video not ready yet
+        }
     }
 
     const width = isIp ? espMjpeg.clientWidth : espVideo.clientWidth;
     const height = isIp ? espMjpeg.clientHeight : espVideo.clientHeight;
+
+    if (width === 0 || height === 0) return;
 
     if (espCanvas.width !== width || espCanvas.height !== height) {
         espCanvas.width = width;
@@ -248,30 +283,40 @@ function detectLogic() {
         const dataUrl = detectionCanvas.toDataURL('image/jpeg', 0.6);
 
         window.onNativeObjectsDetected = (res) => {
-            isDetecting = false;
-            inferenceTime = Math.round(performance.now() - startTime);
-            const infEl = getEl('esp-hud-inf');
-            const devEl = getEl('esp-hud-dev');
-            if (infEl) infEl.innerText = inferenceTime;
-            if (devEl) devEl.innerText = 'Android GPU';
+            try {
+                isDetecting = false;
+                inferenceTime = Math.round(performance.now() - startTime);
+                const infEl = getEl('esp-hud-inf');
+                const devEl = getEl('esp-hud-dev');
+                if (infEl) infEl.innerText = inferenceTime;
+                if (devEl) devEl.innerText = 'Android GPU';
 
-            if (res.detections) {
-                const mappedDetections = res.detections.map(det => {
-                    const box = det.boundingBox;
-                    return {
-                        boundingBox: {
-                            originX: box.left,
-                            originY: box.top,
-                            width: box.right - box.left,
-                            height: box.bottom - box.top
-                        },
-                        categories: det.categories.map(cat => ({
-                            categoryName: cat.label,
-                            score: cat.score
-                        }))
-                    };
-                });
-                drawDetections(mappedDetections);
+                if (res && res.error) {
+                    if (espStatus) espStatus.innerText = 'KI: ' + res.error;
+                    return;
+                }
+
+                if (res && res.detections) {
+                    const mappedDetections = res.detections.map(det => {
+                        const box = det.boundingBox;
+                        return {
+                            boundingBox: {
+                                originX: box.left,
+                                originY: box.top,
+                                width: box.right - box.left,
+                                height: box.bottom - box.top
+                            },
+                            categories: (det.categories || []).map(cat => ({
+                                categoryName: cat.label,
+                                score: cat.score
+                            }))
+                        };
+                    });
+                    drawDetections(mappedDetections);
+                }
+            } catch (err) {
+                console.error("onNativeObjectsDetected error:", err);
+                isDetecting = false;
             }
         };
 
@@ -279,7 +324,14 @@ function detectLogic() {
     } else {
         if (!espModel) return;
         dCtx.drawImage(sourceEl, 0, 0, 320, 320);
-        const detections = espModel.detectForVideo(detectionCanvas, performance.now()).detections;
+
+        let timestamp = Math.round(performance.now());
+        if (timestamp <= lastTimestamp) {
+            timestamp = lastTimestamp + 1;
+        }
+        lastTimestamp = timestamp;
+
+        const detections = espModel.detectForVideo(detectionCanvas, timestamp).detections;
         inferenceTime = Math.round(performance.now() - startTime);
         const infEl = getEl('esp-hud-inf');
         const devEl = getEl('esp-hud-dev');
@@ -292,6 +344,12 @@ function detectLogic() {
 function drawDetections(detections) {
     const ctx = espCanvas.getContext('2d');
     ctx.clearRect(0, 0, espCanvas.width, espCanvas.height);
+
+    if (!detections || !Array.isArray(detections)) {
+        const detEl = getEl('esp-hud-det');
+        if (detEl) detEl.innerText = 0;
+        return;
+    }
 
     const scaleX = espCanvas.width / 320;
     const scaleY = espCanvas.height / 320;
@@ -307,9 +365,11 @@ function drawDetections(detections) {
     let matchCount = 0;
 
     detections.forEach(det => {
-        if (det.categories[0].score < threshold) return;
+        if (!det || !det.categories || det.categories.length === 0) return;
+        const category = det.categories[0];
+        if (!category || typeof category.score !== 'number' || category.score < threshold) return;
 
-        const label = det.categories[0].categoryName;
+        const label = (category.categoryName || category.label || 'unknown').toLowerCase();
         const isPerson = label === 'person';
         const isAirplane = label === 'airplane';
         const isAnimal = animals.includes(label);
@@ -326,20 +386,27 @@ function drawDetections(detections) {
         if (show) {
             matchCount++;
             const box = det.boundingBox;
-            const x = box.originX * scaleX;
-            const y = box.originY * scaleY;
-            const w = box.width * scaleX;
-            const h = box.height * scaleY;
+            if (!box) return;
+
+            const originX = typeof box.originX === 'number' ? box.originX : (box.left || 0);
+            const originY = typeof box.originY === 'number' ? box.originY : (box.top || 0);
+            const boxWidth = typeof box.width === 'number' ? box.width : ((box.right || 0) - originX);
+            const boxHeight = typeof box.height === 'number' ? box.height : ((box.bottom || 0) - originY);
+
+            const x = originX * scaleX;
+            const y = originY * scaleY;
+            const w = boxWidth * scaleX;
+            const h = boxHeight * scaleY;
 
             ctx.strokeStyle = activeColor;
             ctx.lineWidth = 2;
             ctx.strokeRect(x, y, w, h);
 
             let dist = "";
-            if (isPerson) {
+            if (isPerson && boxHeight > 0) {
                 const isIp = sourceSelect && sourceSelect.value === 'ip';
                 const heightVal = isIp ? (espMjpeg.naturalHeight || 480) : (espVideo.videoHeight || 720);
-                const d = (1.7 * 800) / (box.height * (heightVal / 320));
+                const d = (1.7 * 800) / (boxHeight * (heightVal / 320));
                 dist = " ~" + d.toFixed(1) + "m";
             }
 
@@ -347,7 +414,7 @@ function drawDetections(detections) {
             ctx.fillRect(x, y - 20, Math.max(100, w), 20);
             ctx.fillStyle = activeColor;
             ctx.font = 'bold 11px monospace';
-            ctx.fillText(`${label.toUpperCase()} (${(det.categories[0].score * 100).toFixed(0)}%)${dist}`, x + 5, y - 5);
+            ctx.fillText(`${label.toUpperCase()} (${(category.score * 100).toFixed(0)}%)${dist}`, x + 5, y - 5);
 
             // Bounding box corner ticks
             ctx.beginPath();
