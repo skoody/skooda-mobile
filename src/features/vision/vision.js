@@ -17,6 +17,7 @@ let frameCount = 0;
 let fps = 0;
 let inferenceTime = 0;
 let lastTimestamp = 0;
+let useNativeDetection = true;
 
 const espVideo = getEl('esp-video');
 const espMjpeg = getEl('esp-mjpeg');
@@ -94,6 +95,7 @@ export function initVision() {
 export async function startESP() {
     if (espActive) { stopESP(); return; }
     espActive = true;
+    useNativeDetection = true;
     if (toggleEspBtn) toggleEspBtn.innerText = 'Stoppe ESP';
     
     const isIp = sourceSelect && sourceSelect.value === 'ip';
@@ -275,7 +277,7 @@ function detectLogic() {
 
     const startTime = performance.now();
 
-    if (window.Android && window.Android.detectObjects) {
+    if (window.Android && window.Android.detectObjects && useNativeDetection) {
         if (isDetecting) return;
         isDetecting = true;
 
@@ -292,7 +294,9 @@ function detectLogic() {
                 if (devEl) devEl.innerText = 'Android GPU';
 
                 if (res && res.error) {
-                    if (espStatus) espStatus.innerText = 'KI: ' + res.error;
+                    console.warn("Native detection error, switching to WebAssembly fallback:", res.error);
+                    useNativeDetection = false;
+                    if (espStatus) espStatus.innerText = 'Web-KI Fallback...';
                     return;
                 }
 
@@ -322,7 +326,47 @@ function detectLogic() {
 
         window.Android.detectObjects(dataUrl, 'onNativeObjectsDetected');
     } else {
-        if (!espModel) return;
+        if (!espModel) {
+            if (espStatus && !espStatus.innerText.includes('Lade')) {
+                espStatus.innerText = 'Lade Web-KI...';
+            }
+            if (!window.loadingEspModel) {
+                window.loadingEspModel = true;
+                (async () => {
+                    try {
+                        const { ObjectDetector, FilesetResolver } = await import('../../lib/mediapipe/vision_bundle.mjs');
+                        const vision = await FilesetResolver.forVisionTasks('lib/mediapipe');
+                        try {
+                            espModel = await ObjectDetector.createFromOptions(vision, {
+                                baseOptions: {
+                                    modelAssetPath: 'models/mediapipe/detector.tflite',
+                                    delegate: 'GPU'
+                                },
+                                runningMode: 'VIDEO',
+                                scoreThreshold: 0.5
+                            });
+                        } catch (gpuErr) {
+                            console.warn("Web GPU delegate failed, trying CPU:", gpuErr);
+                            espModel = await ObjectDetector.createFromOptions(vision, {
+                                baseOptions: {
+                                    modelAssetPath: 'models/mediapipe/detector.tflite',
+                                    delegate: 'CPU'
+                                },
+                                runningMode: 'VIDEO',
+                                scoreThreshold: 0.5
+                            });
+                        }
+                        if (espStatus) espStatus.innerText = 'ESP AKTIV';
+                    } catch (err) {
+                        if (espStatus) espStatus.innerText = 'KI Fehler: ' + err.message;
+                        stopESP();
+                    } finally {
+                        window.loadingEspModel = false;
+                    }
+                })();
+            }
+            return;
+        }
         dCtx.drawImage(sourceEl, 0, 0, 320, 320);
 
         let timestamp = Math.round(performance.now());

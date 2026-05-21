@@ -601,8 +601,9 @@ class MainActivity : TauriActivity(), SensorEventListener {
         } catch(e: Exception) {}
     }
 
-    fun createDetector(): ObjectDetector? {
-        return try {
+    fun createDetector(): ObjectDetector {
+        val errors = StringBuilder()
+        try {
             val baseOptions = org.tensorflow.lite.task.core.BaseOptions.builder()
                 .useGpu()
                 .build()
@@ -611,29 +612,34 @@ class MainActivity : TauriActivity(), SensorEventListener {
                 .setMaxResults(5)
                 .setScoreThreshold(0.35f)
                 .build()
-            ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
+            return ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
         } catch (e: Exception) {
-            try {
-                val baseOptions = org.tensorflow.lite.task.core.BaseOptions.builder()
-                    .useNnapi()
-                    .build()
-                val options = ObjectDetector.ObjectDetectorOptions.builder()
-                    .setBaseOptions(baseOptions)
-                    .setMaxResults(5)
-                    .setScoreThreshold(0.35f)
-                    .build()
-                ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
-            } catch (e2: Exception) {
-                try {
-                    val options = ObjectDetector.ObjectDetectorOptions.builder()
-                        .setMaxResults(5)
-                        .setScoreThreshold(0.35f)
-                        .build()
-                    ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
-                } catch(e3: Exception) {
-                    null
-                }
-            }
+            errors.append("GPU: ").append(e.message).append("; ")
+        }
+
+        try {
+            val baseOptions = org.tensorflow.lite.task.core.BaseOptions.builder()
+                .useNnapi()
+                .build()
+            val options = ObjectDetector.ObjectDetectorOptions.builder()
+                .setBaseOptions(baseOptions)
+                .setMaxResults(5)
+                .setScoreThreshold(0.35f)
+                .build()
+            return ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
+        } catch (e2: Exception) {
+            errors.append("NNAPI: ").append(e2.message).append("; ")
+        }
+
+        try {
+            val options = ObjectDetector.ObjectDetectorOptions.builder()
+                .setMaxResults(5)
+                .setScoreThreshold(0.35f)
+                .build()
+            return ObjectDetector.createFromFileAndOptions(this, "detector.tflite", options)
+        } catch (e3: Exception) {
+            errors.append("CPU: ").append(e3.message)
+            throw Exception(errors.toString())
         }
     }
 
@@ -1159,9 +1165,10 @@ class MainActivity : TauriActivity(), SensorEventListener {
                         return@execute
                     }
 
-                    var detector = main.createDetector() // Lazily build or fallback automatically
-                    if (detector == null) {
-                        postToJS(callback, JSONObject().put("error", "Detector initialization failed").toString())
+                    val detector = try {
+                        main.createDetector()
+                    } catch (e: Exception) {
+                        postToJS(callback, JSONObject().put("error", "Detector init failed: " + e.message).toString())
                         return@execute
                     }
 

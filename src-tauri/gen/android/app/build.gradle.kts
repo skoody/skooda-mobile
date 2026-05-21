@@ -66,6 +66,9 @@ android {
             )
         }
     }
+    androidResources {
+        noCompress.add("tflite")
+    }
     kotlinOptions {
         jvmTarget = "1.8"
     }
