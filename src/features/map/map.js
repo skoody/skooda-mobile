@@ -12,8 +12,7 @@ let distanceLabel = null;
 let isAutoCenter = true;
 let isAutoRotate = false;
 let isRoutingMode = false;
-let routingStartMarker = null;
-let routingEndMarker = null;
+let routingMarkers = [];
 let routingPolyline = null;
 
 // Trail & GPX State Variables
@@ -43,15 +42,23 @@ export function initMap() {
     const storeName = "tiles";
     let db = null;
 
-    const request = indexedDB.open(dbName, 1);
-    request.onupgradeneeded = (e) => {
-        const database = e.target.result;
-        if (!database.objectStoreNames.contains(storeName)) {
-            database.createObjectStore(storeName);
-        }
-    };
-    request.onsuccess = (e) => {
-        db = e.target.result;
+    const initDB = () => {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(dbName, 1);
+            request.onupgradeneeded = (e) => {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains(storeName)) {
+                    database.createObjectStore(storeName);
+                }
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onerror = () => {
+                resolve(null);
+            };
+        });
     };
 
     const getCachedTile = (key) => {
@@ -156,7 +163,9 @@ export function initMap() {
         if (pane) pane.style.filter = filter;
     };
 
-    setTiles(mapThemeMode);
+    initDB().then(() => {
+        setTiles(mapThemeMode);
+    });
     loadMarkers();
     inspectMBTiles();
 
@@ -263,12 +272,35 @@ export function initMap() {
 
     L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
 
-    map.on('movestart', () => { isAutoCenter = false; });
+    map.on('movestart', (e) => {
+        if (e.target._panAnim && e.target._panAnim._inProgress) {
+            // Animation active
+        } else {
+            isAutoCenter = false;
+            if (isAutoRotate) {
+                isAutoRotate = false;
+                const rotateBtn = document.getElementById('map-rotate-toggle');
+                if (rotateBtn) rotateBtn.style.opacity = '0.5';
+                
+                const mapDiv = getCached('map');
+                if (mapDiv) {
+                    mapDiv.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    mapDiv.style.transform = 'rotate(0deg)';
+                    setTimeout(() => {
+                        if (mapDiv) mapDiv.style.transition = 'none';
+                    }, 400);
+                }
+            }
+        }
+    });
 
     const centerBtn = getEl('center-map');
     if (centerBtn) {
         centerBtn.onclick = () => {
             isAutoCenter = true;
+            isAutoRotate = true;
+            const rotateBtn = document.getElementById('map-rotate-toggle');
+            if (rotateBtn) rotateBtn.style.opacity = '1';
             if (map && mapMarker) {
                 map.setView(mapMarker.getLatLng(), 16);
             }
@@ -435,70 +467,69 @@ export function initMap() {
     map.addControl(new RoutingToggle());
 
     function clearRouting() {
-        if (routingStartMarker) map.removeLayer(routingStartMarker);
-        if (routingEndMarker) map.removeLayer(routingEndMarker);
+        routingMarkers.forEach(m => map.removeLayer(m));
+        routingMarkers = [];
         if (routingPolyline) map.removeLayer(routingPolyline);
-        routingStartMarker = null;
-        routingEndMarker = null;
         routingPolyline = null;
         lastSolvedRoutePoints = [];
         const routeContainer = getEl('route-export-container');
         if (routeContainer) routeContainer.style.display = 'none';
     }
 
-    function calculateOfflineRoute() {
-        if (!routingStartMarker || !routingEndMarker) return;
-        const start = routingStartMarker.getLatLng();
-        const end = routingEndMarker.getLatLng();
-
-        window.__TAURI__.core.invoke("find_shortest_path", {
-            graphJson: "",
-            startLat: start.lat,
-            startLon: start.lng,
-            endLat: end.lat,
-            endLon: end.lng
-        }).then(pathCoords => {
+    async function calculateOfflineRoute() {
+        if (routingMarkers.length < 2) return;
+        
+        let fullPath = [];
+        
+        try {
+            for (let i = 0; i < routingMarkers.length - 1; i++) {
+                const start = routingMarkers[i].getLatLng();
+                const end = routingMarkers[i + 1].getLatLng();
+                
+                const pathSegment = await window.__TAURI__.core.invoke("find_shortest_path", {
+                    graphJson: "",
+                    startLat: start.lat,
+                    startLon: start.lng,
+                    endLat: end.lat,
+                    endLon: end.lng
+                });
+                
+                if (i > 0 && pathSegment.length > 0) {
+                    fullPath.push(...pathSegment.slice(1));
+                } else {
+                    fullPath.push(...pathSegment);
+                }
+            }
+            
             if (routingPolyline) map.removeLayer(routingPolyline);
-            routingPolyline = L.polyline(pathCoords, { color: 'var(--neon-cyan)', weight: 5, dashArray: '5, 10' }).addTo(map);
+            routingPolyline = L.polyline(fullPath, { color: 'var(--neon-cyan)', weight: 5, dashArray: '5, 10' }).addTo(map);
             map.fitBounds(routingPolyline.getBounds());
             
-            lastSolvedRoutePoints = pathCoords;
+            lastSolvedRoutePoints = fullPath;
             const routeContainer = getEl('route-export-container');
             if (routeContainer) routeContainer.style.display = 'block';
-        }).catch(err => {
+        } catch (err) {
             console.error("Routing error:", err);
             alert("Routing failed: " + err);
-        });
+        }
     }
 
     map.on('click', (e) => {
         if (!isRoutingMode) return;
-        if (!routingStartMarker) {
-            routingStartMarker = L.marker(e.latlng, {
-                icon: L.divIcon({
-                    className: 'routing-start-icon',
-                    html: '<div style="background:var(--neon-red); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--neon-red);"></div>',
-                    iconSize: [12, 12]
-                })
-            }).addTo(map);
-        } else if (!routingEndMarker) {
-            routingEndMarker = L.marker(e.latlng, {
-                icon: L.divIcon({
-                    className: 'routing-end-icon',
-                    html: '<div style="background:var(--neon-green); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--neon-green);"></div>',
-                    iconSize: [12, 12]
-                })
-            }).addTo(map);
+        
+        const count = routingMarkers.length + 1;
+        const color = count === 1 ? 'var(--neon-red)' : 'var(--neon-green)';
+        const marker = L.marker(e.latlng, {
+            icon: L.divIcon({
+                className: 'routing-waypoint-icon',
+                html: `<div style="background:${color}; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px ${color}; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #fff; font-weight: bold;">${count}</div>`,
+                iconSize: [12, 12]
+            })
+        }).addTo(map);
+        
+        routingMarkers.push(marker);
+        if (routingMarkers.length >= 2) {
             calculateOfflineRoute();
-        } else {
-            clearRouting();
-            routingStartMarker = L.marker(e.latlng, {
-                icon: L.divIcon({
-                    className: 'routing-start-icon',
-                    html: '<div style="background:var(--neon-red); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--neon-red);"></div>',
-                    iconSize: [12, 12]
-                })
-            }).addTo(map);
         }
     });
 }

@@ -64,39 +64,86 @@ pub fn find_shortest_path(
     end_lon: f64,
 ) -> Result<Vec<(f64, f64)>, String> {
     let graph: GraphData = if graph_json.trim().is_empty() {
-        // Fallback to a dynamic local grid centered near Berlin / default viewport
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
-        let center_lat = start_lat;
-        let center_lon = start_lon;
         
-        let steps = 5;
-        let step_size = 0.002; // in degrees
+        let min_lat = start_lat.min(end_lat);
+        let max_lat = start_lat.max(end_lat);
+        let min_lon = start_lon.min(end_lon);
+        let max_lon = start_lon.max(end_lon);
+        
+        let lat_diff = max_lat - min_lat;
+        let lon_diff = max_lon - min_lon;
+        
+        let lat_padding = (lat_diff * 0.2).max(0.005);
+        let lon_padding = (lon_diff * 0.2).max(0.005);
+        
+        let pad_min_lat = min_lat - lat_padding;
+        let pad_max_lat = max_lat + lat_padding;
+        let pad_min_lon = min_lon - lon_padding;
+        let pad_max_lon = max_lon + lon_padding;
+        
+        let steps = 12;
+        let lat_step = (pad_max_lat - pad_min_lat) / (steps - 1) as f64;
+        let lon_step = (pad_max_lon - pad_min_lon) / (steps - 1) as f64;
+        
         for r in 0..steps {
             for c in 0..steps {
                 let id = (r * steps + c) as u64;
-                let lat = center_lat + (r as f64 - steps as f64 / 2.0) * step_size;
-                let lon = center_lon + (c as f64 - steps as f64 / 2.0) * step_size;
+                let lat = pad_min_lat + r as f64 * lat_step;
+                let lon = pad_min_lon + c as f64 * lon_step;
                 nodes.push(Node { id, lat, lon });
             }
         }
+        
         for r in 0..steps {
             for c in 0..steps {
                 let id = (r * steps + c) as u64;
-                if r + 1 < steps {
-                    let neighbor = ((r + 1) * steps + c) as u64;
-                    let w = haversine_distance(nodes[id as usize].lat, nodes[id as usize].lon, nodes[neighbor as usize].lat, nodes[neighbor as usize].lon);
-                    edges.push(Edge { from: id, to: neighbor, weight: w });
-                    edges.push(Edge { from: neighbor, to: id, weight: w });
-                }
-                if c + 1 < steps {
-                    let neighbor = (r * steps + (c + 1)) as u64;
-                    let w = haversine_distance(nodes[id as usize].lat, nodes[id as usize].lon, nodes[neighbor as usize].lat, nodes[neighbor as usize].lon);
-                    edges.push(Edge { from: id, to: neighbor, weight: w });
-                    edges.push(Edge { from: neighbor, to: id, weight: w });
+                let offsets = [
+                    (-1, 0), (1, 0), (0, -1), (0, 1),
+                    (-1, -1), (-1, 1), (1, -1), (1, 1),
+                ];
+                
+                for &(dr, dc) in &offsets {
+                    let nr = r as i32 + dr;
+                    let nc = c as i32 + dc;
+                    if nr >= 0 && nr < steps as i32 && nc >= 0 && nc < steps as i32 {
+                        let neighbor_id = (nr * steps as i32 + nc) as u64;
+                        let w = haversine_distance(
+                            nodes[id as usize].lat,
+                            nodes[id as usize].lon,
+                            nodes[neighbor_id as usize].lat,
+                            nodes[neighbor_id as usize].lon,
+                        );
+                        edges.push(Edge { from: id, to: neighbor_id, weight: w });
+                    }
                 }
             }
         }
+        
+        let start_node_id = (steps * steps) as u64;
+        let end_node_id = (steps * steps + 1) as u64;
+        
+        nodes.push(Node { id: start_node_id, lat: start_lat, lon: start_lon });
+        nodes.push(Node { id: end_node_id, lat: end_lat, lon: end_lon });
+        
+        for &injected_id in &[start_node_id, end_node_id] {
+            let inj_node = &nodes[injected_id as usize];
+            let mut distances: Vec<(u64, f64)> = (0..(steps * steps) as u64)
+                .map(|grid_id| {
+                    let gn = &nodes[grid_id as usize];
+                    let d = haversine_distance(inj_node.lat, inj_node.lon, gn.lat, gn.lon);
+                    (grid_id, d)
+                })
+                .collect();
+            distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+            
+            for &(grid_id, w) in distances.iter().take(4) {
+                edges.push(Edge { from: injected_id, to: grid_id, weight: w });
+                edges.push(Edge { from: grid_id, to: injected_id, weight: w });
+            }
+        }
+        
         GraphData { nodes, edges }
     } else {
         serde_json::from_str(&graph_json).map_err(|e| e.to_string())?
