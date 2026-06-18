@@ -223,6 +223,20 @@
             <p>Flashlight, BT & more</p>
           </div>
         </div>
+        <div class="tool-card category-card" data-sub="rechner-toolset">
+          <div class="card-icon">🧮</div>
+          <div class="card-info">
+            <h3>Rechner</h3>
+            <p>Elektrische Einheiten</p>
+          </div>
+        </div>
+        <div class="tool-card category-card" data-sub="osint-toolset">
+          <div class="card-icon">🕵️</div>
+          <div class="card-info">
+            <h3>Stalking</h3>
+            <p>OSINT Reconnaissance</p>
+          </div>
+        </div>
       </div>
 
       
@@ -678,6 +692,90 @@
               </div>
             </div>
 
+          </div>
+        </div>
+      </div>
+
+      <!-- Rechner (Untermenü) -->
+      <div id="rechner-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+        <div class="tool-card full-row">
+          <div class="card-info">
+            <h3>Elektrische Einheiten Rechner</h3>
+            <p class="tool-desc">Berechnet Spannung (U), Stromstärke (I), Widerstand (R) und Leistung (P). Gib mindestens zwei Werte ein, um die restlichen automatisch zu berechnen.</p>
+            <div class="cyber-list" style="padding: 10px;">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">U (Volt):</span>
+                <input type="number" id="calc-voltage" class="cyber-input-field" placeholder="in Volt (V)" step="any">
+              </div>
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">I (Ampere):</span>
+                <input type="number" id="calc-current" class="cyber-input-field" placeholder="in Ampere (A)" step="any">
+              </div>
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">R (Ohm):</span>
+                <input type="number" id="calc-resistance" class="cyber-input-field" placeholder="in Ohm (Ω)" step="any">
+              </div>
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">P (Watt):</span>
+                <input type="number" id="calc-power" class="cyber-input-field" placeholder="in Watt (W)" step="any">
+              </div>
+            </div>
+            <button id="calc-clear" class="btn secondary full-width" style="margin-top: 10px;">Clear Values</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="osint-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+        <div class="tool-card full-row">
+          <div class="card-info">
+            <h3>🕵️ OSINT Reconnaissance</h3>
+            <p class="tool-desc">Open Source Intelligence – durchsuche öffentliche Plattformen nach Benutzernamen, E-Mails, Telefonnummern und Namen.</p>
+
+            <div class="osint-tabs">
+              <button class="osint-tab-btn active" data-tab="osint-tab-username">👤 Username</button>
+              <button class="osint-tab-btn" data-tab="osint-tab-email">📧 E-Mail</button>
+              <button class="osint-tab-btn" data-tab="osint-tab-phone">📱 Telefon</button>
+              <button class="osint-tab-btn" data-tab="osint-tab-name">🔤 Name</button>
+            </div>
+
+            <div id="osint-tab-username" class="osint-tab-content active">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">Username:</span>
+                <input type="text" id="osint-username" class="cyber-input-field" placeholder="z.B. johndoe123" autocomplete="off" spellcheck="false">
+              </div>
+              <button id="osint-scan-username" class="btn primary full-width">🔍 Scan starten</button>
+              <div id="osint-username-stats" class="osint-stats" style="margin-top: 12px;"></div>
+              <div id="osint-username-results" class="osint-results-grid" style="margin-top: 12px;"></div>
+            </div>
+
+            <div id="osint-tab-email" class="osint-tab-content">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">E-Mail:</span>
+                <input type="email" id="osint-email" class="cyber-input-field" placeholder="z.B. user@example.com" autocomplete="off" spellcheck="false">
+              </div>
+              <button id="osint-scan-email" class="btn primary full-width">📧 E-Mail prüfen</button>
+              <div id="osint-email-results" class="osint-results-grid" style="margin-top: 12px;"></div>
+            </div>
+
+            <div id="osint-tab-phone" class="osint-tab-content">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">Telefon:</span>
+                <input type="tel" id="osint-phone" class="cyber-input-field" placeholder="z.B. +49 170 1234567" autocomplete="off" spellcheck="false">
+              </div>
+              <button id="osint-scan-phone" class="btn primary full-width">📱 Nummer analysieren</button>
+              <div id="osint-phone-results" class="osint-results-grid" style="margin-top: 12px;"></div>
+            </div>
+
+            <div id="osint-tab-name" class="osint-tab-content">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">Name:</span>
+                <input type="text" id="osint-fullname" class="cyber-input-field" placeholder="z.B. Max Mustermann" autocomplete="off" spellcheck="false">
+              </div>
+              <button id="osint-scan-name" class="btn primary full-width">🔤 Name suchen</button>
+              <div id="osint-name-results" class="osint-results-grid" style="margin-top: 12px;"></div>
+            </div>
           </div>
         </div>
       </div>
