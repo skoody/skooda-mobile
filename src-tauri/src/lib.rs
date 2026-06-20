@@ -551,6 +551,54 @@ async fn strip_image_metadata(base64_in: String) -> Result<String, String> {
     Ok(BASE64_STANDARD.encode(clean_bytes))
 }
 
+#[derive(Serialize, Deserialize)]
+struct ProbeResult {
+    url: String,
+    status: String,
+    status_code: u16,
+}
+
+#[tauri::command]
+async fn probe_urls(urls: Vec<String>) -> Result<Vec<ProbeResult>, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .redirect(reqwest::redirect::Policy::limited(5))
+        .danger_accept_invalid_certs(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let mut handles = Vec::new();
+    for url in urls {
+        let c = client.clone();
+        let u = url.clone();
+        handles.push(tokio::spawn(async move {
+            match c.get(&u).send().await {
+                Ok(resp) => {
+                    let code = resp.status().as_u16();
+                    let status = if code >= 200 && code < 400 {
+                        "found".to_string()
+                    } else if code == 404 {
+                        "not_found".to_string()
+                    } else {
+                        "error".to_string()
+                    };
+                    ProbeResult { url: u, status, status_code: code }
+                }
+                Err(_) => ProbeResult { url: u, status: "error".to_string(), status_code: 0 },
+            }
+        }));
+    }
+
+    let mut results = Vec::new();
+    for h in handles {
+        match h.await {
+            Ok(r) => results.push(r),
+            Err(_) => {}
+        }
+    }
+    Ok(results)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -604,7 +652,8 @@ pub fn run() {
             mbtiles::get_mbtiles_tile,
             mbtiles::get_mbtiles_info,
             routing::find_shortest_path,
-            strip_image_metadata
+            strip_image_metadata,
+            probe_urls
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
