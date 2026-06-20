@@ -560,10 +560,21 @@ struct ProbeResult {
 
 #[tauri::command]
 async fn probe_urls(urls: Vec<String>) -> Result<Vec<ProbeResult>, String> {
+    use reqwest::header;
+    let mut headers = header::HeaderMap::new();
+    headers.insert(header::USER_AGENT, header::HeaderValue::from_static(
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+    ));
+    headers.insert(header::ACCEPT, header::HeaderValue::from_static(
+        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    ));
+    headers.insert(header::ACCEPT_LANGUAGE, header::HeaderValue::from_static("de-DE,de;q=0.9,en;q=0.8"));
+
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(8))
-        .redirect(reqwest::redirect::Policy::limited(5))
+        .timeout(std::time::Duration::from_secs(10))
+        .redirect(reqwest::redirect::Policy::limited(10))
         .danger_accept_invalid_certs(true)
+        .default_headers(headers)
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -575,14 +586,13 @@ async fn probe_urls(urls: Vec<String>) -> Result<Vec<ProbeResult>, String> {
             match c.get(&u).send().await {
                 Ok(resp) => {
                     let code = resp.status().as_u16();
-                    let status = if code >= 200 && code < 400 {
-                        "found".to_string()
-                    } else if code == 404 {
-                        "not_found".to_string()
-                    } else {
-                        "error".to_string()
+                    let status = match code {
+                        200..=399 => "found",
+                        401 | 403 | 429 => "found",
+                        404 | 410 => "not_found",
+                        _ => "error",
                     };
-                    ProbeResult { url: u, status, status_code: code }
+                    ProbeResult { url: u, status: status.to_string(), status_code: code }
                 }
                 Err(_) => ProbeResult { url: u, status: "error".to_string(), status_code: 0 },
             }
