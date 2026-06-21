@@ -3,10 +3,10 @@ import { getEl } from '../../core/ui.js';
 function fmt(val) {
     if (val === 0) return '0';
     const abs = Math.abs(val);
-    if (abs >= 1e12) return val.toExponential(4);
-    if (abs >= 1e6) return Number(val.toPrecision(8)).toString();
+    if (abs >= 1e15) return val.toExponential(4);
+    if (abs >= 1e6) return Number(val.toPrecision(10)).toString();
     if (abs >= 1) return Number(val.toFixed(6)).toString();
-    if (abs >= 0.001) return Number(val.toFixed(8)).toString();
+    if (abs >= 0.0001) return Number(val.toFixed(10)).toString();
     return val.toExponential(4);
 }
 
@@ -18,7 +18,6 @@ function initElektrik() {
         P: { el: getEl('calc-power'), unit: getEl('calc-power-unit') },
     };
     const clearBtn = getEl('calc-clear');
-
     if (!fields.U.el) return;
 
     let editHistory = [];
@@ -32,18 +31,11 @@ function initElektrik() {
     function setBaseVal(key, baseVal) {
         const unitFactor = parseFloat(fields[key].unit.value);
         fields[key].el.value = fmt(baseVal / unitFactor);
-        fields[key].el.style.borderColor = 'var(--neon-cyan)';
-        fields[key].el.style.boxShadow = '0 0 8px rgba(0, 242, 255, 0.3)';
-    }
-
-    function resetStyle(key) {
-        fields[key].el.style.boxShadow = 'none';
-        fields[key].el.style.borderColor = 'var(--glass-border)';
+        fields[key].el.classList.add('conv-computed');
     }
 
     function calculate() {
         if (editHistory.length < 2) return;
-
         const k1 = editHistory[0], k2 = editHistory[1];
         const v1 = getBaseVal(k1), v2 = getBaseVal(k2);
         if (isNaN(v1) || isNaN(v2)) return;
@@ -53,13 +45,14 @@ function initElektrik() {
 
         if (pair === 'IU') {
             if (v2 !== 0) { results.R = v1 / v2; results.P = v1 * v2; }
-            else if (k1 === 'U' && k2 === 'I') { if (v2 !== 0) { results.R = v1/v2; results.P = v1*v2; } }
         } else if (pair === 'RU') {
-            const U = k1 === 'U' ? v1 : v2, R = k1 === 'R' ? v1 : v2;
-            if (R !== 0) { results.I = U / R; results.P = (U * U) / R; }
+            const U = v1 * (k1 === 'U') + v2 * (k2 === 'U' ? 1 : 0) || (k1 === 'U' ? v1 : v2);
+            const R = k1 === 'R' ? v1 : v2;
+            const Uv = k1 === 'U' ? v1 : v2;
+            if (R !== 0) { results.I = Uv / R; results.P = (Uv * Uv) / R; }
         } else if (pair === 'PU') {
-            const U = k1 === 'U' ? v1 : v2, P = k1 === 'P' ? v1 : v2;
-            if (U !== 0) { results.I = P / U; results.R = (U * U) / P; }
+            const Uv = k1 === 'U' ? v1 : v2, P = k1 === 'P' ? v1 : v2;
+            if (Uv !== 0) { results.I = P / Uv; results.R = (Uv * Uv) / P; }
         } else if (pair === 'IR') {
             const I = k1 === 'I' ? v1 : v2, R = k1 === 'R' ? v1 : v2;
             results.U = I * R; results.P = I * I * R;
@@ -72,27 +65,20 @@ function initElektrik() {
         }
 
         Object.keys(fields).forEach(k => {
-            if (k !== k1 && k !== k2 && results[k] !== undefined) {
-                setBaseVal(k, results[k]);
-            }
+            if (k !== k1 && k !== k2 && results[k] !== undefined) setBaseVal(k, results[k]);
         });
     }
 
     Object.entries(fields).forEach(([key, field]) => {
         field.el.addEventListener('input', () => {
-            resetStyle(key);
-            const val = parseFloat(field.el.value);
+            Object.values(fields).forEach(f => f.el.classList.remove('conv-computed'));
             editHistory = editHistory.filter(k => k !== key);
-            if (!isNaN(val)) {
+            if (!isNaN(parseFloat(field.el.value))) {
                 editHistory.push(key);
-                if (editHistory.length > 2) {
-                    const dropped = editHistory.shift();
-                    resetStyle(dropped);
-                }
+                if (editHistory.length > 2) editHistory.shift();
             }
             calculate();
         });
-
         field.unit.addEventListener('change', () => {
             if (editHistory.includes(key)) calculate();
         });
@@ -100,70 +86,77 @@ function initElektrik() {
 
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
-            Object.entries(fields).forEach(([key, field]) => {
-                field.el.value = '';
-                resetStyle(key);
-            });
+            Object.values(fields).forEach(f => { f.el.value = ''; f.el.classList.remove('conv-computed'); });
             editHistory = [];
         });
     }
 }
 
-function initConverters() {
-    const categories = ['laenge', 'gewicht', 'temperatur', 'daten', 'speed', 'druck', 'zeit', 'flaeche'];
-
-    categories.forEach(cat => {
-        const input = getEl(`conv-${cat}-input`);
-        const select = getEl(`conv-${cat}-unit`);
-        const results = getEl(`conv-${cat}-results`);
-        if (!input || !select || !results) return;
-
-        function convert() {
-            const val = parseFloat(input.value);
-            results.innerHTML = '';
-            if (isNaN(val)) return;
-
-            if (cat === 'temperatur') {
-                convertTemperature(val, select.value, results);
-                return;
-            }
-
-            const srcFactor = parseFloat(select.value);
-            const baseVal = val * srcFactor;
-            const options = select.querySelectorAll('option');
-
-            options.forEach(opt => {
-                if (opt.value === select.value) return;
-                const targetFactor = parseFloat(opt.value);
-                const converted = baseVal / targetFactor;
-                const row = document.createElement('div');
-                row.className = 'conv-result-row';
-                row.innerHTML = `<span class="conv-result-val">${fmt(converted)}</span><span class="conv-result-unit">${opt.textContent}</span>`;
-                results.appendChild(row);
-            });
-        }
-
-        input.addEventListener('input', convert);
-        select.addEventListener('change', convert);
-    });
+function tempToBase(val, unit) {
+    if (unit === 'C') return val;
+    if (unit === 'F') return (val - 32) * 5 / 9;
+    return val - 273.15;
 }
 
-function convertTemperature(val, fromUnit, container) {
-    let celsius;
-    if (fromUnit === 'C') celsius = val;
-    else if (fromUnit === 'F') celsius = (val - 32) * 5 / 9;
-    else celsius = val - 273.15;
+function baseToTemp(celsius, unit) {
+    if (unit === 'C') return celsius;
+    if (unit === 'F') return celsius * 9 / 5 + 32;
+    return celsius + 273.15;
+}
 
-    const conversions = [];
-    if (fromUnit !== 'C') conversions.push({ val: celsius, unit: '°C' });
-    if (fromUnit !== 'F') conversions.push({ val: celsius * 9 / 5 + 32, unit: '°F' });
-    if (fromUnit !== 'K') conversions.push({ val: celsius + 273.15, unit: 'K' });
+function initConverters() {
+    const panels = document.querySelectorAll('.conv-panel[data-units]');
 
-    conversions.forEach(c => {
-        const row = document.createElement('div');
-        row.className = 'conv-result-row';
-        row.innerHTML = `<span class="conv-result-val">${fmt(c.val)}</span><span class="conv-result-unit">${c.unit}</span>`;
-        container.appendChild(row);
+    panels.forEach(panel => {
+        const units = JSON.parse(panel.dataset.units);
+        const isTemp = panel.dataset.special === 'temp';
+        const inputs = [];
+
+        units.forEach(([label, factor], idx) => {
+            const row = document.createElement('div');
+            row.className = 'conv-row';
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'cyber-input-field conv-input';
+            input.placeholder = label;
+            input.step = 'any';
+            input.dataset.idx = idx;
+
+            const unitLabel = document.createElement('span');
+            unitLabel.className = 'conv-unit-label';
+            unitLabel.textContent = label;
+
+            row.appendChild(input);
+            row.appendChild(unitLabel);
+            panel.appendChild(row);
+            inputs.push({ input, label, factor });
+        });
+
+        inputs.forEach((src, srcIdx) => {
+            src.input.addEventListener('input', () => {
+                const val = parseFloat(src.input.value);
+                inputs.forEach((dst, dstIdx) => {
+                    if (dstIdx === srcIdx) {
+                        dst.input.classList.remove('conv-computed');
+                        return;
+                    }
+                    if (isNaN(val) || src.input.value === '') {
+                        dst.input.value = '';
+                        dst.input.classList.remove('conv-computed');
+                        return;
+                    }
+                    if (isTemp) {
+                        const celsius = tempToBase(val, src.factor);
+                        dst.input.value = fmt(baseToTemp(celsius, dst.factor));
+                    } else {
+                        const baseVal = val * src.factor;
+                        dst.input.value = fmt(baseVal / dst.factor);
+                    }
+                    dst.input.classList.add('conv-computed');
+                });
+            });
+        });
     });
 }
 

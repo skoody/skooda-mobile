@@ -723,45 +723,14 @@
               <button id="calc-clear" class="btn secondary full-width" style="margin-top: 10px;">Clear</button>
             </div>
 
-            <div id="conv-laenge" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-laenge-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-laenge-unit" class="conv-select"><option value="1000">km</option><option value="1" selected>m</option><option value="0.01">cm</option><option value="0.001">mm</option><option value="0.000001">µm</option><option value="0.000000001">nm</option><option value="1609.344">mi</option><option value="0.9144">yd</option><option value="0.3048">ft</option><option value="0.0254">in</option><option value="1852">nmi</option></select></div>
-              <div id="conv-laenge-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-gewicht" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-gewicht-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-gewicht-unit" class="conv-select"><option value="1000">t</option><option value="1" selected>kg</option><option value="0.001">g</option><option value="0.000001">mg</option><option value="0.000000001">µg</option><option value="0.45359237">lb</option><option value="0.028349523">oz</option><option value="6.35029318">st</option></select></div>
-              <div id="conv-gewicht-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-temperatur" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-temperatur-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-temperatur-unit" class="conv-select"><option value="C" selected>°C</option><option value="F">°F</option><option value="K">K</option></select></div>
-              <div id="conv-temperatur-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-daten" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-daten-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-daten-unit" class="conv-select"><option value="1099511627776">TB</option><option value="1073741824">GB</option><option value="1048576" selected>MB</option><option value="1024">KB</option><option value="1">B</option><option value="137438953472">Tbit</option><option value="134217728">Gbit</option><option value="131072">Mbit</option><option value="128">Kbit</option><option value="0.125">bit</option></select></div>
-              <div id="conv-daten-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-speed" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-speed-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-speed-unit" class="conv-select"><option value="0.277778" selected>km/h</option><option value="1">m/s</option><option value="0.44704">mph</option><option value="0.514444">kn</option><option value="0.3048">ft/s</option></select></div>
-              <div id="conv-speed-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-druck" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-druck-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-druck-unit" class="conv-select"><option value="100000">bar</option><option value="100">mbar</option><option value="1" selected>Pa</option><option value="1000">kPa</option><option value="100">hPa</option><option value="101325">atm</option><option value="6894.757">psi</option><option value="133.322">mmHg</option></select></div>
-              <div id="conv-druck-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-zeit" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-zeit-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-zeit-unit" class="conv-select"><option value="86400">d</option><option value="3600">h</option><option value="60" selected>min</option><option value="1">s</option><option value="0.001">ms</option><option value="0.000001">µs</option><option value="0.000000001">ns</option></select></div>
-              <div id="conv-zeit-results" class="conv-results"></div>
-            </div>
-
-            <div id="conv-flaeche" class="conv-panel">
-              <div class="conv-row"><input type="number" id="conv-flaeche-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-flaeche-unit" class="conv-select"><option value="1000000">km²</option><option value="1" selected>m²</option><option value="0.0001">cm²</option><option value="0.000001">mm²</option><option value="10000">ha</option><option value="4046.8564">ac</option><option value="0.092903">ft²</option><option value="0.00064516">in²</option></select></div>
-              <div id="conv-flaeche-results" class="conv-results"></div>
-            </div>
+            <div id="conv-laenge" class="conv-panel" data-units='[["km",1000],["m",1],["cm",0.01],["mm",0.001],["µm",0.000001],["nm",0.000000001],["mi",1609.344],["yd",0.9144],["ft",0.3048],["in",0.0254],["nmi",1852]]'></div>
+            <div id="conv-gewicht" class="conv-panel" data-units='[["t",1000],["kg",1],["g",0.001],["mg",0.000001],["µg",0.000000001],["lb",0.45359237],["oz",0.028349523],["st",6.35029318]]'></div>
+            <div id="conv-temperatur" class="conv-panel" data-units='[["°C","C"],["°F","F"],["K","K"]]' data-special="temp"></div>
+            <div id="conv-daten" class="conv-panel" data-units='[["TB",1099511627776],["GB",1073741824],["MB",1048576],["KB",1024],["B",1],["Tbit",137438953472],["Gbit",134217728],["Mbit",131072],["Kbit",128],["bit",0.125]]'></div>
+            <div id="conv-speed" class="conv-panel" data-units='[["km/h",0.277778],["m/s",1],["mph",0.44704],["kn",0.514444],["ft/s",0.3048]]'></div>
+            <div id="conv-druck" class="conv-panel" data-units='[["bar",100000],["mbar",100],["Pa",1],["kPa",1000],["hPa",100],["atm",101325],["psi",6894.757],["mmHg",133.322]]'></div>
+            <div id="conv-zeit" class="conv-panel" data-units='[["d",86400],["h",3600],["min",60],["s",1],["ms",0.001],["µs",0.000001],["ns",0.000000001]]'></div>
+            <div id="conv-flaeche" class="conv-panel" data-units='[["km²",1000000],["m²",1],["cm²",0.0001],["mm²",0.000001],["ha",10000],["ac",4046.8564],["ft²",0.092903],["in²",0.00064516]]'></div>
           </div>
         </div>
       </div>

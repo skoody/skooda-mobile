@@ -1857,6 +1857,21 @@ body {
   min-width: 0;
 }
 
+.conv-unit-label {
+  color: var(--neon-cyan);
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 4px;
+}
+
+.conv-computed {
+  border-color: rgba(0, 242, 255, 0.3) !important;
+  color: var(--neon-cyan) !important;
+}
+
 .conv-select {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
