@@ -701,27 +701,67 @@
         <button class="back-btn">← Back to Tools</button>
         <div class="tool-card full-row">
           <div class="card-info">
-            <h3>Elektrische Einheiten Rechner</h3>
-            <p class="tool-desc">Berechnet Spannung (U), Stromstärke (I), Widerstand (R) und Leistung (P). Gib mindestens zwei Werte ein, um die restlichen automatisch zu berechnen.</p>
-            <div class="cyber-list" style="padding: 10px;">
-              <div class="input-wrapper" style="margin-bottom: 12px;">
-                <span class="input-prefix">U (Volt):</span>
-                <input type="number" id="calc-voltage" class="cyber-input-field" placeholder="in Volt (V)" step="any">
-              </div>
-              <div class="input-wrapper" style="margin-bottom: 12px;">
-                <span class="input-prefix">I (Ampere):</span>
-                <input type="number" id="calc-current" class="cyber-input-field" placeholder="in Ampere (A)" step="any">
-              </div>
-              <div class="input-wrapper" style="margin-bottom: 12px;">
-                <span class="input-prefix">R (Ohm):</span>
-                <input type="number" id="calc-resistance" class="cyber-input-field" placeholder="in Ohm (Ω)" step="any">
-              </div>
-              <div class="input-wrapper" style="margin-bottom: 12px;">
-                <span class="input-prefix">P (Watt):</span>
-                <input type="number" id="calc-power" class="cyber-input-field" placeholder="in Watt (W)" step="any">
-              </div>
+            <h3>🧮 Rechner & Umrechner</h3>
+            <div class="conv-tabs">
+              <button class="conv-tab-btn active" data-cat="elektrik">⚡ Elektrik</button>
+              <button class="conv-tab-btn" data-cat="laenge">📏 Länge</button>
+              <button class="conv-tab-btn" data-cat="gewicht">⚖️ Gewicht</button>
+              <button class="conv-tab-btn" data-cat="temperatur">🌡️ Temp</button>
+              <button class="conv-tab-btn" data-cat="daten">💾 Daten</button>
+              <button class="conv-tab-btn" data-cat="speed">🏎️ Speed</button>
+              <button class="conv-tab-btn" data-cat="druck">🌊 Druck</button>
+              <button class="conv-tab-btn" data-cat="zeit">⏱️ Zeit</button>
+              <button class="conv-tab-btn" data-cat="flaeche">📐 Fläche</button>
             </div>
-            <button id="calc-clear" class="btn secondary full-width" style="margin-top: 10px;">Clear Values</button>
+
+            <div id="conv-elektrik" class="conv-panel active">
+              <p class="tool-desc" style="margin-bottom:10px;">Gib 2 Werte ein → Rest wird automatisch berechnet.</p>
+              <div class="conv-row"><input type="number" id="calc-voltage" class="cyber-input-field conv-input" placeholder="Spannung" step="any"><select id="calc-voltage-unit" class="conv-select"><option value="1">V</option><option value="0.001">mV</option><option value="1000">kV</option><option value="1000000">MV</option></select></div>
+              <div class="conv-row"><input type="number" id="calc-current" class="cyber-input-field conv-input" placeholder="Stromstärke" step="any"><select id="calc-current-unit" class="conv-select"><option value="1">A</option><option value="0.001">mA</option><option value="0.000001">µA</option><option value="1000">kA</option></select></div>
+              <div class="conv-row"><input type="number" id="calc-resistance" class="cyber-input-field conv-input" placeholder="Widerstand" step="any"><select id="calc-resistance-unit" class="conv-select"><option value="1">Ω</option><option value="0.001">mΩ</option><option value="1000">kΩ</option><option value="1000000">MΩ</option></select></div>
+              <div class="conv-row"><input type="number" id="calc-power" class="cyber-input-field conv-input" placeholder="Leistung" step="any"><select id="calc-power-unit" class="conv-select"><option value="1">W</option><option value="0.001">mW</option><option value="1000">kW</option><option value="1000000">MW</option></select></div>
+              <button id="calc-clear" class="btn secondary full-width" style="margin-top: 10px;">Clear</button>
+            </div>
+
+            <div id="conv-laenge" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-laenge-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-laenge-unit" class="conv-select"><option value="1000">km</option><option value="1" selected>m</option><option value="0.01">cm</option><option value="0.001">mm</option><option value="0.000001">µm</option><option value="0.000000001">nm</option><option value="1609.344">mi</option><option value="0.9144">yd</option><option value="0.3048">ft</option><option value="0.0254">in</option><option value="1852">nmi</option></select></div>
+              <div id="conv-laenge-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-gewicht" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-gewicht-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-gewicht-unit" class="conv-select"><option value="1000">t</option><option value="1" selected>kg</option><option value="0.001">g</option><option value="0.000001">mg</option><option value="0.000000001">µg</option><option value="0.45359237">lb</option><option value="0.028349523">oz</option><option value="6.35029318">st</option></select></div>
+              <div id="conv-gewicht-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-temperatur" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-temperatur-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-temperatur-unit" class="conv-select"><option value="C" selected>°C</option><option value="F">°F</option><option value="K">K</option></select></div>
+              <div id="conv-temperatur-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-daten" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-daten-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-daten-unit" class="conv-select"><option value="1099511627776">TB</option><option value="1073741824">GB</option><option value="1048576" selected>MB</option><option value="1024">KB</option><option value="1">B</option><option value="137438953472">Tbit</option><option value="134217728">Gbit</option><option value="131072">Mbit</option><option value="128">Kbit</option><option value="0.125">bit</option></select></div>
+              <div id="conv-daten-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-speed" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-speed-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-speed-unit" class="conv-select"><option value="0.277778" selected>km/h</option><option value="1">m/s</option><option value="0.44704">mph</option><option value="0.514444">kn</option><option value="0.3048">ft/s</option></select></div>
+              <div id="conv-speed-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-druck" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-druck-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-druck-unit" class="conv-select"><option value="100000">bar</option><option value="100">mbar</option><option value="1" selected>Pa</option><option value="1000">kPa</option><option value="100">hPa</option><option value="101325">atm</option><option value="6894.757">psi</option><option value="133.322">mmHg</option></select></div>
+              <div id="conv-druck-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-zeit" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-zeit-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-zeit-unit" class="conv-select"><option value="86400">d</option><option value="3600">h</option><option value="60" selected>min</option><option value="1">s</option><option value="0.001">ms</option><option value="0.000001">µs</option><option value="0.000000001">ns</option></select></div>
+              <div id="conv-zeit-results" class="conv-results"></div>
+            </div>
+
+            <div id="conv-flaeche" class="conv-panel">
+              <div class="conv-row"><input type="number" id="conv-flaeche-input" class="cyber-input-field conv-input" placeholder="Wert eingeben" step="any"><select id="conv-flaeche-unit" class="conv-select"><option value="1000000">km²</option><option value="1" selected>m²</option><option value="0.0001">cm²</option><option value="0.000001">mm²</option><option value="10000">ha</option><option value="4046.8564">ac</option><option value="0.092903">ft²</option><option value="0.00064516">in²</option></select></div>
+              <div id="conv-flaeche-results" class="conv-results"></div>
+            </div>
           </div>
         </div>
       </div>

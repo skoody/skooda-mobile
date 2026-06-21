@@ -1809,6 +1809,113 @@ body {
   }
 }
 
+.conv-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0 4px;
+}
+
+.conv-tab-btn {
+  padding: 6px 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  border-radius: 20px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.conv-tab-btn.active {
+  background: var(--neon-cyan);
+  color: #000;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.3);
+}
+
+.conv-panel {
+  display: none;
+  padding: 10px 4px;
+}
+
+.conv-panel.active {
+  display: block;
+}
+
+.conv-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.conv-row .conv-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.conv-select {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--neon-cyan);
+  padding: 10px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 65px;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: center;
+}
+
+.conv-select:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+}
+
+.conv-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.conv-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 242, 255, 0.04);
+  border: 1px solid rgba(0, 242, 255, 0.08);
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+.conv-result-row:hover {
+  background: rgba(0, 242, 255, 0.08);
+  border-color: rgba(0, 242, 255, 0.2);
+}
+
+.conv-result-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.conv-result-unit {
+  font-size: 0.8rem;
+  color: var(--neon-cyan);
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
 .osint-tabs {
   display: flex;
   gap: 6px;
