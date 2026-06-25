@@ -55,6 +55,9 @@ import java.util.Collections
 import java.util.Scanner
 import kotlin.math.atan2
 import kotlin.math.sqrt
+import android.media.projection.MediaProjectionManager
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 
 // Keystore, Encryption & Security
 import java.security.KeyStore
@@ -90,6 +93,12 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 
 class MainActivity : TauriActivity(), SensorEventListener {
+
+    companion object {
+        var pendingRecordCallback: String? = null
+    }
+
+    lateinit var mediaProjectionLauncher: ActivityResultLauncher<Intent>
     private var webViewInstance: WebView? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastCpuTotal: Long = 0
@@ -125,16 +134,43 @@ class MainActivity : TauriActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        mediaProjectionLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == RESULT_OK && result.data != null) {
+                val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                val mediaProjection = mpManager.getMediaProjection(result.resultCode, result.data!!)
+                ScreenRecorderService.mediaProjection = mediaProjection
+                val serviceIntent = Intent(this, ScreenRecorderService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
+                pendingRecordCallback?.let { cb ->
+                    webViewInstance?.post {
+                        webViewInstance?.evaluateJavascript(
+                            "if(window['$cb']){window['$cb']({\"status\":\"recording\"})}", null
+                        )
+                    }
+                }
+            }
+        }
+
         val permissions = mutableListOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.CAMERA,
             android.Manifest.permission.READ_EXTERNAL_STORAGE,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.RECORD_AUDIO
         )
         if (Build.VERSION.SDK_INT >= 31) {
             permissions.add(android.Manifest.permission.BLUETOOTH_CONNECT)
             permissions.add(android.Manifest.permission.BLUETOOTH_SCAN)
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
         }
         
         if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
@@ -1249,6 +1285,28 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun stopProbeSniffer() {
             probeSniffer.stopSniffer()
+        }
+
+        @JavascriptInterface
+        fun startScreenRecording(callback: String) {
+            val activity = mContext as MainActivity
+            MainActivity.pendingRecordCallback = callback
+            val mpManager = mContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            activity.mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+        }
+
+        @JavascriptInterface
+        fun stopScreenRecording(): String {
+            val intent = Intent(mContext, ScreenRecorderService::class.java)
+            mContext.stopService(intent)
+            ScreenRecorderService.mediaProjection?.stop()
+            ScreenRecorderService.mediaProjection = null
+            return "{\"status\":\"stopped\"}"
+        }
+
+        @JavascriptInterface
+        fun isScreenRecording(): Boolean {
+            return ScreenRecorderService.isRecording
         }
 
         private fun postToJS(callback: String, data: String) {

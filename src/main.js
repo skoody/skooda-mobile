@@ -8,6 +8,7 @@ import { initVision } from './features/vision/vision.js';
 import { initSettings } from './features/settings/settings.js';
 import { initRechner } from './features/rechner/rechner.js';
 import { initOsint } from './features/osint/osint.js';
+import { initScreenRecorder } from './features/device/screenrecorder.js';
 
 // Features that need to be globally accessible for cross-module interaction
 import * as MapModule from './features/map/map.js';
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSettings();
     initRechner();
     initOsint();
+    initScreenRecorder();
     
     console.log("✨ All modules initialized.");
 });
