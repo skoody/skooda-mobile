@@ -94,11 +94,8 @@ import android.graphics.Matrix
 
 class MainActivity : TauriActivity(), SensorEventListener {
 
-    companion object {
-        var pendingRecordCallback: String? = null
-    }
-
-    lateinit var mediaProjectionLauncher: ActivityResultLauncher<Intent>
+    private val SCREEN_CAPTURE_REQUEST_CODE = 9999
+    private var pendingRecordCallback: String? = null
     private var webViewInstance: WebView? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastCpuTotal: Long = 0
@@ -134,28 +131,6 @@ class MainActivity : TauriActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        mediaProjectionLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == RESULT_OK && result.data != null) {
-                val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                val mediaProjection = mpManager.getMediaProjection(result.resultCode, result.data!!)
-                ScreenRecorderService.mediaProjection = mediaProjection
-                val serviceIntent = Intent(this, ScreenRecorderService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
-                }
-                pendingRecordCallback?.let { cb ->
-                    webViewInstance?.post {
-                        webViewInstance?.evaluateJavascript(
-                            "if(window['$cb']){window['$cb']({\"status\":\"recording\"})}", null
-                        )
-                    }
-                }
-            }
-        }
 
         val permissions = mutableListOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -239,6 +214,35 @@ class MainActivity : TauriActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SCREEN_CAPTURE_REQUEST_CODE) {
+            if (resultCode == RESULT_OK && data != null) {
+                try {
+                    val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                    val projection = mpManager.getMediaProjection(resultCode, data)
+                    ScreenRecorderService.mediaProjection = projection
+                    val serviceIntent = Intent(this, ScreenRecorderService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent)
+                    } else {
+                        startService(serviceIntent)
+                    }
+                    pendingRecordCallback?.let { cb ->
+                        webViewInstance?.post {
+                            webViewInstance?.evaluateJavascript(
+                                "if(window['$cb']){window['$cb']({\"status\":\"recording\"})}", null
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 
     override fun onWebViewCreate(webView: WebView) {
         super.onWebViewCreate(webView)
@@ -1290,10 +1294,15 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun startScreenRecording(callback: String) {
             val activity = mContext as MainActivity
-            MainActivity.pendingRecordCallback = callback
+            activity.pendingRecordCallback = callback
             Handler(Looper.getMainLooper()).post {
-                val mpManager = mContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                activity.mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+                try {
+                    val mpManager = mContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                    @Suppress("DEPRECATION")
+                    activity.startActivityForResult(mpManager.createScreenCaptureIntent(), activity.SCREEN_CAPTURE_REQUEST_CODE)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
 
