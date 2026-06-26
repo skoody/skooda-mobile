@@ -1291,8 +1291,10 @@ class MainActivity : TauriActivity(), SensorEventListener {
         fun startScreenRecording(callback: String) {
             val activity = mContext as MainActivity
             MainActivity.pendingRecordCallback = callback
-            val mpManager = mContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            activity.mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+            Handler(Looper.getMainLooper()).post {
+                val mpManager = mContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                activity.mediaProjectionLauncher.launch(mpManager.createScreenCaptureIntent())
+            }
         }
 
         @JavascriptInterface

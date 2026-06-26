@@ -109,54 +109,68 @@ class ScreenRecorderService : Service() {
 
         val fd = contentResolver.openFileDescriptor(uri, "w")
         if (fd == null) {
+            contentResolver.delete(uri, null, null)
             stopSelf()
             return
         }
 
-        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(this)
-        } else {
-            @Suppress("DEPRECATION")
-            MediaRecorder()
-        }
-
-        mediaRecorder?.apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setVideoSource(MediaRecorder.VideoSource.SURFACE)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setVideoSize(screenWidth, screenHeight)
-            setVideoFrameRate(30)
-            setVideoEncodingBitRate(8_000_000)
-            setAudioEncodingBitRate(128_000)
-            setAudioSamplingRate(44100)
-            setOutputFile(fd.fileDescriptor)
-            prepare()
-        }
-
-        virtualDisplay = projection.createVirtualDisplay(
-            "SkoodaScreenCapture",
-            screenWidth,
-            screenHeight,
-            density,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            mediaRecorder?.surface,
-            null,
-            null
-        )
-
-        mediaRecorder?.start()
-        isRecording = true
-
-        outputFilePath = uri.toString()
-
-        projection.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() {
-                isRecording = false
-                cleanup()
+        try {
+            mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                MediaRecorder(this)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaRecorder()
             }
-        }, null)
+
+            var hasAudio = true
+            mediaRecorder?.apply {
+                try {
+                    setAudioSource(MediaRecorder.AudioSource.MIC)
+                } catch (_: Exception) {
+                    hasAudio = false
+                }
+                setVideoSource(MediaRecorder.VideoSource.SURFACE)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+                if (hasAudio) {
+                    setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                    setAudioEncodingBitRate(128_000)
+                    setAudioSamplingRate(44100)
+                }
+                setVideoSize(screenWidth, screenHeight)
+                setVideoFrameRate(30)
+                setVideoEncodingBitRate(8_000_000)
+                setOutputFile(fd.fileDescriptor)
+                prepare()
+            }
+
+            virtualDisplay = projection.createVirtualDisplay(
+                "SkoodaScreenCapture",
+                screenWidth,
+                screenHeight,
+                density,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                mediaRecorder?.surface,
+                null,
+                null
+            )
+
+            mediaRecorder?.start()
+            isRecording = true
+            outputFilePath = uri.toString()
+
+            projection.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    isRecording = false
+                    cleanup()
+                }
+            }, null)
+        } catch (e: Exception) {
+            try { fd.close() } catch (_: Exception) {}
+            contentResolver.delete(uri, null, null)
+            cleanup()
+            stopSelf()
+        }
     }
 
     private fun cleanup() {
