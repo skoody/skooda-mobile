@@ -94,8 +94,7 @@ import android.graphics.Matrix
 
 class MainActivity : TauriActivity(), SensorEventListener {
 
-    private val SCREEN_CAPTURE_REQUEST_CODE = 9999
-    private var pendingRecordCallback: String? = null
+
     private var webViewInstance: WebView? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastCpuTotal: Long = 0
@@ -215,34 +214,6 @@ class MainActivity : TauriActivity(), SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-    @Suppress("DEPRECATION")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == SCREEN_CAPTURE_REQUEST_CODE) {
-            if (resultCode == RESULT_OK && data != null) {
-                try {
-                    val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    val projection = mpManager.getMediaProjection(resultCode, data)
-                    ScreenRecorderService.mediaProjection = projection
-                    val serviceIntent = Intent(this, ScreenRecorderService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent)
-                    } else {
-                        startService(serviceIntent)
-                    }
-                    pendingRecordCallback?.let { cb ->
-                        webViewInstance?.post {
-                            webViewInstance?.evaluateJavascript(
-                                "if(window['$cb']){window['$cb']({\"status\":\"recording\"})}", null
-                            )
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-    }
 
     override fun onWebViewCreate(webView: WebView) {
         super.onWebViewCreate(webView)
@@ -1293,13 +1264,12 @@ class MainActivity : TauriActivity(), SensorEventListener {
 
         @JavascriptInterface
         fun startScreenRecording(callback: String) {
-            val activity = mContext as MainActivity
-            activity.pendingRecordCallback = callback
+            ScreenCaptureActivity.pendingCallback = callback
             Handler(Looper.getMainLooper()).post {
                 try {
-                    val mpManager = mContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    @Suppress("DEPRECATION")
-                    activity.startActivityForResult(mpManager.createScreenCaptureIntent(), activity.SCREEN_CAPTURE_REQUEST_CODE)
+                    val intent = Intent(mContext, ScreenCaptureActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    mContext.startActivity(intent)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

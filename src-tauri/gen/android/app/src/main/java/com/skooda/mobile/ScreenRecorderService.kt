@@ -24,6 +24,7 @@ class ScreenRecorderService : Service() {
     companion object {
         @Volatile var mediaProjection: MediaProjection? = null
         @Volatile var isRecording: Boolean = false
+        @Volatile var jsCallback: String? = null
     }
 
     private var virtualDisplay: VirtualDisplay? = null

@@ -2,6 +2,7 @@ import { getEl } from '../../core/ui.js';
 
 let recordingInterval = null;
 let recordingStartTime = 0;
+let pollInterval = null;
 
 function formatTime(seconds) {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -27,6 +28,7 @@ function setRecordingUI(active) {
         info.style.display = 'none';
 
         recordingStartTime = Date.now();
+        if (recordingInterval) clearInterval(recordingInterval);
         recordingInterval = setInterval(() => {
             const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
             timer.textContent = formatTime(elapsed);
@@ -54,21 +56,36 @@ function setRecordingUI(active) {
     }
 }
 
+function startPollingForRecording() {
+    if (pollInterval) clearInterval(pollInterval);
+    let attempts = 0;
+    pollInterval = setInterval(() => {
+        attempts++;
+        try {
+            if (typeof Android !== 'undefined' && Android.isScreenRecording && Android.isScreenRecording()) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                setRecordingUI(true);
+                return;
+            }
+        } catch (e) {}
+        if (attempts > 30) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+    }, 500);
+}
+
 export function initScreenRecorder() {
     const startBtn = getEl('btn-start-rec');
     const stopBtn = getEl('btn-stop-rec');
 
     if (!startBtn || !stopBtn) return;
 
-    window.__screenRecordCallback = function(result) {
-        if (result && result.status === 'recording') {
-            setRecordingUI(true);
-        }
-    };
-
     startBtn.addEventListener('click', () => {
         if (typeof Android !== 'undefined' && Android.startScreenRecording) {
             Android.startScreenRecording('__screenRecordCallback');
+            startPollingForRecording();
         }
     });
 
