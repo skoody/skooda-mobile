@@ -20,6 +20,9 @@ import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.widget.Toast
+import android.os.Handler
+import android.os.Looper
 
 class ScreenRecorderService : Service() {
 
@@ -79,6 +82,7 @@ class ScreenRecorderService : Service() {
 
     private fun startRecording() {
         val projection = mediaProjection ?: run {
+            toast("SCR ERR: projection null in service")
             stopSelf()
             return
         }
@@ -106,12 +110,14 @@ class ScreenRecorderService : Service() {
 
         val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
         if (uri == null) {
+            toast("SCR ERR: uri null")
             stopSelf()
             return
         }
 
         val fd = contentResolver.openFileDescriptor(uri, "w")
         if (fd == null) {
+            toast("SCR ERR: fd null")
             contentResolver.delete(uri, null, null)
             stopSelf()
             return
@@ -160,6 +166,7 @@ class ScreenRecorderService : Service() {
             mediaRecorder?.start()
             isRecording = true
             outputFilePath = uri.toString()
+            toast("SCR: Aufnahme läuft! ${screenWidth}x${screenHeight}")
 
             projection.registerCallback(object : MediaProjection.Callback() {
                 override fun onStop() {
@@ -168,6 +175,7 @@ class ScreenRecorderService : Service() {
                 }
             }, null)
         } catch (e: Exception) {
+            toast("SCR ERR record: ${e.message}")
             try { fd.close() } catch (_: Exception) {}
             contentResolver.delete(uri, null, null)
             cleanup()
@@ -205,5 +213,11 @@ class ScreenRecorderService : Service() {
     override fun onDestroy() {
         cleanup()
         super.onDestroy()
+    }
+
+    private fun toast(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
     }
 }
