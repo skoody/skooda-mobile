@@ -28,29 +28,18 @@ class ScreenCaptureActivity : Activity() {
         if (requestCode == REQUEST_CODE) {
             if (resultCode == RESULT_OK && data != null) {
                 try {
-                    val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    val projection = mpManager.getMediaProjection(resultCode, data)
-                    if (projection == null) {
-                        Toast.makeText(this, "SCR ERR: projection is null", Toast.LENGTH_LONG).show()
-                        finish()
-                        return
-                    }
-                    ScreenRecorderService.mediaProjection = projection
                     val serviceIntent = Intent(this, ScreenRecorderService::class.java)
+                    serviceIntent.putExtra("resultCode", resultCode)
+                    serviceIntent.putExtra("data", data)
+                    serviceIntent.putExtra("callback", pendingCallback)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(serviceIntent)
                     } else {
                         startService(serviceIntent)
                     }
-                    Toast.makeText(this, "SCR: Service gestartet", Toast.LENGTH_SHORT).show()
-                    pendingCallback?.let { cb ->
-                        ScreenRecorderService.jsCallback = cb
-                    }
                 } catch (e: Exception) {
                     Toast.makeText(this, "SCR ERR result: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-            } else {
-                Toast.makeText(this, "SCR: Abgelehnt (code=$resultCode)", Toast.LENGTH_SHORT).show()
             }
         }
         finish()

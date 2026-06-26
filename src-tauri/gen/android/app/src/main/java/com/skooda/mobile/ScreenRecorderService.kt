@@ -76,6 +76,22 @@ class ScreenRecorderService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
+        val resultCode = intent?.getIntExtra("resultCode", -1) ?: -1
+        @Suppress("DEPRECATION")
+        val data: Intent? = intent?.getParcelableExtra("data")
+        jsCallback = intent?.getStringExtra("callback")
+
+        if (resultCode != -1 && data != null) {
+            try {
+                val mpManager = getSystemService(MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+                mediaProjection = mpManager.getMediaProjection(resultCode, data)
+            } catch (e: Exception) {
+                toast("SCR ERR getProjection: ${e.message}")
+                stopSelf()
+                return START_NOT_STICKY
+            }
+        }
+
         startRecording()
         return START_NOT_STICKY
     }
