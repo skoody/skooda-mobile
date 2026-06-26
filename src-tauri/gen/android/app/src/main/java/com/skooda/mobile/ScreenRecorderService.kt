@@ -15,6 +15,8 @@ import android.os.IBinder
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.WindowManager
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -123,12 +125,11 @@ class ScreenRecorderService : Service() {
                 MediaRecorder()
             }
 
-            var hasAudio = true
+            val hasAudio = ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
             mediaRecorder?.apply {
-                try {
+                if (hasAudio) {
                     setAudioSource(MediaRecorder.AudioSource.MIC)
-                } catch (_: Exception) {
-                    hasAudio = false
                 }
                 setVideoSource(MediaRecorder.VideoSource.SURFACE)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
