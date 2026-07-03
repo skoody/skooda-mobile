@@ -38,7 +38,7 @@ const PLATFORMS = [
     { name: 'Roblox', url: 'https://www.roblox.com/user.aspx?username={}' },
 ];
 
-function createResultCard(platform, status, url) {
+function createResultCard(platform, status, url, statusCode, errorMsg) {
     const card = document.createElement('div');
     card.className = 'osint-result-card';
 
@@ -57,7 +57,7 @@ function createResultCard(platform, status, url) {
         case 'error':
             statusClass = 'error';
             statusIcon = '⚠️';
-            statusText = 'Fehler/Blockiert';
+            statusText = errorMsg ? `Fehler: ${errorMsg}` : (statusCode ? `Blockiert (HTTP ${statusCode})` : 'Fehler/Blockiert');
             break;
         default:
             statusClass = 'pending';
@@ -106,7 +106,7 @@ async function runUsernameScan(username, resultsContainer, statsContainer) {
             else if (result.status === 'not_found') notFoundCount++;
             else errorCount++;
 
-            const newCard = createResultCard(platform.name, result.status, profileUrl);
+            const newCard = createResultCard(platform.name, result.status, profileUrl, result.status_code, result.error);
             resultsContainer.replaceChild(newCard, placeholders[index]);
         });
 

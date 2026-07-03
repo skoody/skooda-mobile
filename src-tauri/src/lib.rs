@@ -556,6 +556,7 @@ struct ProbeResult {
     url: String,
     status: String,
     status_code: u16,
+    error: Option<String>,
 }
 
 #[tauri::command]
@@ -592,9 +593,21 @@ async fn probe_urls(urls: Vec<String>) -> Result<Vec<ProbeResult>, String> {
                         404 | 410 => "not_found",
                         _ => "error",
                     };
-                    ProbeResult { url: u, status: status.to_string(), status_code: code }
+                    ProbeResult { url: u, status: status.to_string(), status_code: code, error: None }
                 }
-                Err(_) => ProbeResult { url: u, status: "error".to_string(), status_code: 0 },
+                Err(e) => {
+                    let err_msg = e.to_string();
+                    let short_err = if err_msg.contains("timeout") {
+                        "Timeout".to_string()
+                    } else if err_msg.contains("dns") || err_msg.contains("resolve") {
+                        "DNS Fehler".to_string()
+                    } else if err_msg.contains("ssl") || err_msg.contains("tls") {
+                        "SSL Fehler".to_string()
+                    } else {
+                        "Verb. Fehler".to_string()
+                    };
+                    ProbeResult { url: u, status: "error".to_string(), status_code: 0, error: Some(short_err) }
+                }
             }
         }));
     }
