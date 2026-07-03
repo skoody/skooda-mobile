@@ -237,6 +237,13 @@
             <p>OSINT Reconnaissance</p>
           </div>
         </div>
+        <div class="tool-card category-card" data-sub="coder-toolset">
+          <div class="card-icon">🔏</div>
+          <div class="card-info">
+            <h3>Codierung</h3>
+            <p>Base64 & Binärcode</p>
+          </div>
+        </div>
       </div>
 
       
@@ -810,6 +817,44 @@
               <button id="osint-scan-name" class="btn primary full-width">🔤 Name suchen</button>
               <div id="osint-name-results" class="osint-results-grid" style="margin-top: 12px;"></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Codierung (Untermenü) -->
+      <div id="coder-toolset" class="sub-tool-container" style="display: none;">
+        <button class="back-btn">← Back to Tools</button>
+        <div class="tool-card full-row">
+          <div class="card-info">
+            <h3>🔐 Coder & Decoder</h3>
+            <p class="tool-desc" style="margin-bottom:15px; font-size:0.75rem; color:var(--text-dim);">Texte schnell codieren oder decodieren in Base64 oder Binärcode.</p>
+
+            <div class="osint-tabs" style="margin-bottom: 12px;">
+              <button class="osint-tab-btn coder-mode-btn active" data-mode="encode">Codieren (Encode)</button>
+              <button class="osint-tab-btn coder-mode-btn" data-mode="decode">Decodieren (Decode)</button>
+            </div>
+
+            <div class="osint-tabs" style="margin-bottom: 15px;">
+              <button class="osint-tab-btn coder-type-btn active" data-type="base64">Base64</button>
+              <button class="osint-tab-btn coder-type-btn" data-type="binary">Binärcode</button>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <label id="coder-input-label" style="font-size: 0.75rem; color: var(--neon-cyan); font-weight: bold; font-family: monospace; display: block; margin-bottom: 5px;">KLARTEXT (EINGABE):</label>
+              <textarea id="coder-input" class="cyber-input" style="height: 100px; font-family: monospace; resize: none; margin: 0;" placeholder="Text hier eingeben..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+              <button id="coder-swap" class="btn secondary" style="flex: 1; padding: 10px; font-size: 0.8rem;">🔄 Swap</button>
+              <button id="coder-clear" class="btn secondary" style="flex: 1; padding: 10px; font-size: 0.8rem;">🗑️ Löschen</button>
+            </div>
+
+            <div>
+              <label id="coder-output-label" style="font-size: 0.75rem; color: var(--neon-cyan); font-weight: bold; font-family: monospace; display: block; margin-bottom: 5px;">BASE64 (AUSGABE):</label>
+              <textarea id="coder-output" class="cyber-input" style="height: 100px; font-family: monospace; resize: none; margin: 0; background: rgba(0, 0, 0, 0.3); border-color: rgba(255, 255, 255, 0.05);" readonly placeholder="Ergebnis erscheint hier..."></textarea>
+            </div>
+
+            <button id="coder-copy" class="btn primary full-width" style="margin-top: 15px;">📋 Ergebnis kopieren</button>
           </div>
         </div>
       </div>

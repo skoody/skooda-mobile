@@ -1932,6 +1932,11 @@ body {
   color: var(--neon-cyan) !important;
 }
 
+.conv-error {
+  border-color: rgba(255, 0, 68, 0.4) !important;
+  color: #ff0044 !important;
+}
+
 .conv-select {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
