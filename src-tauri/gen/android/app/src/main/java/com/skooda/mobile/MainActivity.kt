@@ -134,6 +134,28 @@ class MainActivity : TauriActivity(), SensorEventListener {
     private var cachedBatteryHealth: String = "Active"
     private var lastSlowUpdateTime: Long = 0
 
+    // Optimized caching variables
+    private var isStaticStatsInitialized = false
+    private var cachedRamTotal: Long = 0
+    private var cachedStorageTotal: Long = 0
+    private var cachedCpuModel: String = ""
+    private var cachedAndroidVer: String = ""
+    private var cachedApiLevel: Int = 0
+    private var cachedResolution: String = ""
+    private var cachedRefreshRate: Int = 0
+    private var cachedModel: String = ""
+    private var cachedManufacturer: String = ""
+    private var cachedBluetoothVer: String = ""
+
+    private var cachedRamUsed: Long = 0
+    private var cachedStorageUsed: Long = 0
+    private var cachedBatteryCurrent: Int = 0
+    private var cachedBatteryTemp: Float = 0.0f
+    private var cachedWifiSsid: String = "No Connection"
+    private var cachedWifiRssi: Int = 0
+    private var cachedLocalIp: String = "0.0.0.0"
+    private var cachedBluetoothEnabled: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -274,9 +296,36 @@ class MainActivity : TauriActivity(), SensorEventListener {
             val nowNanos = SystemClock.elapsedRealtimeNanos()
             val nowMillis = SystemClock.elapsedRealtime()
 
+            // 1. Initialize static data once
+            if (!isStaticStatsInitialized) {
+                try {
+                    val internal = StatFs(Environment.getDataDirectory().path)
+                    cachedStorageTotal = internal.totalBytes
+                    
+                    val mi = ActivityManager.MemoryInfo()
+                    (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(mi)
+                    cachedRamTotal = mi.totalMem
+                    
+                    cachedCpuModel = Build.HARDWARE.uppercase()
+                    cachedAndroidVer = Build.VERSION.RELEASE
+                    cachedApiLevel = Build.VERSION.SDK_INT
+                    cachedModel = Build.MODEL
+                    cachedManufacturer = Build.MANUFACTURER.uppercase()
+                    cachedBluetoothVer = getBluetoothVersion()
+                    
+                    val dm = DisplayMetrics().apply { windowManager.defaultDisplay.getMetrics(this) }
+                    cachedResolution = "${dm.widthPixels}x${dm.heightPixels}"
+                    cachedRefreshRate = Math.round(windowManager.defaultDisplay.refreshRate)
+                    
+                    isStaticStatsInitialized = true
+                } catch (e: Exception) {}
+            }
+
+            // 2. Update slow-changing data once every 1 second (1000ms)
             if (nowMillis - lastSlowUpdateTime >= 1000) {
                 cachedCpuUsage = getCpuUsage()
                 cachedCoreUsage = getCoreUsage()
+                
                 val batteryIntent: Intent? = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
                 val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
                 val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
@@ -289,12 +338,49 @@ class MainActivity : TauriActivity(), SensorEventListener {
                     BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
                     else -> "Active"
                 }
+                cachedBatteryTemp = (batteryIntent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0) / 10.0f
+                
+                val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+                cachedBatteryCurrent = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) / 1000 // mA
+
+                val internal = StatFs(Environment.getDataDirectory().path)
+                cachedStorageUsed = internal.totalBytes - internal.availableBytes
+
+                val mi = ActivityManager.MemoryInfo()
+                (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(mi)
+                cachedRamUsed = mi.totalMem - mi.availMem
+
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val network = cm.activeNetwork
+                val caps = cm.getNetworkCapabilities(network)
+                var networkName = "No Connection"
+                var localIp = "0.0.0.0"
+                var rssi = 0
+
+                if (caps != null) {
+                    if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                        val info = wifiManager.connectionInfo
+                        val ssid = info.ssid.replace("\"", "")
+                        networkName = if (ssid == "<unknown ssid>") "WiFi (Protected)" else ssid
+                        rssi = info.rssi
+                        val ipAddr = info.ipAddress
+                        localIp = String.format("%d.%d.%d.%d", (ipAddr and 0xff), (ipAddr shr 8 and 0xff), (ipAddr shr 16 and 0xff), (ipAddr shr 24 and 0xff))
+                    } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                        networkName = "Mobile Data"
+                    }
+                }
+                cachedWifiSsid = networkName
+                cachedWifiRssi = rssi
+                cachedLocalIp = localIp
+
+                val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                cachedBluetoothEnabled = btManager.adapter?.isEnabled ?: false
+
                 lastSlowUpdateTime = nowMillis
             }
 
-            val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-            val currentNow = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) / 1000 // mA
-            
+            // 3. Fast-changing calculations (network speeds & sensors)
             val rx = TrafficStats.getTotalRxBytes()
             val tx = TrafficStats.getTotalTxBytes()
             val timeDiffSec = (nowNanos - lastNetTime) / 1_000_000_000.0f
@@ -306,59 +392,32 @@ class MainActivity : TauriActivity(), SensorEventListener {
             lastTxBytes = tx
             lastNetTime = nowNanos
 
-            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val network = cm.activeNetwork
-            val caps = cm.getNetworkCapabilities(network)
-            var networkName = "No Connection"
-            var localIp = "0.0.0.0"
-            var rssi = 0
-
-            if (caps != null) {
-                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                    val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                    val info = wifiManager.connectionInfo
-                    val ssid = info.ssid.replace("\"", "")
-                    networkName = if (ssid == "<unknown ssid>") "WiFi (Protected)" else ssid
-                    rssi = info.rssi
-                    val ipAddr = info.ipAddress
-                    localIp = String.format("%d.%d.%d.%d", (ipAddr and 0xff), (ipAddr shr 8 and 0xff), (ipAddr shr 16 and 0xff), (ipAddr shr 24 and 0xff))
-                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-                    networkName = "Mobile Data"
-                }
-            }
-
-            val internal = StatFs(Environment.getDataDirectory().path)
-            val mi = ActivityManager.MemoryInfo()
-            (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(mi)
-            val dm = DisplayMetrics().apply { windowManager.defaultDisplay.getMetrics(this) }
-            val refreshRate = windowManager.defaultDisplay.refreshRate
-            
+            // 4. Assemble the final stats JSON using fast variables & cached slow/static values
             stats.put("battery_percent", cachedBatteryPct)
             stats.put("battery_voltage", cachedBatteryVolts)
-            stats.put("battery_current", currentNow)
+            stats.put("battery_current", cachedBatteryCurrent)
             stats.put("battery_health", cachedBatteryHealth)
-            stats.put("ram_used", mi.totalMem - mi.availMem)
-            stats.put("ram_total", mi.totalMem)
+            stats.put("ram_used", cachedRamUsed)
+            stats.put("ram_total", cachedRamTotal)
             stats.put("cpu_usage", cachedCpuUsage) 
             stats.put("cpu_cores", cachedCoreUsage)
-            stats.put("cpu_model", Build.HARDWARE.uppercase())
-            stats.put("temperature", (registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0) / 10.0f)
-            stats.put("storage_used", internal.totalBytes - internal.availableBytes)
-            stats.put("storage_total", internal.totalBytes)
+            stats.put("cpu_model", cachedCpuModel)
+            stats.put("temperature", cachedBatteryTemp)
+            stats.put("storage_used", cachedStorageUsed)
+            stats.put("storage_total", cachedStorageTotal)
             stats.put("uptime", SystemClock.elapsedRealtime() / 1000)
-            stats.put("model", Build.MODEL)
-            stats.put("manufacturer", Build.MANUFACTURER.uppercase())
-            stats.put("android_ver", Build.VERSION.RELEASE)
-            stats.put("api_level", Build.VERSION.SDK_INT)
-            stats.put("resolution", "${dm.widthPixels}x${dm.heightPixels}")
-            stats.put("refresh_rate", Math.round(refreshRate))
-            stats.put("wifi_ssid", networkName)
-            stats.put("wifi_rssi", rssi)
-            stats.put("local_ip", localIp)
+            stats.put("model", cachedModel)
+            stats.put("manufacturer", cachedManufacturer)
+            stats.put("android_ver", cachedAndroidVer)
+            stats.put("api_level", cachedApiLevel)
+            stats.put("resolution", cachedResolution)
+            stats.put("refresh_rate", cachedRefreshRate)
+            stats.put("wifi_ssid", cachedWifiSsid)
+            stats.put("wifi_rssi", cachedWifiRssi)
+            stats.put("local_ip", cachedLocalIp)
             stats.put("public_ip", publicIp)
-            stats.put("bluetooth_ver", getBluetoothVersion())
-            val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            stats.put("bluetooth_enabled", btManager.adapter?.isEnabled ?: false)
+            stats.put("bluetooth_ver", cachedBluetoothVer)
+            stats.put("bluetooth_enabled", cachedBluetoothEnabled)
             
             // Sensors
             val sObj = JSONObject()
