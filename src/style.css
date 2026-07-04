@@ -1012,6 +1012,226 @@ body {
   box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
 }
 
+/* Google Maps-like Search Suggestions */
+.map-search-suggestions {
+  position: absolute;
+  top: 66px;
+  left: 16px;
+  width: calc(100% - 100px);
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(15, 17, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 255, 0.3);
+  border-radius: 12px;
+  z-index: 1005;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.suggestion-item {
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: rgba(0, 242, 255, 0.1);
+}
+
+/* Google-Style Directions Panel */
+.map-directions-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: calc(100% - 94px);
+  background: rgba(15, 17, 26, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 255, 0.4);
+  padding: 14px;
+  border-radius: 16px;
+  z-index: 1002;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+}
+
+.directions-inputs .input-row input {
+  transition: border-color 0.2s;
+}
+
+.directions-inputs .input-row input:focus {
+  border-color: var(--neon-cyan) !important;
+  outline: none;
+}
+
+.travel-modes .mode-btn {
+  transition: all 0.2s;
+}
+
+.travel-modes .mode-btn.active {
+  background: rgba(0, 242, 255, 0.2) !important;
+  border-color: var(--neon-cyan) !important;
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+}
+
+/* Turn-by-Turn Navigation HUD (Google Maps green style) */
+.navigation-hud {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  background: #0f9d58; /* Google Maps Green */
+  border-radius: 16px;
+  padding: 12px 16px;
+  z-index: 1003;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(15, 157, 88, 0.3);
+  color: #fff;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.nav-hud-icon {
+  font-size: 1.8rem;
+  background: rgba(255, 255, 255, 0.2);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.nav-hud-details {
+  flex: 1;
+}
+
+.nav-hud-instruction {
+  font-size: 0.95rem;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.nav-hud-distance {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.btn-stop-nav {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-stop-nav:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Bottom Google Maps-like Route Card */
+.map-route-card {
+  position: absolute;
+  bottom: 95px;
+  left: 16px;
+  right: 16px;
+  background: rgba(15, 17, 26, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 255, 0.4);
+  padding: 14px 18px;
+  border-radius: 16px;
+  z-index: 1002;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+}
+
+.route-actions .round-btn {
+  border-radius: 20px !important;
+  font-weight: bold;
+}
+
+/* Step-by-Step Directions Steps Drawer */
+.directions-steps-drawer {
+  position: absolute;
+  bottom: 95px;
+  left: 16px;
+  right: 16px;
+  background: rgba(15, 17, 26, 0.95);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(0, 242, 255, 0.4);
+  padding: 14px 18px;
+  border-radius: 16px;
+  z-index: 1004;
+  box-shadow: 0 -8px 35px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.directions-step-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.directions-step-row:last-child {
+  border-bottom: none;
+}
+
+.step-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.step-text {
+  flex: 1;
+  color: #fff;
+}
+
+.step-dist {
+  color: var(--text-dim);
+  font-weight: bold;
+}
+
+/* 3D Active Navigation Perspective */
+.leaflet-container.tilted-nav .leaflet-map-pane {
+  transform: perspective(600px) rotateX(42deg) !important;
+  transform-origin: 50% 100% !important;
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+/* Standalone navigation point marker */
+.routing-waypoint-icon {
+  z-index: 1000 !important;
+}
+
 .map-btn {
   position: absolute;
   bottom: 20px;

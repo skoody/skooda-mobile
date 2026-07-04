@@ -303,12 +303,81 @@
         <button class="back-btn">← Back to Tools</button>
         <div class="tool-card full-row no-pad">
           <div id="map-container" class="map-container-default">
+            <!-- Map Target -->
             <div id="map" style="height: 100%; width: 100%;"></div>
-            <div id="map-search-container" class="map-top-bar">
-              <input type="text" id="map-search-input" placeholder="Search Location..." class="map-search">
-              <button id="fullscreen-map" class="map-top-btn" title="Toggle Fullscreen">⛶</button>
-              <button id="clear-route" class="map-top-btn" title="Clear Route">🗑️</button>
+
+            <!-- Turn-by-Turn Navigation HUD (Google Maps green style) -->
+            <div id="map-navigation-hud" class="navigation-hud" style="display: none;">
+              <div class="nav-hud-icon" id="nav-hud-icon">➡️</div>
+              <div class="nav-hud-details">
+                <div class="nav-hud-instruction" id="nav-hud-instruction">Route berechnen...</div>
+                <div class="nav-hud-distance" id="nav-hud-distance">In 100m</div>
+              </div>
+              <button id="btn-stop-navigation" class="btn-stop-nav">Beenden</button>
             </div>
+
+            <!-- Floating Search Bar -->
+            <div id="map-search-container" class="map-top-bar">
+              <div class="search-bar-wrapper" style="display: flex; flex: 1; position: relative;">
+                <input type="text" id="map-search-input" placeholder="Nach Ort suchen..." class="map-search">
+                <button id="toggle-directions-btn" class="search-action-btn" title="Route planen" style="position: absolute; right: 10px; top: 8px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--neon-cyan); z-index: 10;">🔀</button>
+              </div>
+              <button id="fullscreen-map" class="map-top-btn" title="Vollbild">⛶</button>
+            </div>
+
+            <!-- Search Suggestions Dropdown -->
+            <div id="map-search-suggestions" class="map-search-suggestions" style="display: none;"></div>
+
+            <!-- Google-Style Directions Panel -->
+            <div id="map-directions-panel" class="map-directions-panel" style="display: none;">
+              <div class="directions-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(0, 242, 255, 0.2); padding-bottom: 8px;">
+                <h4 style="margin: 0; color: var(--neon-cyan); font-size: 0.95rem;">Wegbeschreibung</h4>
+                <button id="close-directions-btn" style="background: none; border: none; color: var(--text-dim); font-size: 1.1rem; cursor: pointer;">✖</button>
+              </div>
+              <div class="directions-inputs">
+                <div class="input-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; position: relative;">
+                  <span class="dot start-dot" style="width: 8px; height: 8px; background: var(--neon-cyan); border-radius: 50%; display: inline-block;"></span>
+                  <input type="text" id="route-start-input" placeholder="Startpunkt wählen..." value="Mein Standort" style="flex: 1; background: rgba(20,22,30,0.8); border: 1px solid rgba(0,242,255,0.3); color: #fff; padding: 6px 36px 6px 10px; border-radius: 8px; font-size: 0.8rem;">
+                  <button id="btn-set-start-gps" class="gps-btn" title="Mein Standort" style="position: absolute; right: 8px; top: 6px; background: none; border: none; color: var(--neon-cyan); cursor: pointer; font-size: 0.9rem;">🎯</button>
+                </div>
+                <div class="input-row" style="display: flex; align-items: center; gap: 8px; position: relative;">
+                  <span class="dot end-dot" style="width: 8px; height: 8px; background: var(--neon-red); border-radius: 50%; display: inline-block;"></span>
+                  <input type="text" id="route-end-input" placeholder="Zielort wählen..." style="flex: 1; background: rgba(20,22,30,0.8); border: 1px solid rgba(0,242,255,0.3); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem;">
+                </div>
+              </div>
+              <div class="travel-modes" style="display: flex; gap: 8px; margin-top: 10px;">
+                <button class="mode-btn active" data-mode="walking" style="flex: 1; background: rgba(0,242,255,0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 8px; padding: 6px 0; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">🚶 Zu Fuß</button>
+                <button class="mode-btn" data-mode="driving" style="flex: 1; background: rgba(10,11,16,0.6); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); border-radius: 8px; padding: 6px 0; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">🚗 Auto</button>
+              </div>
+            </div>
+
+            <!-- Bottom Google Maps-like Route Card -->
+            <div id="map-route-card" class="map-route-card" style="display: none;">
+              <div class="route-card-summary" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="route-metrics" style="display: flex; flex-direction: column;">
+                  <span class="route-duration" id="route-card-duration" style="font-size: 1.1rem; font-weight: bold; color: var(--neon-green);">-- min</span>
+                  <span class="route-distance" id="route-card-distance" style="font-size: 0.75rem; color: var(--text-dim);">(-- km)</span>
+                </div>
+                <div class="route-actions" style="display: flex; gap: 6px;">
+                  <button id="btn-toggle-steps" class="btn secondary mini" style="padding: 6px 12px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">📋 Details</button>
+                  <button id="btn-start-navigation" class="btn primary mini" style="padding: 6px 14px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px; font-weight: bold;">▶ Start</button>
+                  <button id="btn-cancel-route" class="btn secondary mini" style="padding: 6px 8px; font-size: 0.7rem; border-color: var(--neon-red); color: var(--neon-red);">✖</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step-by-Step Directions Steps Drawer -->
+            <div id="map-directions-drawer" class="directions-steps-drawer" style="display: none;">
+              <div class="drawer-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 10px;">
+                <h5 style="margin: 0; color: var(--neon-cyan); font-size: 0.9rem;">Wegbeschreibung Details</h5>
+                <button id="close-drawer-btn" style="background: none; border: none; color: var(--text-dim); font-size: 1rem; cursor: pointer;">✖</button>
+              </div>
+              <div id="directions-steps-list" class="directions-steps-list" style="max-height: 180px; overflow-y: auto; font-size: 0.75rem; line-height: 1.4;">
+                <!-- Steps dynamically generated -->
+              </div>
+            </div>
+
+            <!-- HUD Diagnostics Stats (Minimizable floating panel) -->
             <div class="map-overlay-stats" style="max-height: 250px; overflow-y: auto;">
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 5px;">
                 <span id="map-heading" style="font-weight: bold; color: var(--neon-cyan);">HDG: 0° N</span>
@@ -339,6 +408,7 @@
                 <div>Size: <span id="inspect-mbtiles-size">--</span></div>
               </div>
             </div>
+            
             <button id="center-map" class="map-btn">🎯</button>
           </div>
         </div>

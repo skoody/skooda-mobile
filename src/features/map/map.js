@@ -11,9 +11,6 @@ let distanceLine = null;
 let distanceLabel = null;
 let isAutoCenter = true;
 let isAutoRotate = false;
-let isRoutingMode = false;
-let routingMarkers = [];
-let routingPolyline = null;
 
 // Trail & GPX State Variables
 let trailCoords = [];
@@ -21,6 +18,18 @@ let trailPolyline = null;
 let isRecordingTrail = false;
 let importedPolylines = [];
 let lastSolvedRoutePoints = [];
+
+// New Google Maps Rework State
+let searchMarker = null;
+let startMarker = null;
+let endMarker = null;
+let routePolyline = null;
+let isNavigationMode = false;
+let navigationSteps = [];
+let currentStepIndex = 0;
+let travelMode = 'walking';
+let currentGpsLatLng = null;
+let simulationInterval = null;
 
 export function initMap() {
     const mapEl = document.getElementById('map');
@@ -175,12 +184,12 @@ export function initMap() {
 
     const arrowIcon = L.divIcon({
         className: 'player-marker',
-        html: `<div id="map-player-pointer" style="width: 20px; height: 20px; position: relative;">
-                <div style="width: 100%; height: 100%; background: var(--neon-cyan); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 10px var(--neon-cyan);"></div>
-                <div id="map-direction" style="position: absolute; top: -10px; left: 5px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 10px solid #fff; transform-origin: 5px 20px;"></div>
+        html: `<div id="map-player-pointer" style="width: 24px; height: 24px; position: relative;">
+                <div style="width: 100%; height: 100%; background: var(--neon-cyan); border: 2.5px solid #fff; border-radius: 50%; box-shadow: 0 0 12px var(--neon-cyan);"></div>
+                <div id="map-direction" style="position: absolute; top: -12px; left: 6px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 12px solid #fff; transform-origin: 6px 24px;"></div>
                </div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
     });
 
     mapMarker = L.marker([0, 0], { icon: arrowIcon }).addTo(map);
@@ -194,6 +203,7 @@ export function initMap() {
         navigator.geolocation.watchPosition((pos) => {
             const { latitude, longitude, speed, accuracy, altitude } = pos.coords;
             const latlng = [latitude, longitude];
+            currentGpsLatLng = latlng;
 
             if (mapMarker) mapMarker.setLatLng(latlng);
             if (accuracyCircle) {
@@ -215,21 +225,190 @@ export function initMap() {
                 }
             }
 
+            // Update GPS HUD
             const kmh = speed ? (speed * 3.6).toFixed(1) : "0.0";
             if (speedEl) speedEl.innerText = `SPD: ${kmh} km/h`;
             if (altEl) altEl.innerText = `ALT: ${altitude ? Math.round(altitude) : 0} m`;
             if (accEl) accEl.innerText = `ACC: ${Math.round(accuracy)} m`;
+
+            // Active Navigation updates
+            if (isNavigationMode) {
+                updateNavigationState(latlng);
+            }
         }, (err) => {
             console.error("GPS Watch error", err);
         }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     }
 
+    // Google Maps pin placement on map click (when not navigating or routing inputs are active)
     map.on('click', (e) => {
-        if (isRoutingMode) return;
-        addTacticalMarker(e.latlng.lat, e.latlng.lng, true);
+        if (isNavigationMode) return;
+        
+        const directionsPanel = getEl('map-directions-panel');
+        if (directionsPanel && directionsPanel.style.display === 'block') {
+            // Set destination input automatically from click if active
+            const endInput = getEl('route-end-input');
+            if (endInput) {
+                endInput.value = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+                setRouteDestination(e.latlng);
+            }
+            return;
+        }
+
+        // Default: Place a Google Maps-style pin at the clicked location
+        placeDestinationPin(e.latlng);
         if (window.navigator.vibrate) window.navigator.vibrate(50);
     });
 
+    // Toggle Directions button in Search Bar
+    const toggleDirectionsBtn = getEl('toggle-directions-btn');
+    if (toggleDirectionsBtn) {
+        toggleDirectionsBtn.onclick = () => {
+            openDirectionsPanel();
+        };
+    }
+
+    // Close Directions Panel Button
+    const closeDirectionsBtn = getEl('close-directions-btn');
+    if (closeDirectionsBtn) {
+        closeDirectionsBtn.onclick = () => {
+            closeDirectionsPanel();
+        };
+    }
+
+    // "Mein Standort" GPS button inside directions
+    const setStartGpsBtn = getEl('btn-set-start-gps');
+    if (setStartGpsBtn) {
+        setStartGpsBtn.onclick = () => {
+            const startInput = getEl('route-start-input');
+            if (startInput) {
+                startInput.value = "Mein Standort";
+                if (startMarker) map.removeLayer(startMarker);
+                startMarker = null;
+                calculateOptimalRoute();
+            }
+        };
+    }
+
+    // Route Input Changes
+    const startInput = getEl('route-start-input');
+    const endInput = getEl('route-end-input');
+    if (startInput && endInput) {
+        const handleInputChange = () => {
+            calculateOptimalRoute();
+        };
+        startInput.onchange = handleInputChange;
+        endInput.onchange = handleInputChange;
+    }
+
+    // Travel Modes Toggle
+    const modeBtns = document.querySelectorAll('.travel-modes .mode-btn');
+    modeBtns.forEach(btn => {
+        btn.onclick = () => {
+            modeBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'rgba(10,11,16,0.6)';
+                b.style.borderColor = 'rgba(255,255,255,0.1)';
+                b.style.color = 'var(--text-dim)';
+            });
+            btn.classList.add('active');
+            btn.style.background = 'rgba(0,242,255,0.2)';
+            btn.style.borderColor = 'var(--neon-cyan)';
+            btn.style.color = 'var(--neon-cyan)';
+            travelMode = btn.getAttribute('data-mode');
+            calculateOptimalRoute();
+        };
+    });
+
+    // Start Navigation Button Click
+    const startNavBtn = getEl('btn-start-navigation');
+    if (startNavBtn) {
+        startNavBtn.onclick = () => {
+            startActiveNavigation();
+        };
+    }
+
+    // Stop Navigation Button Click
+    const stopNavBtn = getEl('btn-stop-navigation');
+    if (stopNavBtn) {
+        stopNavBtn.onclick = () => {
+            stopActiveNavigation();
+        };
+    }
+
+    // Toggle Steps Details Button Click
+    const toggleStepsBtn = getEl('btn-toggle-steps');
+    const closeDrawerBtn = getEl('close-drawer-btn');
+    if (toggleStepsBtn && closeDrawerBtn) {
+        toggleStepsBtn.onclick = () => {
+            const drawer = getEl('map-directions-drawer');
+            if (drawer) drawer.style.display = 'block';
+        };
+        closeDrawerBtn.onclick = () => {
+            const drawer = getEl('map-directions-drawer');
+            if (drawer) drawer.style.display = 'none';
+        };
+    }
+
+    // Cancel Route Button Click
+    const cancelRouteBtn = getEl('btn-cancel-route');
+    if (cancelRouteBtn) {
+        cancelRouteBtn.onclick = () => {
+            clearGoogleRouting();
+        };
+    }
+
+    // Search Box Nominatim Autocomplete
+    const searchInput = getEl('map-search-input');
+    const suggestionBox = getEl('map-search-suggestions');
+    let searchTimeout = null;
+
+    if (searchInput && suggestionBox) {
+        searchInput.oninput = () => {
+            clearTimeout(searchTimeout);
+            const query = searchInput.value.trim();
+            if (query.length < 3) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+                    const data = await resp.json();
+                    
+                    suggestionBox.innerHTML = '';
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            div.innerHTML = `📍 <span>${item.display_name}</span>`;
+                            div.onclick = () => {
+                                const lat = parseFloat(item.lat);
+                                const lon = parseFloat(item.lon);
+                                const latlng = L.latLng(lat, lon);
+                                
+                                searchInput.value = item.display_name;
+                                suggestionBox.style.display = 'none';
+                                
+                                isAutoCenter = false;
+                                map.setView(latlng, 15);
+                                placeDestinationPin(latlng);
+                            };
+                            suggestionBox.appendChild(div);
+                        });
+                        suggestionBox.style.display = 'block';
+                    } else {
+                        suggestionBox.style.display = 'none';
+                    }
+                } catch (e) {
+                    suggestionBox.style.display = 'none';
+                }
+            }, 600);
+        };
+    }
+
+    // Fullscreen Toggle
     const fullscreenBtn = getEl('fullscreen-map');
     const mapContainer = getEl('map-container');
     const mapPlaceholder = document.createElement('div');
@@ -251,76 +430,19 @@ export function initMap() {
         };
     }
 
-    const clearRouteBtn = getEl('clear-route');
-    if (clearRouteBtn) {
-        clearRouteBtn.onclick = () => {
-            tacticalMarkers.forEach(m => map.removeLayer(m));
-            tacticalMarkers = [];
-            if (distanceLine) map.removeLayer(distanceLine);
-            if (distanceLabel) map.removeLayer(distanceLabel);
-            distanceLine = null;
-            distanceLabel = null;
-            localStorage.removeItem('skooda_markers');
-
-            // Clear imported tracks
-            importedPolylines.forEach(p => map.removeLayer(p));
-            importedPolylines = [];
-
-            if (window.navigator.vibrate) window.navigator.vibrate(50);
-        };
-    }
-
-    L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
-
+    // Dragging Map turns off auto-center follow
     map.on('movestart', (e) => {
-        if (e.target._panAnim && e.target._panAnim._inProgress) {
-            // Animation active
-        } else {
-            isAutoCenter = false;
-            if (isAutoRotate) {
-                isAutoRotate = false;
-                const rotateBtn = document.getElementById('map-rotate-toggle');
-                if (rotateBtn) rotateBtn.style.opacity = '0.5';
-                
-                const mapDiv = getCached('map');
-                if (mapDiv) {
-                    mapDiv.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    mapDiv.style.transform = 'rotate(0deg)';
-                    setTimeout(() => {
-                        if (mapDiv) mapDiv.style.transition = 'none';
-                    }, 400);
-                }
-            }
-        }
+        if (e.target._panAnim && e.target._panAnim._inProgress) return;
+        if (isNavigationMode) return; // Keep follow locked during navigation
+        isAutoCenter = false;
     });
 
     const centerBtn = getEl('center-map');
     if (centerBtn) {
         centerBtn.onclick = () => {
             isAutoCenter = true;
-            isAutoRotate = true;
-            const rotateBtn = document.getElementById('map-rotate-toggle');
-            if (rotateBtn) rotateBtn.style.opacity = '1';
             if (map && mapMarker) {
                 map.setView(mapMarker.getLatLng(), 16);
-            }
-        };
-    }
-
-    const searchInput = getEl('map-search-input');
-    if (searchInput) {
-        searchInput.onkeydown = async (e) => {
-            if (e.key === 'Enter') {
-                const query = searchInput.value;
-                if (!query) return;
-                isAutoCenter = false;
-                try {
-                    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-                    const data = await resp.json();
-                    if (data[0]) {
-                        map.setView([data[0].lat, data[0].lon], 15);
-                    }
-                } catch (err) { }
             }
         };
     }
@@ -380,7 +502,7 @@ export function initMap() {
                             const lat = parseFloat(trkpts[i].getAttribute("lat"));
                             const lon = parseFloat(trkpts[i].getAttribute("lon"));
                             if (!isNaN(lat) && !isNaN(lon)) {
-                                pts.push([lat, lon]);
+                                  pts.push([lat, lon]);
                             }
                         }
                         if (pts.length > 0) {
@@ -421,117 +543,429 @@ export function initMap() {
         }
     });
 
-    const RotateToggle = L.Control.extend({
-        options: { position: 'bottomright' },
-        onAdd: function () {
-            const btn = L.DomUtil.create('button', 'map-btn');
-            btn.id = 'map-rotate-toggle';
-            btn.innerHTML = '🧭';
-            btn.style.opacity = isAutoRotate ? '1' : '0.5';
-            L.DomEvent.on(btn, 'click', (e) => {
-                L.DomEvent.stopPropagation(e);
-                isAutoRotate = !isAutoRotate;
-                btn.style.opacity = isAutoRotate ? '1' : '0.5';
-                if (!isAutoRotate) {
-                    const mapDiv = getCached('map');
-                    if (mapDiv) mapDiv.style.transform = 'rotate(0deg)';
-                }
-            });
-            return btn;
-        }
-    });
-
-    const RoutingToggle = L.Control.extend({
-        options: { position: 'bottomright' },
-        onAdd: function () {
-            const btn = L.DomUtil.create('button', 'map-btn');
-            btn.id = 'map-routing-toggle';
-            btn.innerHTML = '🔀';
-            btn.style.opacity = '0.5';
-            L.DomEvent.on(btn, 'click', (e) => {
-                L.DomEvent.stopPropagation(e);
-                isRoutingMode = !isRoutingMode;
-                btn.style.opacity = isRoutingMode ? '1' : '0.5';
-                if (!isRoutingMode) {
-                    clearRouting();
-                } else {
-                    alert("A* Routing Mode Active. Click two points on the map to calculate offline route.");
-                }
-            });
-            return btn;
-        }
-    });
-
     map.addControl(new ThemeToggle());
-    map.addControl(new RotateToggle());
-    map.addControl(new RoutingToggle());
+    L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
+}
 
-    function clearRouting() {
-        routingMarkers.forEach(m => map.removeLayer(m));
-        routingMarkers = [];
-        if (routingPolyline) map.removeLayer(routingPolyline);
-        routingPolyline = null;
-        lastSolvedRoutePoints = [];
-        const routeContainer = getEl('route-export-container');
-        if (routeContainer) routeContainer.style.display = 'none';
+// Google Maps-Style Pin Placement
+function placeDestinationPin(latlng) {
+    if (searchMarker) map.removeLayer(searchMarker);
+    
+    const pinIcon = L.divIcon({
+        className: 'google-maps-pin',
+        html: `<div style="position: relative;">
+                <div style="font-size: 2rem; transform: translate(-30%, -85%); filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); text-shadow: 0 0 5px var(--neon-red);">📍</div>
+               </div>`,
+        iconSize: [32, 32]
+    });
+    
+    searchMarker = L.marker(latlng, { icon: pinIcon }).addTo(map);
+    
+    // Autofill route target
+    const endInput = getEl('route-end-input');
+    if (endInput) {
+        endInput.value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
     }
+    
+    setRouteDestination(latlng);
+}
 
-    async function calculateOfflineRoute() {
-        if (routingMarkers.length < 2) return;
+function setRouteDestination(latlng) {
+    if (endMarker) map.removeLayer(endMarker);
+    endMarker = L.marker(latlng).addTo(map);
+    
+    // Automatically trigger route calculation
+    calculateOptimalRoute();
+}
+
+function openDirectionsPanel() {
+    getEl('map-directions-panel').style.display = 'block';
+    getEl('map-search-container').style.display = 'none';
+    getEl('map-search-suggestions').style.display = 'none';
+    
+    // Pre-fill fields if we already have a search marker
+    if (searchMarker) {
+        const ll = searchMarker.getLatLng();
+        getEl('route-end-input').value = `${ll.lat.toFixed(6)}, ${ll.lng.toFixed(6)}`;
+        if (endMarker) map.removeLayer(endMarker);
+        endMarker = L.marker(ll).addTo(map);
+    }
+    
+    calculateOptimalRoute();
+}
+
+function closeDirectionsPanel() {
+    getEl('map-directions-panel').style.display = 'none';
+    getEl('map-search-container').style.display = 'flex';
+    clearGoogleRouting();
+}
+
+function clearGoogleRouting() {
+    if (startMarker) map.removeLayer(startMarker);
+    if (endMarker) map.removeLayer(endMarker);
+    if (searchMarker) map.removeLayer(searchMarker);
+    if (routePolyline) map.removeLayer(routePolyline);
+    
+    startMarker = null;
+    endMarker = null;
+    searchMarker = null;
+    routePolyline = null;
+    lastSolvedRoutePoints = [];
+    
+    getEl('route-end-input').value = '';
+    getEl('map-route-card').style.display = 'none';
+    getEl('map-directions-drawer').style.display = 'none';
+    
+    const routeContainer = getEl('route-export-container');
+    if (routeContainer) routeContainer.style.display = 'none';
+    
+    stopActiveNavigation();
+}
+
+// Perform A* path calculation
+async function calculateOptimalRoute() {
+    let startLatLng = null;
+    const startVal = getEl('route-start-input').value.trim();
+    
+    if (startVal === "Mein Standort") {
+        if (currentGpsLatLng) {
+            startLatLng = L.latLng(currentGpsLatLng[0], currentGpsLatLng[1]);
+        } else {
+            // Default center if no GPS yet
+            startLatLng = map.getCenter();
+        }
+    } else {
+        const parts = startVal.split(',');
+        if (parts.length === 2) {
+            startLatLng = L.latLng(parseFloat(parts[0]), parseFloat(parts[1]));
+        }
+    }
+    
+    let endLatLng = null;
+    const endVal = getEl('route-end-input').value.trim();
+    if (endVal) {
+        const parts = endVal.split(',');
+        if (parts.length === 2) {
+            endLatLng = L.latLng(parseFloat(parts[0]), parseFloat(parts[1]));
+        }
+    } else if (endMarker) {
+        endLatLng = endMarker.getLatLng();
+    }
+    
+    if (!startLatLng || !endLatLng) return;
+    
+    // Draw indicators
+    if (startMarker) map.removeLayer(startMarker);
+    startMarker = L.marker(startLatLng, {
+        icon: L.divIcon({
+            className: 'start-marker',
+            html: `<div style="background: var(--neon-cyan); width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow: 0 0 10px var(--neon-cyan);"></div>`,
+            iconSize: [14, 14]
+        })
+    }).addTo(map);
+
+    try {
+        const pathSegment = await window.__TAURI__.core.invoke("find_shortest_path", {
+            graphJson: "",
+            startLat: startLatLng.lat,
+            startLon: startLatLng.lng,
+            endLat: endLatLng.lat,
+            endLon: endLatLng.lng
+        });
         
-        let fullPath = [];
+        if (routePolyline) map.removeLayer(routePolyline);
         
-        try {
-            for (let i = 0; i < routingMarkers.length - 1; i++) {
-                const start = routingMarkers[i].getLatLng();
-                const end = routingMarkers[i + 1].getLatLng();
-                
-                const pathSegment = await window.__TAURI__.core.invoke("find_shortest_path", {
-                    graphJson: "",
-                    startLat: start.lat,
-                    startLon: start.lng,
-                    endLat: end.lat,
-                    endLon: end.lng
-                });
-                
-                if (i > 0 && pathSegment.length > 0) {
-                    fullPath.push(...pathSegment.slice(1));
-                } else {
-                    fullPath.push(...pathSegment);
+        routePolyline = L.polyline(pathSegment, { color: 'var(--neon-green)', weight: 6, opacity: 0.85 }).addTo(map);
+        map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+        
+        lastSolvedRoutePoints = pathSegment;
+        
+        // Calculate Metrics
+        let totalDist = 0;
+        for (let i = 0; i < pathSegment.length - 1; i++) {
+            totalDist += L.latLng(pathSegment[i][0], pathSegment[i][1]).distanceTo(L.latLng(pathSegment[i+1][0], pathSegment[i+1][1]));
+        }
+        
+        // walking speed: 5km/h = 1.38 m/s, driving speed: 40km/h = 11.1 m/s
+        const speedKms = travelMode === 'walking' ? 1.38 : 11.1;
+        const durationSec = totalDist / speedKms;
+        const durationMin = Math.ceil(durationSec / 60);
+        const distanceText = totalDist > 1000 ? (totalDist / 1000).toFixed(1) + " km" : Math.round(totalDist) + " m";
+        
+        // Update Bottom Card
+        getEl('route-card-duration').innerText = `${durationMin} min`;
+        getEl('route-card-distance').innerText = `(${distanceText})`;
+        getEl('map-route-card').style.display = 'flex';
+        
+        // Generate Step Descriptions
+        navigationSteps = generateDetailedSteps(pathSegment);
+        renderDirectionsDrawer(navigationSteps);
+        
+        const routeContainer = getEl('route-export-container');
+        if (routeContainer) routeContainer.style.display = 'block';
+    } catch (err) {
+        console.error("Routing error:", err);
+    }
+}
+
+// Generate human readable directions step-by-step
+function generateDetailedSteps(points) {
+    if (!points || points.length < 2) return [];
+    
+    let steps = [];
+    let accumulatedDist = 0;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+        const p1 = L.latLng(points[i][0], points[i][1]);
+        const p2 = L.latLng(points[i + 1][0], points[i + 1][1]);
+        const dist = p1.distanceTo(p2);
+        accumulatedDist += dist;
+        
+        if (i === 0) {
+            steps.push({
+                type: 'start',
+                instruction: 'Starte Route in Richtung Ziel',
+                distance: Math.round(dist),
+                latlng: points[i],
+                icon: '🚗'
+            });
+            accumulatedDist = 0;
+            continue;
+        }
+        
+        if (i < points.length - 2) {
+            const p0 = L.latLng(points[i - 1][0], points[i - 1][1]);
+            const bearing1 = getBearing(p0, p1);
+            const bearing2 = getBearing(p1, p2);
+            let angleDiff = bearing2 - bearing1;
+            angleDiff = ((angleDiff + 180) % 360) - 180;
+            
+            if (Math.abs(angleDiff) > 22) {
+                // Add straight part before turn
+                if (accumulatedDist > 15) {
+                    steps.push({
+                        type: 'straight',
+                        instruction: `Dem Weg folgen`,
+                        distance: Math.round(accumulatedDist),
+                        latlng: points[i],
+                        icon: '⬆️'
+                    });
+                    accumulatedDist = 0;
                 }
+                
+                const turnType = angleDiff > 0 ? 'right' : 'left';
+                const turnIcon = turnType === 'right' ? '➡️' : '⬅️';
+                const turnInstruction = turnType === 'right' ? 'Rechts abbiegen' : 'Links abbiegen';
+                steps.push({
+                    type: turnType,
+                    instruction: turnInstruction,
+                    distance: Math.round(dist),
+                    latlng: points[i + 1],
+                    icon: turnIcon
+                });
+            }
+        }
+    }
+    
+    if (accumulatedDist > 0) {
+        steps.push({
+            type: 'straight',
+            instruction: 'Dem Straßenverlauf folgen',
+            distance: Math.round(accumulatedDist),
+            latlng: points[points.length - 1],
+            icon: '⬆️'
+        });
+    }
+    
+    steps.push({
+        type: 'arrival',
+        instruction: 'Du hast das Ziel erreicht',
+        distance: 0,
+        latlng: points[points.length - 1],
+        icon: '🏁'
+    });
+    
+    return steps;
+}
+
+function getBearing(p1, p2) {
+    const lat1 = p1.lat * Math.PI / 180;
+    const lat2 = p2.lat * Math.PI / 180;
+    const lon1 = p1.lng * Math.PI / 180;
+    const lon2 = p2.lng * Math.PI / 180;
+    const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+    return Math.atan2(y, x) * 180 / Math.PI;
+}
+
+// Populate the detail step drawer list
+function renderDirectionsDrawer(steps) {
+    const list = getEl('directions-steps-list');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    steps.forEach((step, idx) => {
+        const div = document.createElement('div');
+        div.className = 'directions-step-row';
+        div.innerHTML = `
+            <div class="step-icon">${step.icon}</div>
+            <div class="step-text">${step.instruction}</div>
+            <div class="step-dist">${step.distance > 0 ? step.distance + ' m' : ''}</div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// Start Google Active 3D follow-mode Navigation
+function startActiveNavigation() {
+    if (navigationSteps.length === 0) return;
+    
+    isNavigationMode = true;
+    currentStepIndex = 0;
+    isAutoCenter = true;
+    isAutoRotate = true;
+    
+    // Hide default top bars and search
+    getEl('map-directions-panel').style.display = 'none';
+    getEl('map-search-container').style.display = 'none';
+    getEl('map-route-card').style.display = 'none';
+    getEl('map-directions-drawer').style.display = 'none';
+    
+    // Show Nav HUD Banner
+    getEl('map-navigation-hud').style.display = 'flex';
+    
+    // Apply 3D perspective tilt class to Leaflet map container
+    getEl('map-container').classList.add('tilted-nav');
+    
+    if (map) {
+        map.invalidateSize();
+        // Zoom closely
+        map.setZoom(18);
+    }
+    
+    // Update first instructions
+    updateNavBannerInstructions();
+    
+    // GPS simulation if user is testing offline/static
+    startGPSSimulator();
+}
+
+function stopActiveNavigation() {
+    isNavigationMode = false;
+    stopGPSSimulator();
+    
+    const navHud = getEl('map-navigation-hud');
+    if (navHud) navHud.style.display = 'none';
+    
+    const container = getEl('map-container');
+    if (container) container.classList.remove('tilted-nav');
+    
+    isAutoRotate = false;
+    const rotateBtn = document.getElementById('map-rotate-toggle');
+    if (rotateBtn) rotateBtn.style.opacity = '0.5';
+    
+    const mapDiv = getCached('map');
+    if (mapDiv) mapDiv.style.transform = 'rotate(0deg)';
+    
+    if (map) {
+        setTimeout(() => { map.invalidateSize(); }, 100);
+    }
+}
+
+function updateNavBannerInstructions() {
+    if (currentStepIndex >= navigationSteps.length) {
+        getEl('nav-hud-instruction').innerText = "Ziel erreicht!";
+        getEl('nav-hud-distance').innerText = "0 m";
+        getEl('nav-hud-icon').innerText = "🏁";
+        return;
+    }
+    
+    const step = navigationSteps[currentStepIndex];
+    getEl('nav-hud-instruction').innerText = step.instruction;
+    getEl('nav-hud-distance').innerText = step.distance > 0 ? `In ${step.distance} m` : '';
+    getEl('nav-hud-icon').innerText = step.icon;
+}
+
+// Triggers when GPS position moves
+function updateNavigationState(latlng) {
+    if (navigationSteps.length === 0) return;
+    
+    const p1 = L.latLng(latlng[0], latlng[1]);
+    
+    // Calculate distance to the next checkpoint/step
+    const nextStep = navigationSteps[currentStepIndex];
+    if (!nextStep) return;
+    
+    const nextLoc = L.latLng(nextStep.latlng[0], nextStep.latlng[1]);
+    const distToNext = p1.distanceTo(nextLoc);
+    
+    // If within 15 meters, move to next navigation step!
+    if (distToNext < 15) {
+        currentStepIndex++;
+        updateNavBannerInstructions();
+        if (window.navigator.vibrate) window.navigator.vibrate(200);
+    } else {
+        // Dynamically decrease distance in HUD banner
+        getEl('nav-hud-distance').innerText = `In ${Math.round(distToNext)} m`;
+    }
+}
+
+// GPS movement simulator to trace the route (Excellent for testing offline capabilities)
+function startGPSSimulator() {
+    if (lastSolvedRoutePoints.length < 2) return;
+    
+    let pathIndex = 0;
+    simulationInterval = setInterval(() => {
+        if (pathIndex >= lastSolvedRoutePoints.length) {
+            clearInterval(simulationInterval);
+            currentStepIndex = navigationSteps.length - 1;
+            updateNavBannerInstructions();
+            return;
+        }
+        
+        const pt = lastSolvedRoutePoints[pathIndex];
+        currentGpsLatLng = pt;
+        
+        // Move player marker
+        if (mapMarker) mapMarker.setLatLng(pt);
+        if (accuracyCircle) {
+            accuracyCircle.setLatLng(pt);
+            accuracyCircle.setRadius(5); // Simulate high precision
+        }
+        
+        // Rotate pointer facing next node direction
+        if (pathIndex < lastSolvedRoutePoints.length - 1) {
+            const nextPt = lastSolvedRoutePoints[pathIndex + 1];
+            const bearing = getBearing(L.latLng(pt[0], pt[1]), L.latLng(nextPt[0], nextPt[1]));
+            
+            const pointer = document.getElementById('map-direction');
+            if (pointer) {
+                pointer.style.transform = `rotate(${bearing}deg)`;
             }
             
-            if (routingPolyline) map.removeLayer(routingPolyline);
-            routingPolyline = L.polyline(fullPath, { color: 'var(--neon-cyan)', weight: 5, dashArray: '5, 10' }).addTo(map);
-            map.fitBounds(routingPolyline.getBounds());
-            
-            lastSolvedRoutePoints = fullPath;
-            const routeContainer = getEl('route-export-container');
-            if (routeContainer) routeContainer.style.display = 'block';
-        } catch (err) {
-            console.error("Routing error:", err);
-            alert("Routing failed: " + err);
+            // In follow mode, rotate the map accordingly
+            const mapDiv = getCached('map');
+            if (mapDiv && isAutoRotate) {
+                mapDiv.style.transform = `rotate(${-bearing}deg)`;
+            }
         }
-    }
+        
+        if (map && isAutoCenter) {
+            map.panTo(pt, { animate: true, duration: 0.3 });
+        }
+        
+        // Trigger nav recalculation ticks
+        updateNavigationState(pt);
+        
+        pathIndex++;
+    }, 1500); // Step every 1.5 seconds along grid
+}
 
-    map.on('click', (e) => {
-        if (!isRoutingMode) return;
-        
-        const count = routingMarkers.length + 1;
-        const color = count === 1 ? 'var(--neon-red)' : 'var(--neon-green)';
-        const marker = L.marker(e.latlng, {
-            icon: L.divIcon({
-                className: 'routing-waypoint-icon',
-                html: `<div style="background:${color}; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px ${color}; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #fff; font-weight: bold;">${count}</div>`,
-                iconSize: [12, 12]
-            })
-        }).addTo(map);
-        
-        routingMarkers.push(marker);
-        if (routingMarkers.length >= 2) {
-            calculateOfflineRoute();
-        }
-    });
+function stopGPSSimulator() {
+    if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+    }
 }
 
 function inspectMBTiles() {
@@ -667,6 +1101,7 @@ function loadMarkers() {
 }
 
 export function updateMapHeading(sensors) {
+    if (isNavigationMode) return; // Skip default heading rotation when in active nav simulation follow mode
     if (!sensors || sensors.mx === undefined) return;
 
     const ax = sensors.ax || 0;
