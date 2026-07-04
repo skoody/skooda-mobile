@@ -1,7 +1,10 @@
-# Tauri + Vanilla
+# Skooda Mobile
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+Aktuelle Version: v0.15.1
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### Features:
+- 🚀 **Hintergrund-Updateprüfungen**
+- 🗺️ **Google Maps Offline Rework & Routing**
+- 💎 **Bluetooth LE Scanner & Sniffer**
+- 🔑 **Encoders & Hashers (Hex, MD5, SHA)**
+- 🔍 **OSINT & Stalking Tools**

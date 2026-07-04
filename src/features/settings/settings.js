@@ -59,31 +59,31 @@ export function initSettings() {
             checkUpdateBtn.disabled = true;
             checkUpdateBtn.innerText = "Prüfe...";
             try {
-                const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+                const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
                 if (!response.ok) throw new Error("Verbindung fehlgeschlagen");
-                const data = await response.json();
-                const latestVersion = data.tag_name.replace('v', '');
+                const text = await response.text();
+                const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
+                if (!match) throw new Error("Format ungültig");
+                const latestVersion = match[1];
 
                 if (latestVersionVal) latestVersionVal.innerText = 'v' + latestVersion;
                 if (updateInfo) updateInfo.style.display = 'flex';
-                if (releaseNotes) releaseNotes.innerText = data.body || "Keine Release-Notes vorhanden.";
+                if (releaseNotes) releaseNotes.innerText = `Skooda Mobile v${latestVersion} Release (Closed Source APK Download)`;
 
                 if (latestVersion !== CURRENT_VERSION) {
                     if (updateTitle) updateTitle.innerText = "Update Verfügbar!";
-                    if (updateDesc) updateDesc.innerText = "Eine neue Version wurde auf GitHub gefunden.";
+                    if (updateDesc) updateDesc.innerText = "Eine neue Version wurde veröffentlicht.";
                     if (downloadUpdateBtn) {
                         downloadUpdateBtn.style.display = 'block';
-                        const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
-                        if (apkAsset) {
-                            downloadUpdateBtn.onclick = () => {
-                                if (window.Android) {
-                                    window.Android.cleanupOldApks();
-                                    window.Android.openExternalUrl(apkAsset.browser_download_url);
-                                } else {
-                                    window.open(apkAsset.browser_download_url, '_blank');
-                                }
-                            };
-                        }
+                        const downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/v${latestVersion}/skooda-mobile.apk`;
+                        downloadUpdateBtn.onclick = () => {
+                            if (window.Android) {
+                                window.Android.cleanupOldApks();
+                                window.Android.openExternalUrl(downloadUrl);
+                            } else {
+                                window.open(downloadUrl, '_blank');
+                            }
+                        };
                     }
                 } else {
                     if (updateTitle) updateTitle.innerText = "System Aktuell";
@@ -111,10 +111,12 @@ export function initSettings() {
 
 async function silentCheckUpdate() {
     try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+        const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
         if (!response.ok) return;
-        const data = await response.json();
-        const latestVersion = data.tag_name.replace('v', '');
+        const text = await response.text();
+        const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
+        if (!match) return;
+        const latestVersion = match[1];
         if (latestVersion !== CURRENT_VERSION) {
             if (window.Android) {
                 window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar.`);

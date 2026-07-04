@@ -22,7 +22,7 @@ class UpdateCheckWorker(
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val currentVersion = packageInfo.versionName ?: return Result.failure()
 
-            val connection = URL("https://api.github.com/repos/skoody/skooda-mobile/releases/latest").openConnection() as HttpURLConnection
+            val connection = URL("https://raw.githubusercontent.com/skoody/skooda-mobile/main/README.md").openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("User-Agent", "Skooda-Mobile-App")
             connection.connectTimeout = 15000
@@ -33,8 +33,9 @@ class UpdateCheckWorker(
             }
 
             val responseText = connection.inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(responseText)
-            val latestVersion = json.getString("tag_name").replace("v", "")
+            val regex = Regex("Aktuelle Version:\\s*v?([\\d\\.]+)")
+            val matchResult = regex.find(responseText)
+            val latestVersion = matchResult?.groups?.get(1)?.value ?: return Result.failure()
 
             if (latestVersion != currentVersion) {
                 showNotification(
