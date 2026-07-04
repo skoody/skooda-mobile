@@ -29,6 +29,11 @@ import android.net.LinkProperties
 import android.net.wifi.WifiManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.RandomAccessFile
@@ -36,6 +41,8 @@ import java.io.File
 import java.io.FilenameFilter
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanSettings
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
@@ -187,6 +194,28 @@ class MainActivity : TauriActivity(), SensorEventListener {
                 handler.postDelayed(this, 100)
             }
         }, 2000)
+
+        setupBackgroundUpdateCheck()
+    }
+
+    private fun setupBackgroundUpdateCheck() {
+        try {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val updateCheckRequest = PeriodicWorkRequestBuilder<UpdateCheckWorker>(8, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+                "SkoodaUpdateCheck",
+                ExistingPeriodicWorkPolicy.KEEP,
+                updateCheckRequest
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -658,9 +687,15 @@ class MainActivity : TauriActivity(), SensorEventListener {
         private val executor = Executors.newFixedThreadPool(20)
         private val scanExecutor = Executors.newFixedThreadPool(64)
         private val activeTasks = ConcurrentHashMap<String, Future<*>>()
+        
+        @Volatile private var netScanSession: Long = 0L
+        @Volatile private var portScanSession: Long = 0L
+        private var bleScanCallback: ScanCallback? = null
 
         @JavascriptInterface
         fun cancelTask(taskName: String) {
+            if (taskName == "netScan") netScanSession = 0L
+            if (taskName == "portScan") portScanSession = 0L
             activeTasks[taskName]?.cancel(true)
             activeTasks.remove(taskName)
         }
@@ -801,6 +836,8 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun scanNetwork(callback: String) {
             cancelTask("netScan")
+            val session = System.currentTimeMillis()
+            netScanSession = session
             val future = executor.submit {
                 try {
                     val results = JSONArray()
@@ -817,36 +854,37 @@ class MainActivity : TauriActivity(), SensorEventListener {
                         val arpMap = getArpTable()
                         
                         for (i in 1..254) {
-                            if (Thread.currentThread().isInterrupted) break
+                            if (netScanSession != session) break
                             scanExecutor.execute {
                                 try {
-                                    val testIp = "$prefix.$i"
-                                    val addr = InetAddress.getByName(testIp)
-                                    if (addr.isReachable(300)) {
-                                        val device = JSONObject()
-                                        device.put("ip", testIp)
-                                        device.put("name", if (testIp == ip) "This Device" else addr.canonicalHostName)
-                                        device.put("mac", arpMap[testIp] ?: "Unknown")
-                                        
-                                        val ports = JSONArray()
-                                        val commonPorts = intArrayOf(21, 22, 23, 80, 443, 445, 3389, 5900, 8080)
-                                        commonPorts.forEach { port -> if (isPortOpen(testIp, port, 150)) ports.put(port) }
-                                        device.put("ports", ports)
-                                        synchronized(results) { results.put(device) }
+                                    if (netScanSession == session) {
+                                        val testIp = "$prefix.$i"
+                                        val addr = InetAddress.getByName(testIp)
+                                        if (addr.isReachable(300)) {
+                                            val device = JSONObject()
+                                            device.put("ip", testIp)
+                                            device.put("name", if (testIp == ip) "This Device" else addr.canonicalHostName)
+                                            device.put("mac", arpMap[testIp] ?: "Unknown")
+                                            
+                                            val ports = JSONArray()
+                                            val commonPorts = intArrayOf(21, 22, 23, 80, 443, 445, 3389, 5900, 8080)
+                                            commonPorts.forEach { port -> if (isPortOpen(testIp, port, 150)) ports.put(port) }
+                                            device.put("ports", ports)
+                                            synchronized(results) { results.put(device) }
+                                        }
                                     }
                                 } catch (e: Exception) {}
-                                val done = completed.incrementAndGet()
-                                if (done % 10 == 0 || done == 254) postToJS(callback, JSONObject().put("progress", done * 100 / 254).toString())
+                                
+                                if (netScanSession == session) {
+                                    val done = completed.incrementAndGet()
+                                    if (done == 254) {
+                                        postToJS(callback, JSONObject().put("devices", results).put("done", true).toString())
+                                    } else if (done % 5 == 0) {
+                                        postToJS(callback, JSONObject().put("progress", done * 100 / 254).toString())
+                                    }
+                                }
                             }
                         }
-                        
-                        var waitCount = 0
-                        while(completed.get() < 254 && waitCount < 100 && !Thread.currentThread().isInterrupted) {
-                            Thread.sleep(100)
-                            waitCount++
-                        }
-                        
-                        postToJS(callback, JSONObject().put("devices", results).put("done", true).toString())
                     } else postToJS(callback, JSONObject().put("error", "No Network IP found").toString())
                 } catch (e: Exception) { postToJS(callback, JSONObject().put("error", e.message).toString()) }
                 finally { activeTasks.remove("netScan") }
@@ -924,6 +962,8 @@ class MainActivity : TauriActivity(), SensorEventListener {
         @JavascriptInterface
         fun scanPorts(host: String, portsJson: String, callback: String) {
             cancelTask("portScan")
+            val session = System.currentTimeMillis()
+            portScanSession = session
             val future = executor.submit {
                 try {
                     val portArray = JSONArray(portsJson)
@@ -935,28 +975,116 @@ class MainActivity : TauriActivity(), SensorEventListener {
                     val completed = AtomicInteger(0)
                     
                     commonPorts.forEach { port ->
-                        if (Thread.currentThread().isInterrupted) return@forEach
+                        if (portScanSession != session) return@forEach
                         scanExecutor.execute {
-                            if (isPortOpen(host, port, 300)) {
-                                synchronized(openPorts) { openPorts.put(port) }
+                            if (portScanSession == session) {
+                                if (isPortOpen(host, port, 300)) {
+                                    synchronized(openPorts) { openPorts.put(port) }
+                                }
                             }
-                            val done = completed.incrementAndGet()
-                            postToJS(callback, JSONObject().put("progress", done * 100 / total).toString())
+                            if (portScanSession == session) {
+                                val done = completed.incrementAndGet()
+                                if (done == total) {
+                                    postToJS(callback, JSONObject().put("ports", openPorts).put("done", true).toString())
+                                } else {
+                                    postToJS(callback, JSONObject().put("progress", done * 100 / total).toString())
+                                }
+                            }
                         }
                     }
-                    
-                    var waitCount = 0
-                    while(completed.get() < total && waitCount < 100 && !Thread.currentThread().isInterrupted) {
-                        Thread.sleep(100)
-                        waitCount++
-                    }
-                    
-                    postToJS(callback, JSONObject().put("ports", openPorts).put("done", true).toString())
                 } catch (e: Exception) {
                     postToJS(callback, JSONObject().put("error", e.message).toString())
                 } finally { activeTasks.remove("portScan") }
             }
             activeTasks["portScan"] = future
+        }
+
+        @JavascriptInterface
+        fun startBleScan(callback: String) {
+            if (ActivityCompat.checkSelfPermission(mContext, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(mContext, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                postToJS(callback, JSONObject().put("error", "Bluetooth permissions denied").toString())
+                return
+            }
+
+            val btManager = mContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val adapter = btManager.adapter
+            if (adapter == null || !adapter.isEnabled) {
+                postToJS(callback, JSONObject().put("error", "Bluetooth is disabled").toString())
+                return
+            }
+
+            val scanner = adapter.bluetoothLeScanner
+            if (scanner == null) {
+                postToJS(callback, JSONObject().put("error", "BLE Scanner not available").toString())
+                return
+            }
+
+            if (bleScanCallback != null) {
+                try {
+                    scanner.stopScan(bleScanCallback)
+                } catch (e: Exception) {}
+            }
+
+            val discoveredDevices = ConcurrentHashMap<String, Long>()
+
+            bleScanCallback = object : android.bluetooth.le.ScanCallback() {
+                override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult) {
+                    val device = result.device
+                    val address = device.address
+                    val name = if (ActivityCompat.checkSelfPermission(mContext, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                        device.name ?: "Unknown"
+                    } else {
+                        "Unknown"
+                    }
+                    val rssi = result.rssi
+                    
+                    val lastSeen = discoveredDevices[address] ?: 0L
+                    val now = System.currentTimeMillis()
+                    if (now - lastSeen < 2000) return
+                    discoveredDevices[address] = now
+
+                    val obj = JSONObject()
+                    obj.put("name", name)
+                    obj.put("address", address)
+                    obj.put("rssi", rssi)
+
+                    val uuids = JSONArray()
+                    result.scanRecord?.serviceUuids?.forEach { uuids.put(it.toString()) }
+                    obj.put("uuids", uuids)
+
+                    postToJS(callback, obj.toString())
+                }
+
+                override fun onScanFailed(errorCode: Int) {
+                    postToJS(callback, JSONObject().put("error", "Scan failed: $errorCode").toString())
+                }
+            }
+
+            val settings = android.bluetooth.le.ScanSettings.Builder()
+                .setScanMode(android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build()
+
+            try {
+                scanner.startScan(null, settings, bleScanCallback)
+                postToJS(callback, JSONObject().put("status", "started").toString())
+            } catch (e: Exception) {
+                postToJS(callback, JSONObject().put("error", e.message).toString())
+            }
+        }
+
+        @JavascriptInterface
+        fun stopBleScan() {
+            val btManager = mContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val adapter = btManager.adapter
+            val scanner = adapter?.bluetoothLeScanner
+            val callback = bleScanCallback
+            if (scanner != null && callback != null) {
+                try {
+                    scanner.stopScan(callback)
+                } catch (e: Exception) {}
+            }
+            bleScanCallback = null
         }
 
         @JavascriptInterface

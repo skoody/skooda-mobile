@@ -76,6 +76,7 @@ export function initCyber() {
     setupWifiScanTool();
     setupSslAuditTool();
     setupProbeSnifferTool();
+    setupBleScanTool();
 }
 
 function setupSubtabs() {
@@ -95,6 +96,9 @@ function setupSubtabs() {
             });
             if (targetTab === 'cyber-wifi') {
                 drawWifiSpectrum();
+            }
+            if (targetTab !== 'cyber-ble') {
+                stopBleScanner();
             }
         });
     });
@@ -978,5 +982,96 @@ function setupProbeSnifferTool() {
         } else {
             clearInterval(window.snifferInterval);
         }
+    };
+}
+
+let bleDevicesMap = new Map();
+
+export function stopBleScanner() {
+    const startBtn = document.getElementById('btn-start-ble');
+    const stopBtn = document.getElementById('btn-stop-ble');
+    const statusLabel = document.getElementById('ble-scan-status');
+
+    if (stopBtn && stopBtn.style.display === 'block') {
+        stopBtn.style.display = 'none';
+        startBtn.style.display = 'block';
+        if (statusLabel) {
+            statusLabel.innerHTML = 'Idle';
+            statusLabel.className = 'badge';
+        }
+        import('./cyber-utils.js').then(m => m.CyberTools.stopBleScan());
+    }
+}
+
+function setupBleScanTool() {
+    const startBtn = document.getElementById('btn-start-ble');
+    const stopBtn = document.getElementById('btn-stop-ble');
+    const statusLabel = document.getElementById('ble-scan-status');
+    const listDiv = document.getElementById('ble-devices-list');
+
+    if (!startBtn) return;
+
+    window.onBleDeviceFound = (device) => {
+        if (!device || !device.address) return;
+        
+        bleDevicesMap.set(device.address, {
+            name: device.name || "Unknown",
+            rssi: device.rssi,
+            uuids: device.uuids || [],
+            timestamp: Date.now()
+        });
+
+        renderBleDevices();
+    };
+
+    function renderBleDevices() {
+        if (!listDiv) return;
+        if (bleDevicesMap.size === 0) {
+            listDiv.innerHTML = '<div class="wifi-item" style="justify-content:center; color: var(--text-dim);">No devices found.</div>';
+            return;
+        }
+
+        const sorted = Array.from(bleDevicesMap.values())
+            .sort((a, b) => b.rssi - a.rssi);
+
+        listDiv.innerHTML = sorted.map(dev => {
+            const rssiPercent = Math.min(100, Math.max(0, 2 * (dev.rssi + 100)));
+            let rssiColor = "var(--neon-green)";
+            if (dev.rssi < -80) rssiColor = "var(--neon-purple)";
+            else if (dev.rssi < -70) rssiColor = "var(--neon-orange)";
+
+            const uuidStr = dev.uuids.length > 0 ? dev.uuids.join(', ') : 'N/A';
+
+            return `
+                <div class="info-item" style="flex-direction: column; align-items: flex-start; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05)">
+                    <div style="display:flex; justify-content:space-between; width:100%">
+                        <span class="info-value" style="font-weight:bold">${dev.name}</span>
+                        <span style="color: ${rssiColor}; font-weight:bold">${dev.rssi} dBm</span>
+                    </div>
+                    <div class="info-label" style="font-size:0.8rem; margin: 3px 0; font-family: monospace;">MAC: ${dev.address}</div>
+                    <div class="info-label" style="font-size:0.75rem; color:var(--text-dim); overflow-wrap: break-word; width: 100%;">UUIDs: ${uuidStr}</div>
+                    <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:5px;">
+                        <div style="width:${rssiPercent}%; height:100%; background:${rssiColor}; border-radius:2px;"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    startBtn.onclick = () => {
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+        if (statusLabel) {
+            statusLabel.innerHTML = 'Scanning';
+            statusLabel.className = 'badge pulse-cyan';
+        }
+        listDiv.innerHTML = '<div class="wifi-item" style="justify-content:center; color: var(--text-dim);">Listening for BLE beacons...</div>';
+
+        bleDevicesMap.clear();
+        import('./cyber-utils.js').then(m => m.CyberTools.startBleScan());
+    };
+
+    stopBtn.onclick = () => {
+        stopBleScanner();
     };
 }

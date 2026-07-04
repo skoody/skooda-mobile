@@ -82,5 +82,38 @@ export const CyberTools = {
                 }
             }, 1000);
         }
+    },
+
+    startBleScan: () => {
+        if (window.Android && typeof window.Android.startBleScan === 'function') {
+            window.Android.startBleScan('onBleDeviceFound');
+        } else {
+            console.warn("BLE Scan not supported by bridge. Using mock data.");
+            window.mockBleInterval = setInterval(() => {
+                if (window.onBleDeviceFound) {
+                    const mockNames = ["Pixel 8 Pro", "Tile Tracker", "Sony WH-1000XM5", "Mi Band 8", "Apple Watch S9"];
+                    const name = mockNames[Math.floor(Math.random() * mockNames.length)];
+                    const address = Array.from({length: 6}, () => Math.floor(Math.random()*256).toString(16).padStart(2,'0')).join(':').toUpperCase();
+                    const rssi = -30 - Math.floor(Math.random() * 60);
+                    window.onBleDeviceFound({
+                        name: name,
+                        address: address,
+                        rssi: rssi,
+                        uuids: ["0000180a-0000-1000-8000-00805f9b34fb"]
+                    });
+                }
+            }, 1500);
+        }
+    },
+
+    stopBleScan: () => {
+        if (window.Android && typeof window.Android.stopBleScan === 'function') {
+            window.Android.stopBleScan();
+        } else {
+            if (window.mockBleInterval) {
+                clearInterval(window.mockBleInterval);
+                window.mockBleInterval = null;
+            }
+        }
     }
 };

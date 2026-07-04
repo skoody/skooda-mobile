@@ -451,6 +451,9 @@
           <button class="cyber-subnav-btn" data-cyber-tab="cyber-sniffer">
             <i>📡</i><span>Probe Sniffer</span>
           </button>
+          <button class="cyber-subnav-btn" data-cyber-tab="cyber-ble">
+            <i>💎</i><span>BLE Scan</span>
+          </button>
         </div>
 
         <!-- Tab 1: Network Discovery -->
@@ -636,6 +639,26 @@
               </div>
             </div>
           </div>
+        <!-- Tab 6: BLE Scan -->
+        <div id="cyber-ble" class="cyber-tab-content">
+          <div class="tool-card">
+            <div class="card-info">
+              <div class="card-header-flex">
+                <h3>Bluetooth LE Scanner</h3>
+                <span class="badge" id="ble-scan-status">Idle</span>
+              </div>
+              <p class="tool-desc">Echtzeit-Suche nach Bluetooth Low Energy (BLE) Sendern in der Umgebung.</p>
+              
+              <div style="display: flex; gap: 8px; margin-top: 15px;">
+                <button id="btn-start-ble" class="btn primary" style="flex: 1;">Start Scan</button>
+                <button id="btn-stop-ble" class="btn secondary" style="flex: 1; display: none;">Stop</button>
+              </div>
+
+              <div id="ble-devices-list" class="wifi-networks-list" style="margin-top: 15px; max-height: 250px; overflow-y: auto;">
+                <div class="wifi-item" style="justify-content: center; color: var(--text-dim);">Drücke Start Scan...</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -779,6 +802,8 @@
               <button class="osint-tab-btn" data-tab="osint-tab-email">📧 E-Mail</button>
               <button class="osint-tab-btn" data-tab="osint-tab-phone">📱 Telefon</button>
               <button class="osint-tab-btn" data-tab="osint-tab-name">🔤 Name</button>
+              <button class="osint-tab-btn" data-tab="osint-tab-dorking">🔍 Google Dorks</button>
+              <button class="osint-tab-btn" data-tab="osint-tab-iplookup">🌐 IP Geolocator</button>
             </div>
 
             <div id="osint-tab-username" class="osint-tab-content active">
@@ -817,6 +842,33 @@
               <button id="osint-scan-name" class="btn primary full-width">🔤 Name suchen</button>
               <div id="osint-name-results" class="osint-results-grid" style="margin-top: 12px;"></div>
             </div>
+
+            <div id="osint-tab-dorking" class="osint-tab-content">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">Ziel:</span>
+                <input type="text" id="osint-dork-target" class="cyber-input-field" placeholder="Username, E-Mail, Name oder Domain" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="input-wrapper" style="margin-bottom: 12px; height: 45px; display: flex; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 10px; padding: 0 12px;">
+                <span class="input-prefix">Kategorie:</span>
+                <select id="osint-dork-type" class="conv-select" style="flex:1; background:transparent; border:none; color:white; padding:0; font-weight:normal;">
+                  <option value="profiles" style="background:#0a0b10;">Soziale Profile finden</option>
+                  <option value="leaks" style="background:#0a0b10;">Passwörter & Leaks</option>
+                  <option value="files" style="background:#0a0b10;">Dokumente & Dateien (PDF/Doc)</option>
+                  <option value="dirindex" style="background:#0a0b10;">Offene Verzeichnisse (Index of)</option>
+                </select>
+              </div>
+              <button id="osint-gen-dorks" class="btn primary full-width">🔍 Dorks generieren</button>
+              <div id="osint-dork-results" class="osint-results-grid" style="margin-top: 15px;"></div>
+            </div>
+
+            <div id="osint-tab-iplookup" class="osint-tab-content">
+              <div class="input-wrapper" style="margin-bottom: 12px;">
+                <span class="input-prefix">IP-Adresse:</span>
+                <input type="text" id="osint-ip-input" class="cyber-input-field" placeholder="z.B. 8.8.8.8 (leer für eigene IP)" autocomplete="off" spellcheck="false">
+              </div>
+              <button id="osint-scan-ip" class="btn primary full-width">🌐 IP lokalisieren</button>
+              <div id="osint-ip-results" class="osint-results-grid" style="margin-top: 15px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -836,7 +888,11 @@
 
             <div class="osint-tabs" style="margin-bottom: 15px;">
               <button class="osint-tab-btn coder-type-btn active" data-type="base64">Base64</button>
-              <button class="osint-tab-btn coder-type-btn" data-type="binary">Binärcode</button>
+              <button class="osint-tab-btn coder-type-btn" data-type="binary">Binär</button>
+              <button class="osint-tab-btn coder-type-btn" data-type="hex">Hex</button>
+              <button class="osint-tab-btn coder-type-btn" data-type="md5">MD5</button>
+              <button class="osint-tab-btn coder-type-btn" data-type="sha1">SHA-1</button>
+              <button class="osint-tab-btn coder-type-btn" data-type="sha256">SHA-256</button>
             </div>
 
             <div style="margin-bottom: 15px;">

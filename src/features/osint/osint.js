@@ -166,6 +166,37 @@ async function runEmailLookup(email, resultsContainer) {
         resultsContainer.innerHTML = '';
     }
 
+    // Public breach lookup via leakcheck.net API
+    try {
+        const breachResp = await fetch(`https://leakcheck.net/api/public?key=${encodeURIComponent(email)}`);
+        const breachData = await breachResp.json();
+        
+        const card = document.createElement('div');
+        if (breachData.success && breachData.found) {
+            card.className = 'osint-result-card error';
+            const sources = breachData.sources ? breachData.sources.join(', ') : 'Unbekannt';
+            card.innerHTML = `
+                <div class="osint-result-header">
+                    <span class="osint-platform-name">⚠️ LeakCheck Breach DB</span>
+                    <span class="osint-status-badge error">❌ ${breachData.count} Leaks</span>
+                </div>
+                <div class="osint-detail" style="font-size:0.75rem; color:var(--neon-red); margin-top:5px;">Gefunden in: ${sources}</div>
+            `;
+        } else {
+            card.className = 'osint-result-card found';
+            card.innerHTML = `
+                <div class="osint-result-header">
+                    <span class="osint-platform-name">🛡️ LeakCheck Breach DB</span>
+                    <span class="osint-status-badge found">✅ Keine Leaks</span>
+                </div>
+                <div class="osint-detail" style="font-size:0.75rem; color:var(--text-dim); margin-top:5px;">Keine bekannten Datenbank-Breaches gefunden.</div>
+            `;
+        }
+        resultsContainer.appendChild(card);
+    } catch (e) {
+        console.error("LeakCheck error: ", e);
+    }
+
     const havIBeenPwnedCard = document.createElement('div');
     havIBeenPwnedCard.className = 'osint-result-card found';
     havIBeenPwnedCard.innerHTML = `
@@ -317,6 +348,133 @@ function runFullNameSearch(name, resultsContainer) {
     }
 }
 
+function runGoogleDorking(target, type, resultsContainer) {
+    resultsContainer.innerHTML = '';
+    if (!target) return;
+
+    const encoded = encodeURIComponent(target);
+    let dorks = [];
+
+    if (type === 'profiles') {
+        dorks = [
+            { query: `site:instagram.com "${target}"`, label: 'Instagram Profile' },
+            { query: `site:facebook.com "${target}"`, label: 'Facebook Profile' },
+            { query: `site:twitter.com "${target}"`, label: 'Twitter / X Profile' },
+            { query: `site:tiktok.com "@${target}"`, label: 'TikTok Accounts' },
+            { query: `site:linkedin.com/in "${target}"`, label: 'LinkedIn Lebensläufe' },
+            { query: `site:reddit.com/user "${target}"`, label: 'Reddit Profile' },
+            { query: `site:pinterest.com "${target}"`, label: 'Pinterest Profile' }
+        ];
+    } else if (type === 'leaks') {
+        dorks = [
+            { query: `"${target}" + "password" OR "passwort"`, label: 'Passwort-Listen' },
+            { query: `"${target}" + "leak" OR "breach" OR "database"`, label: 'Datenbank-Breaches' },
+            { query: `"${target}" + filetype:sql OR filetype:txt OR filetype:json`, label: 'Rohdaten-Dateien' },
+            { query: `"${target}" + "combo" OR "combolist"`, label: 'Combo-Listen Treffer' }
+        ];
+    } else if (type === 'files') {
+        dorks = [
+            { query: `"${target}" + filetype:pdf`, label: 'PDF Dokumente' },
+            { query: `"${target}" + filetype:xlsx OR filetype:xls`, label: 'Excel Tabellen' },
+            { query: `"${target}" + filetype:docx OR filetype:doc`, label: 'Word Dokumente' },
+            { query: `"${target}" + filetype:conf OR filetype:cfg OR filetype:env`, label: 'Konfigurationsdateien' },
+            { query: `"${target}" + filetype:log`, label: 'System Log-Dateien' }
+        ];
+    } else if (type === 'dirindex') {
+        dorks = [
+            { query: `intitle:"index of" "${target}"`, label: 'Offene Verzeichnisse' },
+            { query: `intitle:"index of /" "${target}"`, label: 'Stamm-Verzeichnis Index' },
+            { query: `intitle:"index of" "${target}" + filetype:log OR filetype:sql OR filetype:zip`, label: 'Verzeichnis-Archive' }
+        ];
+    }
+
+    dorks.forEach(dork => {
+        const card = document.createElement('div');
+        card.className = 'osint-result-card found';
+        const dorkUrl = `https://www.google.com/search?q=${encodeURIComponent(dork.query)}`;
+        card.innerHTML = `
+            <div class="osint-result-header">
+                <span class="osint-platform-name">🔍 ${dork.label}</span>
+                <span class="osint-status-badge found">🔗 Google Dork</span>
+            </div>
+            <div class="osint-detail" style="font-family: monospace; font-size:0.7rem; color:var(--text-dim); overflow-wrap: break-word; margin: 5px 0;">${dork.query}</div>
+            <a href="#" class="osint-profile-link" style="display:block; margin-top:5px;">Dork ausführen →</a>
+        `;
+        card.querySelector('a').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.Android && typeof window.Android.openExternalUrl === 'function') {
+                window.Android.openExternalUrl(dorkUrl);
+            } else {
+                window.open(dorkUrl, '_blank');
+            }
+        });
+        resultsContainer.appendChild(card);
+    });
+}
+
+async function runIpLookup(ip, resultsContainer) {
+    resultsContainer.innerHTML = '';
+    
+    const loadCard = document.createElement('div');
+    loadCard.className = 'osint-result-card pending';
+    loadCard.innerHTML = `<div class="osint-result-header"><span class="osint-platform-name">IP Geolocator</span><span class="osint-status-badge pending">🔄 IP lokalisieren...</span></div>`;
+    resultsContainer.appendChild(loadCard);
+
+    try {
+        const cleanIp = ip.trim();
+        const url = cleanIp ? `https://ipapi.co/${cleanIp}/json/` : 'https://ipapi.co/json/';
+        const resp = await fetch(url);
+        const data = await resp.json();
+        
+        resultsContainer.innerHTML = '';
+        
+        if (data.error) {
+            const card = document.createElement('div');
+            card.className = 'osint-result-card error';
+            card.innerHTML = `
+                <div class="osint-result-header">
+                    <span class="osint-platform-name">🌐 Geolocator</span>
+                    <span class="osint-status-badge error">❌ Fehler</span>
+                </div>
+                <div class="osint-detail">${data.reason || 'Ungültige IP-Adresse'}</div>
+            `;
+            resultsContainer.appendChild(card);
+            return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'osint-result-card found';
+        card.innerHTML = `
+            <div class="osint-result-header">
+                <span class="osint-platform-name">📍 IP Details: ${data.ip}</span>
+                <span class="osint-status-badge found">✅ Lokalisierung</span>
+            </div>
+            <div class="osint-detail" style="line-height: 1.6; font-size: 0.8rem; margin-top:5px;">
+                <strong>Land:</strong> ${data.country_name} (${data.country_code}) ${data.country_emoji || ''}<br>
+                <strong>Region:</strong> ${data.region || 'N/A'} (${data.region_code || 'N/A'})<br>
+                <strong>Stadt:</strong> ${data.city || 'N/A'} (PLZ: ${data.postal || 'N/A'})<br>
+                <strong>Provider (ISP):</strong> ${data.org || 'N/A'}<br>
+                <strong>Zeitzone:</strong> ${data.timezone || 'N/A'}<br>
+                <strong>Koordinaten:</strong> Lat ${data.latitude}, Lon ${data.longitude}<br>
+                <strong>ASN:</strong> ${data.asn || 'N/A'}
+            </div>
+        `;
+        resultsContainer.appendChild(card);
+    } catch (e) {
+        resultsContainer.innerHTML = '';
+        const card = document.createElement('div');
+        card.className = 'osint-result-card error';
+        card.innerHTML = `
+            <div class="osint-result-header">
+                <span class="osint-platform-name">🌐 Geolocator</span>
+                <span class="osint-status-badge error">❌ Fehler</span>
+            </div>
+            <div class="osint-detail">Netzwerkfehler: ${e.message}</div>
+        `;
+        resultsContainer.appendChild(card);
+    }
+}
+
 export function initOsint() {
     const tabBtns = document.querySelectorAll('.osint-tab-btn');
     const tabContents = document.querySelectorAll('.osint-tab-content');
@@ -333,6 +491,15 @@ export function initOsint() {
     const emailResults = getEl('osint-email-results');
     const phoneResults = getEl('osint-phone-results');
     const nameResults = getEl('osint-name-results');
+
+    // New element selectors
+    const dorkTarget = getEl('osint-dork-target');
+    const dorkType = getEl('osint-dork-type');
+    const genDorksBtn = getEl('osint-gen-dorks');
+    const dorkResults = getEl('osint-dork-results');
+    const ipInput = getEl('osint-ip-input');
+    const scanIpBtn = getEl('osint-scan-ip');
+    const ipResults = getEl('osint-ip-results');
 
     if (!usernameInput) return;
 
@@ -385,6 +552,24 @@ export function initOsint() {
             const name = nameInput.value.trim();
             if (!name) return;
             runFullNameSearch(name, nameResults);
+        });
+    }
+
+    // Google Dorks button listener
+    if (genDorksBtn) {
+        genDorksBtn.addEventListener('click', () => {
+            const targetVal = dorkTarget.value.trim();
+            const typeVal = dorkType.value;
+            if (!targetVal) return;
+            runGoogleDorking(targetVal, typeVal, dorkResults);
+        });
+    }
+
+    // IP Lookup button listener
+    if (scanIpBtn) {
+        scanIpBtn.addEventListener('click', () => {
+            const ipVal = ipInput.value.trim();
+            runIpLookup(ipVal, ipResults);
         });
     }
 }

@@ -1508,6 +1508,13 @@ body {
   animation: badgePulse 1.5s infinite;
 }
 
+.badge.pulse-cyan {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  background: rgba(0, 242, 255, 0.1);
+  animation: badgePulse 1.5s infinite;
+}
+
 @keyframes badgePulse {
   0% { opacity: 0.6; }
   50% { opacity: 1; }

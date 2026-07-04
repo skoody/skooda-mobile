@@ -90,6 +90,7 @@ dependencies {
     implementation("org.java-websocket:Java-WebSocket:1.5.4")
     implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
     implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.4")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
