@@ -14,6 +14,24 @@ if (window.Android && window.Android.getAppVersion) {
 }
 const GITHUB_REPO = "skoody/skooda-mobile";
 
+function nativeCheckForUpdate() {
+    return new Promise((resolve) => {
+        if (!window.Android || !window.Android.checkForUpdate) {
+            return resolve(null);
+        }
+        const cbName = '_updateCb_' + Math.random().toString(36).substring(2, 9);
+        window[cbName] = (res) => {
+            resolve(res);
+        };
+        try {
+            window.Android.checkForUpdate(cbName);
+        } catch (e) {
+            delete window[cbName];
+            resolve(null);
+        }
+    });
+}
+
 export function initSettings() {
     // Hardware Toggles
     const toggleFlashlight = getEl('toggle-flashlight');
@@ -52,6 +70,7 @@ export function initSettings() {
             alert("Danke für dein Feedback!");
         };
     }
+
     // Updater
     if (checkUpdateBtn) {
         checkUpdateBtn.onclick = async () => {
@@ -61,14 +80,13 @@ export function initSettings() {
                 let latestVersion = null;
                 let downloadUrl = null;
 
-                if (window.Android && window.Android.checkForUpdate) {
-                    const resStr = window.Android.checkForUpdate();
-                    const res = JSON.parse(resStr);
-                    if (res.status === 'ok') {
-                        latestVersion = res.latestVersion;
-                        downloadUrl = res.downloadUrl;
+                const nativeRes = await nativeCheckForUpdate();
+                if (nativeRes) {
+                    if (nativeRes.status === 'ok') {
+                        latestVersion = nativeRes.latestVersion;
+                        downloadUrl = nativeRes.downloadUrl;
                     } else {
-                        throw new Error(res.message || "Netzwerkfehler");
+                        throw new Error(nativeRes.message || "Netzwerkfehler");
                     }
                 } else {
                     const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
@@ -125,10 +143,9 @@ export function initSettings() {
 async function silentCheckUpdate() {
     try {
         let latestVersion = null;
-        if (window.Android && window.Android.checkForUpdate) {
-            const resStr = window.Android.checkForUpdate();
-            const res = JSON.parse(resStr);
-            if (res.status === 'ok') latestVersion = res.latestVersion;
+        const nativeRes = await nativeCheckForUpdate();
+        if (nativeRes) {
+            if (nativeRes.status === 'ok') latestVersion = nativeRes.latestVersion;
         } else {
             const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
             if (!response.ok) return;
@@ -155,5 +172,4 @@ async function silentCheckUpdate() {
             }
         }
     } catch (e) {}
-}e) { }
 }

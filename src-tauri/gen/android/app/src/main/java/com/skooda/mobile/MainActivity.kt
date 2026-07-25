@@ -103,7 +103,7 @@ import android.graphics.Matrix
 class MainActivity : TauriActivity(), SensorEventListener {
 
 
-    private var webViewInstance: WebView? = null
+    var webViewInstance: WebView? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastCpuTotal: Long = 0
     private var lastCpuIdle: Long = 0
@@ -826,58 +826,65 @@ class MainActivity : TauriActivity(), SensorEventListener {
         }
 
         @JavascriptInterface
-        fun checkForUpdate(): String {
-            val resultObj = JSONObject()
-            try {
-                var versionFound: String? = null
+        fun checkForUpdate(callback: String) {
+            Thread {
+                val resultObj = JSONObject()
                 try {
-                    val conn = URL("https://raw.githubusercontent.com/skoody/skooda-mobile/main/README.md").openConnection() as HttpURLConnection
-                    conn.requestMethod = "GET"
-                    conn.setRequestProperty("User-Agent", "Skooda-Mobile-App")
-                    conn.connectTimeout = 8000
-                    conn.readTimeout = 8000
-                    if (conn.responseCode == 200) {
-                        val text = conn.inputStream.bufferedReader().use { it.readText() }
-                        val regex = Regex("Aktuelle Version:\\s*v?([\\d\\.]+)")
-                        val match = regex.find(text)
-                        versionFound = match?.groups?.get(1)?.value
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-                if (versionFound.isNullOrEmpty()) {
+                    var versionFound: String? = null
                     try {
-                        val conn = URL("https://api.github.com/repos/skoody/skooda-mobile/releases/latest").openConnection() as HttpURLConnection
+                        val conn = URL("https://raw.githubusercontent.com/skoody/skooda-mobile/main/README.md").openConnection() as HttpURLConnection
                         conn.requestMethod = "GET"
                         conn.setRequestProperty("User-Agent", "Skooda-Mobile-App")
                         conn.connectTimeout = 8000
                         conn.readTimeout = 8000
                         if (conn.responseCode == 200) {
                             val text = conn.inputStream.bufferedReader().use { it.readText() }
-                            val json = JSONObject(text)
-                            versionFound = json.optString("tag_name", "").replace("v", "")
+                            val regex = Regex("Aktuelle Version:\\s*v?([\\d\\.]+)")
+                            val match = regex.find(text)
+                            versionFound = match?.groups?.get(1)?.value
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
+
+                    if (versionFound.isNullOrEmpty()) {
+                        try {
+                            val conn = URL("https://api.github.com/repos/skoody/skooda-mobile/releases/latest").openConnection() as HttpURLConnection
+                            conn.requestMethod = "GET"
+                            conn.setRequestProperty("User-Agent", "Skooda-Mobile-App")
+                            conn.connectTimeout = 8000
+                            conn.readTimeout = 8000
+                            if (conn.responseCode == 200) {
+                                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                                val json = JSONObject(text)
+                                versionFound = json.optString("tag_name", "").replace("v", "")
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+
+                    if (!versionFound.isNullOrEmpty()) {
+                        resultObj.put("status", "ok")
+                        resultObj.put("latestVersion", versionFound)
+                        resultObj.put("downloadUrl", "https://github.com/skoody/skooda-mobile/releases/download/v$versionFound/skooda-mobile.apk")
+                    } else {
+                        resultObj.put("status", "error")
+                        resultObj.put("message", "Verbindung zum Update-Server fehlgeschlagen")
+                    }
+                } catch (e: Exception) {
+                    resultObj.put("status", "error")
+                    resultObj.put("message", e.message ?: "Netzwerkfehler")
                 }
 
-                if (!versionFound.isNullOrEmpty()) {
-                    resultObj.put("status", "ok")
-                    resultObj.put("latestVersion", versionFound)
-                    resultObj.put("downloadUrl", "https://github.com/skoody/skooda-mobile/releases/download/v$versionFound/skooda-mobile.apk")
-                    return resultObj.toString()
-                } else {
-                    resultObj.put("status", "error")
-                    resultObj.put("message", "Verbindung zum Update-Server fehlgeschlagen")
-                    return resultObj.toString()
+                val activity = mContext as? MainActivity
+                val jsonEscaped = JSONObject.quote(resultObj.toString())
+                activity?.webViewInstance?.post {
+                    activity.webViewInstance?.evaluateJavascript(
+                        "if(window['$callback']){window['$callback'](JSON.parse($jsonEscaped)); delete window['$callback'];}", null
+                    )
                 }
-            } catch (e: Exception) {
-                resultObj.put("status", "error")
-                resultObj.put("message", e.message ?: "Netzwerkfehler")
-                return resultObj.toString()
-            }
+            }.start()
         }
 
         @JavascriptInterface
