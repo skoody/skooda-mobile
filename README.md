@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: v0.15.3
+Aktuelle Version: v0.16.0
 
 ### Features:
 - 🚀 **Hintergrund-Updateprüfungen**

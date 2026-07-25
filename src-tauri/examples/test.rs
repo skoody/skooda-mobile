@@ -1,4 +1,3 @@
-use sysinfo::{System};
 use std::fs;
 
 fn get_battery_info() -> (f32, String, String, f32) {
@@ -47,19 +46,11 @@ fn get_temperature() -> f32 {
 }
 
 fn main() {
-    let mut sys = System::new_all();
-    sys.refresh_all();
-    
     let (bat_pct, bat_status, _, bat_w) = get_battery_info();
     
-    println!("--- Skooda Mobile Backend Test (Note 14 Pro+ Optimized) ---");
+    println!("--- Skooda Mobile Backend Test ---");
     println!("Battery: {:.1}% ({})", bat_pct, bat_status);
     println!("Power Draw: {:.2} W", bat_w);
-    println!("CPU Usage: {:.1}%", sys.global_cpu_usage());
-    println!("RAM: {:.1}/{:.1} GB", 
-        sys.used_memory() as f32 / (1024.0 * 1024.0 * 1024.0),
-        sys.total_memory() as f32 / (1024.0 * 1024.0 * 1024.0)
-    );
     println!("Temp: {:.1}°C", get_temperature());
-    println!("----------------------------------------------------------");
+    println!("----------------------------------");
 }

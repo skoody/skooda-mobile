@@ -126,16 +126,17 @@ async fn open_secure_database(passphrase: String, state: State<'_, ChatState>, a
         return Ok(());
     }
 
-    let data_dir = app.path().app_data_dir().unwrap();
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     if !data_dir.exists() {
-        fs::create_dir_all(&data_dir).unwrap();
+        fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
     }
     let db_path = data_dir.join("chat_secure_v2.db");
 
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
     
-    // Set SQLCipher encryption key
-    conn.execute(&format!("PRAGMA key = '{}';", passphrase.replace("'", "''")), [])
+    // Set SQLCipher encryption key safely
+    let safe_passphrase = passphrase.replace('\'', "''");
+    conn.execute(&format!("PRAGMA key = '{safe_passphrase}';"), [])
         .map_err(|e| e.to_string())?;
 
     conn.execute(
@@ -256,9 +257,9 @@ async fn send_chat_message(message: String, is_binary: bool, state: State<'_, Ch
     if let Some(tx) = tx_lock.as_ref() {
         if is_binary {
             let data = BASE64_STANDARD.decode(message).map_err(|e| e.to_string())?;
-            tx.send(Message::Binary(data.into())).map_err(|e| e.to_string())?;
+            tx.send(Message::Binary(data)).map_err(|e| e.to_string())?;
         } else {
-            tx.send(Message::Text(message.into())).map_err(|e| e.to_string())?;
+            tx.send(Message::Text(message)).map_err(|e| e.to_string())?;
         }
         Ok(())
     } else {
@@ -341,7 +342,10 @@ async fn get_my_sender_key(room: String, state: State<'_, ChatState>) -> Result<
         }
     };
 
-    let signing_key = SigningKey::from_bytes(&seed.try_into().unwrap());
+    let seed_arr: [u8; 32] = seed
+        .try_into()
+        .map_err(|_| "Invalid seed size".to_string())?;
+    let signing_key = SigningKey::from_bytes(&seed_arr);
     let verify_key = signing_key.verifying_key().to_bytes().to_vec();
 
     Ok(serde_json::json!({
@@ -363,8 +367,8 @@ async fn encrypt_group_message(room: String, text: String, state: State<'_, Chat
 
     let (chain_key, seed) = match row {
         Ok(data) => (
-            data.0.try_into().map_err(|_| "Invalid key size").unwrap(),
-            data.1.try_into().map_err(|_| "Invalid seed size").unwrap()
+            data.0.try_into().map_err(|_| "Invalid key size".to_string())?,
+            data.1.try_into().map_err(|_| "Invalid seed size".to_string())?
         ),
         Err(_) => {
             // Generate keys automatically if they don't exist
@@ -459,7 +463,7 @@ async fn decrypt_group_message(
     let nonce = XNonce::from_slice(&nonce_bytes);
     let plaintext = cipher.decrypt(nonce, ciphertext.as_slice()).map_err(|e| e.to_string())?;
 
-    Ok(String::from_utf8(plaintext).map_err(|e| e.to_string())?)
+    String::from_utf8(plaintext).map_err(|e| e.to_string())
 }
 
 // --- DB HISTORY COMMANDS ---
@@ -614,9 +618,8 @@ async fn probe_urls(urls: Vec<String>) -> Result<Vec<ProbeResult>, String> {
 
     let mut results = Vec::new();
     for h in handles {
-        match h.await {
-            Ok(r) => results.push(r),
-            Err(_) => {}
+        if let Ok(r) = h.await {
+            results.push(r);
         }
     }
     Ok(results)
@@ -627,17 +630,27 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            let data_dir = app.path().app_data_dir().unwrap();
-            if !data_dir.exists() { fs::create_dir_all(&data_dir).unwrap(); }
+            let data_dir = app.path().app_data_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+            if !data_dir.exists() {
+                let _ = fs::create_dir_all(&data_dir);
+            }
 
             // Identity Persistence
             let seed_path = data_dir.join("identity.seed");
-            let seed = if seed_path.exists() {
-                fs::read(&seed_path).unwrap().try_into().unwrap()
+            let seed: [u8; 32] = if seed_path.exists() {
+                fs::read(&seed_path)
+                    .ok()
+                    .and_then(|b| b.try_into().ok())
+                    .unwrap_or_else(|| {
+                        let mut s = [0u8; 32];
+                        OsRng.fill_bytes(&mut s);
+                        let _ = fs::write(&seed_path, s);
+                        s
+                    })
             } else {
                 let mut s = [0u8; 32];
                 OsRng.fill_bytes(&mut s);
-                fs::write(&seed_path, &s).unwrap();
+                let _ = fs::write(&seed_path, s);
                 s
             };
 
@@ -651,6 +664,7 @@ pub fn run() {
                 encryption_secret,
                 db: Arc::new(Mutex::new(None)),
             });
+            app.manage(mbtiles::MbtilesCacheState::default());
 
             Ok(())
         })

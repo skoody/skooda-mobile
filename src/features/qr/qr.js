@@ -78,12 +78,30 @@ export function initQR() {
 
     // Scanner Trigger
     if (startBtn) {
-        startBtn.addEventListener('click', () => {
-            if (!window.html5QrCode) window.html5QrCode = new Html5Qrcode("reader");
+        startBtn.addEventListener('click', async () => {
             if (startBtn.innerText === "Stop Scanner") {
                 stopScanner();
                 return;
             }
+
+            try {
+                if (!window.Html5Qrcode) {
+                    if (scanResult) scanResult.innerText = "Loading scanner engine...";
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'html5-qrcode.min.js';
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error("Failed to load html5-qrcode script"));
+                        document.head.appendChild(script);
+                    });
+                }
+            } catch (err) {
+                if (scanResult) scanResult.innerText = "Error: " + err.message;
+                return;
+            }
+
+            if (!window.html5QrCode) window.html5QrCode = new Html5Qrcode("reader");
+
             const boxSize = Math.min(250, window.innerWidth * 0.7);
             const config = {
                 fps: 20,

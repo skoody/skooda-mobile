@@ -83,7 +83,7 @@ pub fn find_shortest_path(
         let pad_min_lon = min_lon - lon_padding;
         let pad_max_lon = max_lon + lon_padding;
         
-        let steps = 12;
+        let steps: i32 = 12;
         let lat_step = (pad_max_lat - pad_min_lat) / (steps - 1) as f64;
         let lon_step = (pad_max_lon - pad_min_lon) / (steps - 1) as f64;
         
@@ -105,10 +105,10 @@ pub fn find_shortest_path(
                 ];
                 
                 for &(dr, dc) in &offsets {
-                    let nr = r as i32 + dr;
-                    let nc = c as i32 + dc;
-                    if nr >= 0 && nr < steps as i32 && nc >= 0 && nc < steps as i32 {
-                        let neighbor_id = (nr * steps as i32 + nc) as u64;
+                    let nr = r + dr;
+                    let nc = c + dc;
+                    if nr >= 0 && nr < steps && nc >= 0 && nc < steps {
+                        let neighbor_id = (nr * steps + nc) as u64;
                         let w = haversine_distance(
                             nodes[id as usize].lat,
                             nodes[id as usize].lon,
@@ -136,7 +136,7 @@ pub fn find_shortest_path(
                     (grid_id, d)
                 })
                 .collect();
-            distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+            distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
             
             for &(grid_id, w) in distances.iter().take(4) {
                 edges.push(Edge { from: injected_id, to: grid_id, weight: w });
@@ -204,11 +204,10 @@ pub fn find_shortest_path(
                     dist.insert(next_node, next_cost);
                     parent.insert(next_node, node_id);
                     
-                    let end_coords = node_map.get(&end_node.id).unwrap();
-                    let next_coords = node_map.get(&next_node).unwrap();
-                    let h = haversine_distance(next_coords.lat, next_coords.lon, end_coords.lat, end_coords.lon);
-                    
-                    heap.push(State { cost: next_cost + h, node_id: next_node });
+                    if let (Some(end_coords), Some(next_coords)) = (node_map.get(&end_node.id), node_map.get(&next_node)) {
+                        let h = haversine_distance(next_coords.lat, next_coords.lon, end_coords.lat, end_coords.lon);
+                        heap.push(State { cost: next_cost + h, node_id: next_node });
+                    }
                 }
             }
         }

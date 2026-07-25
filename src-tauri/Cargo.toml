@@ -1,6 +1,6 @@
 [package]
 name = "skooda-mobile"
-version = "0.13.8"
+version = "0.16.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -33,6 +33,8 @@ tauri-plugin-notification = "2"
 sha2 = "0.10"
 thiserror = "1.0"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+dashmap = "6.1.0"
+parking_lot = "0.12"
 
 [profile.dev]
 panic = "abort"
