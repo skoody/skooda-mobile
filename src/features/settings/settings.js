@@ -89,7 +89,7 @@ export function initSettings() {
                         throw new Error(nativeRes.message || "Netzwerkfehler");
                     }
                 } else {
-                    const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
+                    const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md?t=${Date.now()}`);
                     if (!response.ok) throw new Error("Verbindung fehlgeschlagen");
                     const text = await response.text();
                     const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
@@ -147,7 +147,7 @@ async function silentCheckUpdate() {
         if (nativeRes) {
             if (nativeRes.status === 'ok') latestVersion = nativeRes.latestVersion;
         } else {
-            const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
+            const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md?t=${Date.now()}`);
             if (!response.ok) return;
             const text = await response.text();
             const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);

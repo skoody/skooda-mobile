@@ -832,16 +832,18 @@ class MainActivity : TauriActivity(), SensorEventListener {
                 try {
                     var versionFound: String? = null
                     try {
-                        val conn = URL("https://raw.githubusercontent.com/skoody/skooda-mobile/main/README.md").openConnection() as HttpURLConnection
+                        val conn = URL("https://api.github.com/repos/skoody/skooda-mobile/releases/latest").openConnection() as HttpURLConnection
                         conn.requestMethod = "GET"
                         conn.setRequestProperty("User-Agent", "Skooda-Mobile-App")
                         conn.connectTimeout = 8000
                         conn.readTimeout = 8000
                         if (conn.responseCode == 200) {
                             val text = conn.inputStream.bufferedReader().use { it.readText() }
-                            val regex = Regex("Aktuelle Version:\\s*v?([\\d\\.]+)")
-                            val match = regex.find(text)
-                            versionFound = match?.groups?.get(1)?.value
+                            val json = JSONObject(text)
+                            val tag = json.optString("tag_name", "")
+                            if (tag.isNotEmpty()) {
+                                versionFound = tag.replace("v", "").trim()
+                            }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -849,15 +851,17 @@ class MainActivity : TauriActivity(), SensorEventListener {
 
                     if (versionFound.isNullOrEmpty()) {
                         try {
-                            val conn = URL("https://api.github.com/repos/skoody/skooda-mobile/releases/latest").openConnection() as HttpURLConnection
+                            val ts = System.currentTimeMillis()
+                            val conn = URL("https://raw.githubusercontent.com/skoody/skooda-mobile/main/README.md?t=$ts").openConnection() as HttpURLConnection
                             conn.requestMethod = "GET"
                             conn.setRequestProperty("User-Agent", "Skooda-Mobile-App")
                             conn.connectTimeout = 8000
                             conn.readTimeout = 8000
                             if (conn.responseCode == 200) {
                                 val text = conn.inputStream.bufferedReader().use { it.readText() }
-                                val json = JSONObject(text)
-                                versionFound = json.optString("tag_name", "").replace("v", "")
+                                val regex = Regex("Aktuelle Version:\\s*v?([\\d\\.]+)")
+                                val match = regex.find(text)
+                                versionFound = match?.groups?.get(1)?.value
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
