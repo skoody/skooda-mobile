@@ -1,0 +1,70 @@
+==============================================================================
+                      SKOODA MOBILE - AKTUELER STAND DER APP
+==============================================================================
+Stand: 25. Juli 2026
+Version: v0.15.3 (VersionCode: 102)
+Plattform: Android (Tauri v2 + Rust Core + Vanilla JS Frontend + Native Kotlin)
+Repository Status: Öffentlich auf GitHub (Closed-Source Release: Remote enthält nur README.md)
+
+------------------------------------------------------------------------------
+1. REPOSITORY & CLOSED-SOURCE STATUS
+------------------------------------------------------------------------------
+- GitHub Repository: https://github.com/skoody/skooda-mobile
+- Das Remote-Repository auf GitHub ist öffentlich zugänglich, damit andere die APK
+  herunterladen können.
+- Der gesamte Quellcode ist auf GitHub gelöscht und befindet sich ausschließlich
+  lokal auf deinem Entwickler-PC. Auf GitHub existiert nur die README.md und die
+  kompilierten Release-Assets.
+
+------------------------------------------------------------------------------
+2. AKTUELLES RELEASE & DOWNLOAD-LINKS
+------------------------------------------------------------------------------
+- Aktuelle Version: v0.15.3
+- Release-Seite auf GitHub:
+  https://github.com/skoody/skooda-mobile/releases/tag/v0.15.3
+- Direkter APK-Download:
+  https://github.com/skoody/skooda-mobile/releases/download/v0.15.3/skooda-mobile.apk
+
+------------------------------------------------------------------------------
+3. INHALTE & MODULE DER APP
+------------------------------------------------------------------------------
+
+[🗺️ OFFLINE MAP & ROUTING (GOOGLE MAPS REWORK)]
+- Nominatim Ortssuche mit Autocomplete-Vorschlägen.
+- Routenplaner für Fußgänger (🚶) und Autofahrer (🚗).
+- Rust A*-Algorithmus Backend (`routing.rs`) zur Offline-Pfadfindung.
+- Turn-by-Turn Wegbeschreibung mit Richtungsweisern (z. B. "Rechts abbiegen auf...").
+- 3D-Navigationsmodus mit 42°-Kartenneigung und Kompass-Ausrichtung.
+- Live-GPS-Routensimulator zum Testen von Routen ohne GPS-Signal.
+
+[🚀 AUTOMATISCHES & MANUELLES UPDATE-SYSTEM]
+- Absolut ausfallsicher: Versionen werden über das ratenunbegrenzte Raw-CDN
+  von GitHub abgefragt (verhindert 403 API Rate Limits).
+- Asynchroner Kotlin-Hintergrundthread (`window.Android.checkForUpdate()`):
+  Die UI bleibt beim Prüfen zu 100 % flüssig und friert nicht ein.
+- Systembenachrichtigungen im Hintergrund via Android `WorkManager` (prüft alle 8h).
+- Angepasste CSP (Content-Security-Policy) Regeln für ungehinderten Datenaustausch.
+
+[📶 PROBE SNIFFER & NETZWERK-DIAGNOSE]
+- Echtzeit-Erfassung von Wi-Fi Probe Requests, BSSIDs und Signalstärken.
+- Korrigiertes HTML-Layout zur dauerhaften Sicherstellung der unteren Navigationsleiste.
+
+[💎 BLUETOOTH LE SCANNER & SNIFFER]
+- Live-Scanner für BLE-Geräte in der Umgebung mit RSSI-Signalanzeige, UUID
+  und MAC-Adresse.
+
+[🔑 ENCODER, DECODER & HASHER]
+- Zwei-Wege-Konverter für Base64, Binär, Hex.
+- Kryptografische Hash-Generierung für MD5, SHA-1 und SHA-256.
+
+[🔍 OSINT & STALKING SUITE]
+- Automatischer Google-Dorking-Link-Generator (Dateien, Passwörter, Profile, Verzeichnisse).
+- IP-Geolokalierung via `ipapi.co` (Land, ISP, ASN, Koordinaten, Zeitzone).
+- LeakCheck Datenbankabfrage für bekannte Datenlecks.
+
+[⚙️ PERFORMANCE- & AKKU-OPTIMIERUNG]
+- Caching statischer Hardware-Informationen beim Start in `MainActivity.kt`.
+- Drosselung langsamer Dateisystemabfragen (RAM, Speicher, Akkutemperatur) von 100ms
+  auf 1000ms zur Akkonsschonung und Vermeidung von E/A-Sperren.
+
+==============================================================================
