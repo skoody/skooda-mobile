@@ -52,19 +52,33 @@ export function initSettings() {
             alert("Danke für dein Feedback!");
         };
     }
-
     // Updater
     if (checkUpdateBtn) {
         checkUpdateBtn.onclick = async () => {
             checkUpdateBtn.disabled = true;
             checkUpdateBtn.innerText = "Prüfe...";
             try {
-                const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
-                if (!response.ok) throw new Error("Verbindung fehlgeschlagen");
-                const text = await response.text();
-                const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
-                if (!match) throw new Error("Format ungültig");
-                const latestVersion = match[1];
+                let latestVersion = null;
+                let downloadUrl = null;
+
+                if (window.Android && window.Android.checkForUpdate) {
+                    const resStr = window.Android.checkForUpdate();
+                    const res = JSON.parse(resStr);
+                    if (res.status === 'ok') {
+                        latestVersion = res.latestVersion;
+                        downloadUrl = res.downloadUrl;
+                    } else {
+                        throw new Error(res.message || "Netzwerkfehler");
+                    }
+                } else {
+                    const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
+                    if (!response.ok) throw new Error("Verbindung fehlgeschlagen");
+                    const text = await response.text();
+                    const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
+                    if (!match) throw new Error("Format ungültig");
+                    latestVersion = match[1];
+                    downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/v${latestVersion}/skooda-mobile.apk`;
+                }
 
                 if (latestVersionVal) latestVersionVal.innerText = 'v' + latestVersion;
                 if (updateInfo) updateInfo.style.display = 'flex';
@@ -75,7 +89,6 @@ export function initSettings() {
                     if (updateDesc) updateDesc.innerText = "Eine neue Version wurde veröffentlicht.";
                     if (downloadUpdateBtn) {
                         downloadUpdateBtn.style.display = 'block';
-                        const downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/v${latestVersion}/skooda-mobile.apk`;
                         downloadUpdateBtn.onclick = () => {
                             if (window.Android) {
                                 window.Android.cleanupOldApks();
@@ -111,13 +124,21 @@ export function initSettings() {
 
 async function silentCheckUpdate() {
     try {
-        const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
-        if (!response.ok) return;
-        const text = await response.text();
-        const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
-        if (!match) return;
-        const latestVersion = match[1];
-        if (latestVersion !== CURRENT_VERSION) {
+        let latestVersion = null;
+        if (window.Android && window.Android.checkForUpdate) {
+            const resStr = window.Android.checkForUpdate();
+            const res = JSON.parse(resStr);
+            if (res.status === 'ok') latestVersion = res.latestVersion;
+        } else {
+            const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md`);
+            if (!response.ok) return;
+            const text = await response.text();
+            const match = text.match(/Aktuelle Version:\s*v?([\d\.]+)/);
+            if (!match) return;
+            latestVersion = match[1];
+        }
+
+        if (latestVersion && latestVersion !== CURRENT_VERSION) {
             if (window.Android) {
                 window.Android.showNotification("Skooda Update Verfügbar!", `Version v${latestVersion} ist jetzt verfügbar.`);
             }
@@ -133,5 +154,6 @@ async function silentCheckUpdate() {
                 }
             }
         }
-    } catch (e) { }
+    } catch (e) {}
+}e) { }
 }
