@@ -1,13 +1,13 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.17.8** (VersionCode: 112)
+Aktuelle Version: **v0.17.9** (VersionCode: 113)
 
 Skooda Mobile ist eine multifunktionale Android-Applikation auf Basis von **Tauri v2**, **Rust Core**, **Native Kotlin** und einem modularen **Cyberpunk Dark Web-Frontend**.
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 📊 **Hardware & System Monitor:** Multi-Core Heatmap, CPU/RAM/Storage-Auslastung, Akku-Telemetrie mit mA-Smoothing, 3D-Sensorik & Peak-Hold.
+- 📊 **Hardware & System Monitor (Echte Live-Telemetrie):** Reales Gerätemodell via Android Properties, echte Multi-Core Heatmap (C0-C7), physische RAM- & Storage-Werte (`sysinfo` & `statvfs`), Akku-Telemetrie mit mA-Smoothing, dynamische Display-Hz-Messung & 3D-Sensorik.
 - 🛡️ **Cyber Tools & Security Suite:** Subnetz NetScan mit MAC-OUI-Herstellererkennung & Shodan API, Diagnose-Konsole (Ping, DNS, Traceroute), Port-Matrix mit **Live Banner Grabbing**, 2.4/5GHz WLAN-Spektrum-Analyzer, SSL/TLS-Auditor, Wi-Fi Probe Radar & BLE Scanner.
 - 📱 **QR Tools & Krypto-Engine:** Multi-Format Barcode/QR-Scanner, Ed25519-Signaturprüfung & Generierung, Hex-Inspector, Batch-Modus.
 - 🗺️ **Offline Map & Navigation:** Nominatim Suche, Interaktiver Pin-Drop, Fußgänger- & Auto-Routing mit Rust A*-Backend, Turn-by-Turn Wegbeschreibung, 3D-Kompassmodus, MBTiles Offline-Kacheln, GPX-Trail-Recorder.
