@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.17.6** (VersionCode: 110)
+Aktuelle Version: **v0.17.7** (VersionCode: 111)
 
 Skooda Mobile ist eine multifunktionale Android-Applikation auf Basis von **Tauri v2**, **Rust Core**, **Native Kotlin** und einem modularen **Cyberpunk Dark Web-Frontend**.
 
@@ -13,7 +13,7 @@ Skooda Mobile ist eine multifunktionale Android-Applikation auf Basis von **Taur
 - 🗺️ **Offline Map & Navigation:** Nominatim Suche, Interaktiver Pin-Drop, Fußgänger- & Auto-Routing mit Rust A*-Backend, Turn-by-Turn Wegbeschreibung, 3D-Kompassmodus, MBTiles Offline-Kacheln, GPX-Trail-Recorder.
 - 👁️ **ESP Kamera & KI-Vision:** Objekterkennung via Android GPU / MediaPipe TFLite mit Distanzschätzung, FPS-HUD & MJPEG-Stream-Unterstützung.
 - ⚙️ **Device Controls:** Taschenlampe, Bluetooth & nativer Bildschirm-Rekorder mit Live-HUD.
-- 🧮 **Elektrik-Rechner & Konverter:** Ohmsches Gesetz & Leistung ($U, I, R, P$), 8 physikalische Einheiten-Konverter.
+- ⚡ **Elektrik- & Elektronik-Suite (9 Module):** Ohm & Power ($U, I, R, P$), 4/5/6-Band Farbcode-Decoder mit Reverse-Suche, LED-Vorwiderstandsrechner mit E12/E24-Normwerten, Kabelquerschnitt & Spannungsabfall (DC, 230V, 400V 3~), Spannungsteiler unter Last, Akkulaufzeit & C-Rate, Reihen-/Parallelschaltung ($R, C, L$), RC-Filter & Grenzfrequenz ($f_c, \tau$), SMD-Code Decoder & 8 Einheiten-Konverter.
 - 🕵️ **OSINT & Stalking Suite:** 30+ Plattformen Benutzername-Scan via Rust, **Subdomain Finder** (Certificate Transparency & DNS-Resolution), LeakCheck Datenleck-Prüfung, Telefonnummer-Analyse, Google Dorks Generator, IP Geolokalisierung.
 - 🔏 **Coder & Hasher:** Base64, Binärcode, Hexadezimal, MD5, SHA-1 & SHA-256.
 - 💬 **E2EE Secure Chat & P2P Mesh:** Ed25519/X25519 & XChaCha20-Poly1305 E2EE, SQLCipher verschlüsselte lokale SQLite-DB, internetloser P2P-WLAN-Mesh-Modus, EXIF-Stripping, Sprachnachrichten, HIDS Root-Check.
