@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.17.4** (VersionCode: 108)
+Aktuelle Version: **v0.17.5** (VersionCode: 109)
 
 Skooda Mobile ist eine multifunktionale Android-Applikation auf Basis von **Tauri v2**, **Rust Core**, **Native Kotlin** und einem modularen **Cyberpunk Dark Web-Frontend**.
 
