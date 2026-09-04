@@ -1,12 +1,13 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.23.3** (VersionCode: 128)
+Aktuelle Version: **v0.23.4** (VersionCode: 129)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🛠️ **Tools-Tab & Sub-Tool Layout-Modernisierung:** Taktisches Redesign der 14 Werkzeug-Karten in `#tool-categories` mit 2-Spalten Mobil-Grid, Obsidian-Glow-Karten und Domain-Badges (`SEC`, `OPTIC`, `GEO`, `VISION`, `CTRL`, `CALC`, `INTEL`, `CRYPT`, `SENS`, `ENV`, `AUDIO`, `RADIO`, `FORENSIC`, `TAC`), durchgängiges Sticky-Header-HUD (`.subtool-header`) mit Schnell-Rücksprung (`← Tools`) für alle 14 Subtools, sowie horizontale Scroll-Pill-Leisten (`.cyber-subnav`, `.conv-tabs`, `.osint-tabs`, `.el-subtabs`) mit Touch-Gesten, Scroll-Snap und klarem Karmesin-Glühen.
 - 📱 **Permanente Bottom-Navigation:** Viewport-geankerte Navigationsleiste (`#bottom-nav`), 100 % sicht- und bedienbar auf allen Geräten, vollständige Android 15 Edge-to-Edge System-Insets-Kompatibilität (`fitsSystemWindows`) und blickdichtes High-Z-Index Obsidian-Design.
 - 🛡️ **Frontend-Integritäts-Guard:** Automatisierte Pre-Build Link-Validierung (`scripts/verify_frontend_integrity.js`), 100% stabile ES-Modul-Initialisierung und fehlertolerante System-Telemetrie.
 - 🩸 **Dark-Crimson & Yandere Noir Redesign:** Vollständig überarbeitete Benutzeroberfläche in tiefem Obsidian-Schwarz (`#070103`), edler Blutglas-Optik (`rgba(36, 4, 11, 0.65)`), stechend scharfen Karmesin-Borderkanten (`#ff003c`), rubinrotem Glühen, pulsierendem Herzschlag-Statusdot und maßgeschneiderten Canvas-Farbverläufen (u. a. 2D-Wasserfall-Spektrogramm im Audio-Labor).
