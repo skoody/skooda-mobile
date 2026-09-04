@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.21.0** (VersionCode: 123)
+Aktuelle Version: **v0.22.0** (VersionCode: 124)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
@@ -9,7 +9,11 @@ Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis vo
 ### 🚀 Kern-Module & Features:
 - ⚡ **Modulare Lazy Architecture:** Sofortiger Boot (< 50ms), reaktives EventBus/Store-System, Globaler ErrorBoundary & Tactical Toast HUD.
 - 📊 **Hardware & System Monitor:** 100% echte Kernel-Telemetrie via `libc`, Multi-Core Heatmap (C0-C7), physische RAM- & Storage-Werte, Akku-Telemetrie mit mA-Smoothing, Display-Hz-Messung & 3D-Sensorik.
-- 🛡️ **Cyber Tools & Security Suite:** Subnetz NetScan mit MAC-OUI-Herstellererkennung & Shodan API, Diagnose-Konsole (Ping, DNS, Traceroute), Port-Matrix mit **Live Banner Grabbing**, 2.4/5GHz WLAN-Spektrum-Analyzer, SSL/TLS-Auditor, Wi-Fi Probe Radar, BLE Scanner, **DoH Multi-Resolver Benchmark**, **HTTP REST & API Client** und **IPv6 Subnetz- & Adress-Analyzer**.
+- 🎙️ **Audio-Labor (Akustik & Signalverarbeitung):** **SPL Schallpegel-Messer** mit dB(A)/dB(C) IEC 61672-1 Filterung, Leq, Peak & Lärmampel, **2048-Punkt FFT-Spektrumanalysator & Wasserfall-Spektrogramm**, **DDS Signal- & Sweep-Generator** (Sinus, Rechteck, Dreieck, Sägezahn, 20Hz–20kHz Sweep, Rosa/Weißes Rauschen) und **DTMF & Morse-Studio** (Goertzel-Decoder, Audio/Taschenlampen-CW).
+- 📡 **Funk- & HF-Tools (RF Engineering):** **Antennenlängen-Rechner** (Dipol, Groundplane, J-Pole, Yagi mit $k$-Verkürzungsfaktor & Band-Presets), **Koaxialkabel-Dämpfung & Link-Budget** (Friis FSPL, RG-58, RG-213, Ecoflex 10, LMR-400), **SWR- & Reflexionsrechner** ($P_{fwd}, P_{refl}, \text{SWR}, \text{Return Loss}, \text{Mismatch Loss}$) und **HF-Pegelrechner** (dBm, W, $V_{eff}$, dBµV, 50Ω/75Ω, IARU S-Meter).
+- 🛡️ **Cyber Tools & Web-Forensik:** Subnetz NetScan mit MAC-OUI-Herstellererkennung & Shodan API, Diagnose-Konsole (Ping, DNS, Traceroute), Port-Matrix mit **Live Banner Grabbing**, 2.4/5GHz WLAN-Spektrum, SSL/TLS-Auditor, Wi-Fi Probe Radar, BLE Scanner, **DoH Multi-Resolver Benchmark**, **HTTP REST & API Client**, **IPv6 Subnetz-Analyzer**, **Native RDAP / WHOIS Domain-Lookup**, **X.509 TLS Zertifikats-Inspector**, **Globaler DNS-Propagation-Checker** und **HTTP Security Headers Auditor**.
+- 🔬 **Datei-Forensik & Hex-Viewer:** **Virtueller Hex-Viewer** (Offset, Hex, ASCII, 512B Paginierung), **Magic-Bytes Signatur-Erkennung** für 30+ Dateitypen, **Shannon-Entropie-Analyse** (0.0–8.0 bits/Byte) und **Prüfsummen-Vergleicher** (SHA-256, SHA-1, MD5).
+- 🧭 **Taktische Orientierung & Survival:** **MGRS & UTM Koordinaten-Konverter** (WGS84 $\leftrightarrow$ UTM $\leftrightarrow$ MGRS, 1m Genauigkeit), **Sonnenstand & Schattenradar** (NOAA Meeus Azimut, Elevation, Auf-/Untergang, Schattenstab-Nordpeilung) und **CPR & Notfall-Taktgeber** (100–120 BPM Metronom, 30:2 Taktung, ABCDE-Schema).
 - 📱 **QR Tools & Krypto-Engine:** Multi-Format Barcode/QR-Scanner, Ed25519-Signaturprüfung & Generierung, Hex-Inspector, Batch-Modus.
 - 🗺️ **Offline Map & Tactical Compass HUD:** Nominatim Suche, Interaktiver Pin-Drop, Fußgänger- & Auto-Routing mit Rust A*-Backend, Turn-by-Turn Wegbeschreibung, **Tactical Compass HUD** mit Zielpeilung & Kurskorrektur, **POI GPX & GeoJSON Ex-/Import**, MBTiles Offline-Kacheln, GPX-Trail-Recorder.
 - 🧲 **Sensorik-Suite:** **EMF Metallsucher & Leitungs-Finder** mit akustischem Geiger-Klick & Haptik, **Barometer & Höhenmesser** mit 3h Wettertrend & QNH, **Luxmeter** mit logarithmischer Wahrnehmungsskala.
@@ -19,7 +23,7 @@ Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis vo
 - 🕵️ **OSINT & Stalking Suite:** 30+ Plattformen Benutzername-Scan via Rust, **Subdomain Finder** (Certificate Transparency & DNS-Resolution), LeakCheck Datenleck-Prüfung, Telefonnummer-Analyse, Google Dorks Generator, IP Geolokalisierung.
 - 🔏 **Coder- & Entwickler-Suite:** Base64, Binärcode, Hexadezimal, Hashes (MD5, SHA-1, SHA-256), **JSON / YAML / XML Studio**, **RegEx Sandbox & Live-Tester** und **Unix Timestamp & Epoch Studio**.
 - 💬 **E2EE Secure Chat & P2P Mesh:** Ed25519/X25519 & XChaCha20-Poly1305 E2EE, **QR Safety Numbers Schlüsselverifikation**, **Verschlüsseltes Voll-Backup (.skooda)**, SQLCipher verschlüsselte lokale SQLite-DB, internetloser P2P-WLAN-Mesh-Modus, EXIF-Stripping, HIDS Root-Check.
-- 🎨 **HUD Themes & Spotlight:** Theme-Profile (Cyberpunk, Matrix Green, Tactical Amber, Stealth Red) & systemweite Spotlight-Schnellsuche (Ctrl+K).
+- 🎨 **HUD Themes & Spotlight:** 4 Theme-Profile (Cyberpunk, Matrix Green, Tactical Amber, Stealth Red) & systemweite Spotlight-Schnellsuche (Ctrl+K) mit Favoritenleiste.
 - 🔄 **Ausfallsicheres Update-System:** Raw-CDN GitHub-Fallback, Android WorkManager Hintergrund-Prüfung alle 8h, Auto-Bereinigung alter APKs.
 
 ---
