@@ -1,3 +1,4 @@
+import { solvePythagoras, fmtGeo } from './geometry.js';
 import { getEl } from '../../core/ui.js';
 
 function fmt(val) {
@@ -46,7 +47,6 @@ function initElektrik() {
         if (pair === 'IU') {
             if (v2 !== 0) { results.R = v1 / v2; results.P = v1 * v2; }
         } else if (pair === 'RU') {
-            const U = v1 * (k1 === 'U') + v2 * (k2 === 'U' ? 1 : 0) || (k1 === 'U' ? v1 : v2);
             const R = k1 === 'R' ? v1 : v2;
             const Uv = k1 === 'U' ? v1 : v2;
             if (R !== 0) { results.I = Uv / R; results.P = (Uv * Uv) / R; }
@@ -175,8 +175,110 @@ function initTabs() {
     });
 }
 
+function initGeometry() {
+    const aEl = getEl('geo-a');
+    const bEl = getEl('geo-b');
+    const cEl = getEl('geo-c');
+    if (!aEl || !bEl || !cEl) return;
+
+    const formulaEl = getEl('geo-formula');
+    const usedEl = getEl('geo-formula-used');
+    const subEl = getEl('geo-formula-sub');
+    const areaEl = getEl('geo-area');
+    const periEl = getEl('geo-peri');
+    const heightEl = getEl('geo-height');
+    const errEl = getEl('geo-error');
+    const clearBtn = getEl('geo-clear');
+    const fields = { a: aEl, b: bEl, c: cEl };
+    let editHistory = [];
+
+    function valOf(key) {
+        const raw = fields[key].value;
+        if (raw === '' || raw == null) return undefined;
+        const n = parseFloat(raw);
+        return Number.isFinite(n) ? n : undefined;
+    }
+
+    function render() {
+        const given = {};
+        editHistory.forEach((k) => {
+            const v = valOf(k);
+            if (v !== undefined) given[k] = v;
+        });
+        if (editHistory.length < 2) {
+            const leftover = Object.keys(fields).find((k) => !editHistory.includes(k));
+            if (leftover) {
+                fields[leftover].value = '';
+                fields[leftover].classList.remove('conv-computed', 'conv-error');
+            }
+            if (formulaEl) formulaEl.textContent = 'a² + b² = c²';
+            if (usedEl) usedEl.textContent = 'c = √(a² + b²)';
+            if (subEl) subEl.textContent = '—';
+            if (areaEl) areaEl.textContent = 'A = ½·a·b = —';
+            if (periEl) periEl.textContent = 'U = a+b+c = —';
+            if (heightEl) heightEl.textContent = 'h = (a·b)/c = —';
+            if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+            Object.values(fields).forEach((el) => el.classList.remove('conv-error'));
+            return;
+        }
+
+        const result = solvePythagoras(given);
+        Object.values(fields).forEach((el) => el.classList.remove('conv-error', 'conv-computed'));
+        if (!result.ok) {
+            if (errEl) {
+                errEl.hidden = !result.error;
+                errEl.textContent = result.error || '';
+            }
+            if (result.error) {
+                Object.keys(fields).forEach((k) => {
+                    if (!editHistory.includes(k)) fields[k].classList.add('conv-error');
+                });
+            }
+            if (usedEl) usedEl.textContent = result.formula;
+            if (subEl) subEl.textContent = result.substituted || '—';
+            return;
+        }
+        if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+        ['a', 'b', 'c'].forEach((k) => {
+            if (!editHistory.includes(k)) {
+                fields[k].value = fmtGeo(result[k]);
+                fields[k].classList.add('conv-computed');
+            }
+        });
+        if (formulaEl) formulaEl.textContent = result.formula;
+        if (usedEl) usedEl.textContent = result.used || result.formula;
+        if (subEl) subEl.textContent = result.substituted || '—';
+        if (areaEl) areaEl.textContent = `A = ½·a·b = ${fmtGeo(result.area)}`;
+        if (periEl) periEl.textContent = `U = a+b+c = ${fmtGeo(result.perimeter)}`;
+        if (heightEl) heightEl.textContent = `h = (a·b)/c = ${fmtGeo(result.height)}`;
+    }
+
+    Object.entries(fields).forEach(([key, el]) => {
+        el.addEventListener('input', () => {
+            editHistory = editHistory.filter((k) => k !== key);
+            if (el.value !== '' && !isNaN(parseFloat(el.value))) {
+                editHistory.push(key);
+                if (editHistory.length > 2) editHistory.shift();
+            }
+            render();
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            Object.values(fields).forEach((el) => {
+                el.value = '';
+                el.classList.remove('conv-computed', 'conv-error');
+            });
+            editHistory = [];
+            render();
+        });
+    }
+}
+
 export function initRechner() {
     initTabs();
     initElektrik();
     initConverters();
+    initGeometry();
 }
