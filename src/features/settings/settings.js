@@ -1,4 +1,6 @@
-import { getEl } from '../../core/ui.js';
+import { getEl, openExternalUrl } from '../../core/ui.js';
+import { storageRepo } from '../../core/storage.js';
+import { showToast } from '../../core/toast.js';
 
 const checkUpdateBtn = getEl('check-update-btn');
 const downloadUpdateBtn = getEl('download-update-btn');
@@ -8,11 +10,30 @@ const updateTitle = getEl('update-title');
 const updateDesc = getEl('update-desc');
 const releaseNotes = getEl('release-notes');
 
-let CURRENT_VERSION = "0.9.0";
-if (window.Android && window.Android.getAppVersion) {
-    CURRENT_VERSION = window.Android.getAppVersion();
-}
+let CURRENT_VERSION = "0.23.5";
 const GITHUB_REPO = "skoody/skooda-mobile";
+
+async function fetchCurrentVersion() {
+    if (window.__TAURI__ && window.__TAURI__.core) {
+        try {
+            const v = await window.__TAURI__.core.invoke('get_app_version');
+            if (v) {
+                CURRENT_VERSION = v;
+                return v;
+            }
+        } catch (e) {}
+    }
+    if (window.Android && window.Android.getAppVersion) {
+        try {
+            const v = window.Android.getAppVersion();
+            if (v) {
+                CURRENT_VERSION = v;
+                return v;
+            }
+        } catch (e) {}
+    }
+    return CURRENT_VERSION;
+}
 
 function nativeCheckForUpdate() {
     return new Promise((resolve) => {
@@ -33,6 +54,9 @@ function nativeCheckForUpdate() {
 }
 
 export function initSettings() {
+    setupThemeSwitcher();
+    setupBackupSystem();
+
     // Hardware Toggles
     const toggleFlashlight = getEl('toggle-flashlight');
     const toggleBluetooth = getEl('toggle-bluetooth');
@@ -60,12 +84,7 @@ export function initSettings() {
             const subject = encodeURIComponent("Skooda Mobile Feedback");
             const body = encodeURIComponent(`User Feedback (v${CURRENT_VERSION}):\n\n${text}`);
             const githubIssueUrl = `https://github.com/${GITHUB_REPO}/issues/new?title=${subject}&body=${body}`;
-            if (window.Android) {
-                window.Android.openExternalUrl(githubIssueUrl);
-                window.Android.cleanupOldApks();
-            } else {
-                window.open(githubIssueUrl, '_blank');
-            }
+            openExternalUrl(githubIssueUrl);
             feedbackText.value = "";
             alert("Danke für dein Feedback!");
         };
@@ -77,18 +96,50 @@ export function initSettings() {
             checkUpdateBtn.disabled = true;
             checkUpdateBtn.innerText = "Prüfe...";
             try {
+                await fetchCurrentVersion();
                 let latestVersion = null;
                 let downloadUrl = null;
+                let notes = null;
 
-                const nativeRes = await nativeCheckForUpdate();
-                if (nativeRes) {
-                    if (nativeRes.status === 'ok') {
-                        latestVersion = nativeRes.latestVersion;
-                        downloadUrl = nativeRes.downloadUrl;
-                    } else {
-                        throw new Error(nativeRes.message || "Netzwerkfehler");
+                // 1. Try GitHub Releases API first (provides full markdown changelog)
+                try {
+                    const apiRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+                        headers: { 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                    if (apiRes.ok) {
+                        const releaseData = await apiRes.json();
+                        if (releaseData.tag_name) {
+                            latestVersion = releaseData.tag_name.replace(/^v/, '');
+                            notes = releaseData.body || "";
+                            if (releaseData.assets && releaseData.assets.length > 0) {
+                                const apkAsset = releaseData.assets.find(a => a.name.endsWith('.apk'));
+                                if (apkAsset) downloadUrl = apkAsset.browser_download_url;
+                            }
+                            if (!downloadUrl) {
+                                downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/v${latestVersion}/skooda-mobile.apk`;
+                            }
+                        }
                     }
-                } else {
+                } catch (apiErr) {
+                    console.warn("Direct GitHub API call failed, falling back", apiErr);
+                }
+
+                // 2. Native Android Bridge fallback
+                if (!latestVersion) {
+                    const nativeRes = await nativeCheckForUpdate();
+                    if (nativeRes) {
+                        if (nativeRes.status === 'ok') {
+                            latestVersion = nativeRes.latestVersion;
+                            downloadUrl = nativeRes.downloadUrl;
+                            notes = nativeRes.body || nativeRes.releaseNotes || "";
+                        } else {
+                            throw new Error(nativeRes.message || "Netzwerkfehler");
+                        }
+                    }
+                }
+
+                // 3. Raw README.md Fallback
+                if (!latestVersion) {
                     const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/README.md?t=${Date.now()}`);
                     if (!response.ok) throw new Error("Verbindung fehlgeschlagen");
                     const text = await response.text();
@@ -96,29 +147,36 @@ export function initSettings() {
                     if (!match) throw new Error("Format ungültig");
                     latestVersion = match[1];
                     downloadUrl = `https://github.com/${GITHUB_REPO}/releases/download/v${latestVersion}/skooda-mobile.apk`;
+                    
+                    const featMatch = text.match(/### (?:🚀 )?Kern-Module & Features:([\s\S]*?)(?:---|\n\n##|$)/i);
+                    if (featMatch) {
+                        notes = featMatch[1].trim();
+                    }
                 }
 
                 if (latestVersionVal) latestVersionVal.innerText = 'v' + latestVersion;
                 if (updateInfo) updateInfo.style.display = 'flex';
-                if (releaseNotes) releaseNotes.innerText = `Skooda Mobile v${latestVersion} Release (Closed Source APK Download)`;
+                
+                if (releaseNotes) {
+                    if (notes && notes.trim().length > 0) {
+                        releaseNotes.innerText = notes.trim();
+                    } else {
+                        releaseNotes.innerText = `Skooda Mobile v${latestVersion} Release:\n\n• Alle neuen Sicherheits- und Feature-Erweiterungen enthalten.\n• Geschlossenes APK-Build-Paket.`;
+                    }
+                }
 
                 if (latestVersion !== CURRENT_VERSION) {
                     if (updateTitle) updateTitle.innerText = "Update Verfügbar!";
-                    if (updateDesc) updateDesc.innerText = "Eine neue Version wurde veröffentlicht.";
+                    if (updateDesc) updateDesc.innerText = `Eine neue Version (v${latestVersion}) wurde veröffentlicht.`;
                     if (downloadUpdateBtn) {
                         downloadUpdateBtn.style.display = 'block';
                         downloadUpdateBtn.onclick = () => {
-                            if (window.Android) {
-                                window.Android.cleanupOldApks();
-                                window.Android.openExternalUrl(downloadUrl);
-                            } else {
-                                window.open(downloadUrl, '_blank');
-                            }
+                            openExternalUrl(downloadUrl);
                         };
                     }
                 } else {
                     if (updateTitle) updateTitle.innerText = "System Aktuell";
-                    if (updateDesc) updateDesc.innerText = `Du nutzt bereits die neueste Version ${CURRENT_VERSION}.`;
+                    if (updateDesc) updateDesc.innerText = `Du nutzt bereits die neueste Version (v${CURRENT_VERSION}).`;
                     if (downloadUpdateBtn) downloadUpdateBtn.style.display = 'none';
                 }
             } catch (err) {
@@ -132,8 +190,15 @@ export function initSettings() {
     }
 
     // Version Display
-    const versionDisplay = document.querySelector('.version-badge .value');
-    if (versionDisplay) versionDisplay.innerText = `v${CURRENT_VERSION}`;
+    const updateVersionUI = async () => {
+        await fetchCurrentVersion();
+        const currentVerEl = document.getElementById('current-version-val') || document.querySelector('.version-badge .value');
+        if (currentVerEl) currentVerEl.innerText = `v${CURRENT_VERSION}`;
+        if (latestVersionVal && (latestVersionVal.innerText.includes('?') || latestVersionVal.innerText === '')) {
+            latestVersionVal.innerText = `v${CURRENT_VERSION}`;
+        }
+    };
+    updateVersionUI();
 
     // Auto-check
     setInterval(silentCheckUpdate, 30 * 60 * 1000);
@@ -142,6 +207,7 @@ export function initSettings() {
 
 async function silentCheckUpdate() {
     try {
+        await fetchCurrentVersion();
         let latestVersion = null;
         const nativeRes = await nativeCheckForUpdate();
         if (nativeRes) {
@@ -172,4 +238,152 @@ async function silentCheckUpdate() {
             }
         }
     } catch (e) {}
+}
+
+// =============================================================================
+// HUD FARBPROFILE (THEMES)
+// =============================================================================
+function setupThemeSwitcher() {
+    const themeSelect = getEl('settings-theme-select');
+    const savedTheme = localStorage.getItem('skooda_theme') || 'crimson-yandere';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (themeSelect) {
+        themeSelect.value = savedTheme;
+        themeSelect.addEventListener('change', (e) => {
+            const newTheme = e.target.value;
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('skooda_theme', newTheme);
+            showToast(`Theme geändert: ${newTheme}`, 'info');
+        });
+    }
+}
+
+// =============================================================================
+// VERSCHLÜSSELTES VOLL-BACKUP (.SKOODA) & RESTORE
+// =============================================================================
+function setupBackupSystem() {
+    const exportBtn = getEl('backup-export-btn');
+    const importBtn = getEl('backup-import-btn');
+    const fileInput = getEl('backup-file-input');
+    const backupModal = getEl('backup-modal');
+    const backupPassInput = getEl('backup-pass-input');
+    const backupConfirmBtn = getEl('backup-confirm-btn');
+    const backupCancelBtn = getEl('backup-cancel-btn');
+    const backupModalTitle = getEl('backup-modal-title');
+
+    let pendingAction = null; // 'export' | 'restore'
+    let pendingBlob = null;
+
+    if (exportBtn && backupModal) {
+        exportBtn.onclick = () => {
+            pendingAction = 'export';
+            if (backupModalTitle) backupModalTitle.innerText = "🔒 Voll-Backup verschlüsseln (.skooda)";
+            if (backupPassInput) backupPassInput.value = "";
+            backupModal.style.display = 'flex';
+        };
+    }
+
+    if (importBtn && fileInput) {
+        importBtn.onclick = () => {
+            fileInput.click();
+        };
+    }
+
+    if (fileInput) {
+        fileInput.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            pendingBlob = await file.text();
+            pendingAction = 'restore';
+            if (backupModalTitle) backupModalTitle.innerText = "🔓 Voll-Backup entschlüsseln (.skooda)";
+            if (backupPassInput) backupPassInput.value = "";
+            if (backupModal) backupModal.style.display = 'flex';
+            fileInput.value = "";
+        };
+    }
+
+    if (backupCancelBtn && backupModal) {
+        backupCancelBtn.onclick = () => {
+            backupModal.style.display = 'none';
+            pendingAction = null;
+            pendingBlob = null;
+        };
+    }
+
+    if (backupConfirmBtn && backupPassInput) {
+        backupConfirmBtn.onclick = async () => {
+            const passphrase = backupPassInput.value;
+            if (!passphrase || passphrase.length < 4) {
+                showToast('Passwort muss mindestens 4 Zeichen lang sein', 'warn');
+                return;
+            }
+
+            backupConfirmBtn.disabled = true;
+            backupConfirmBtn.innerText = "Verarbeite...";
+
+            try {
+                if (pendingAction === 'export') {
+                    // Gather all data
+                    const pois = storageRepo.getPois();
+                    const theme = localStorage.getItem('skooda_theme') || 'cyber-default';
+                    const favorites = localStorage.getItem('skooda_favorites') || '[]';
+                    const bundle = {
+                        app: 'skooda-mobile',
+                        version: CURRENT_VERSION,
+                        exported_at: new Date().toISOString(),
+                        theme,
+                        favorites,
+                        pois,
+                    };
+
+                    const encryptedBlob = await window.__TAURI__.core.invoke('create_encrypted_backup', {
+                        payloadJson: JSON.stringify(bundle),
+                        passphrase
+                    });
+
+                    // Download file
+                    const blob = new Blob([encryptedBlob], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `skooda_backup_${Date.now()}.skooda`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    showToast('Voll-Backup (.skooda) erfolgreich exportiert!', 'success');
+                    if (backupModal) backupModal.style.display = 'none';
+                } else if (pendingAction === 'restore') {
+                    if (!pendingBlob) throw new Error("Keine Backup-Datei geladen");
+
+                    const decryptedJson = await window.__TAURI__.core.invoke('restore_encrypted_backup', {
+                        encryptedBlob: pendingBlob,
+                        passphrase
+                    });
+
+                    const bundle = JSON.parse(decryptedJson);
+                    if (bundle.theme) {
+                        localStorage.setItem('skooda_theme', bundle.theme);
+                        document.documentElement.setAttribute('data-theme', bundle.theme);
+                    }
+                    if (bundle.favorites) {
+                        localStorage.setItem('skooda_favorites', bundle.favorites);
+                    }
+                    if (bundle.pois && Array.isArray(bundle.pois)) {
+                        bundle.pois.forEach(p => storageRepo.addPoi(p));
+                    }
+
+                    showToast('Backup erfolgreich wiederhergestellt!', 'success');
+                    if (backupModal) backupModal.style.display = 'none';
+                    setTimeout(() => window.location.reload(), 1200);
+                }
+            } catch (err) {
+                showToast(`Fehler: ${err.message || String(err)}`, 'error');
+            } finally {
+                backupConfirmBtn.disabled = false;
+                backupConfirmBtn.innerText = "Bestätigen";
+            }
+        };
+    }
 }

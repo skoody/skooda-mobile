@@ -86,6 +86,16 @@ export function initScreenRecorder() {
         if (typeof Android !== 'undefined' && Android.startScreenRecording) {
             Android.startScreenRecording('__screenRecordCallback');
             startPollingForRecording();
+        } else {
+            const statusText = getEl('rec-status-text');
+            if (statusText) {
+                statusText.textContent = 'Native Screen-Recording Bridge nicht verfügbar';
+                statusText.style.color = 'var(--neon-purple)';
+                setTimeout(() => {
+                    statusText.textContent = 'Bereit';
+                    statusText.style.color = '';
+                }, 3000);
+            }
         }
     });
 

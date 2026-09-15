@@ -1,4 +1,4 @@
-import { getEl } from '../../core/ui.js';
+import { getEl, openExternalUrl } from '../../core/ui.js';
 
 const chatWindow = getEl('chat-window');
 const chatInput = getEl('chat-input');
@@ -144,9 +144,11 @@ export function initChat() {
     if (window.Android && window.Android.getDatabasePassphrase) {
         passphrase = window.Android.getDatabasePassphrase();
     }
-    window.__TAURI__.core.invoke("open_secure_database", { passphrase })
-        .then(() => console.log("Secure database unlocked."))
-        .catch(e => console.error("Failed to unlock database:", e));
+    if (window.__TAURI__ && window.__TAURI__.core) {
+        window.__TAURI__.core.invoke("open_secure_database", { passphrase })
+            .then(() => console.log("Secure database unlocked."))
+            .catch(e => console.error("Failed to unlock database:", e));
+    }
 
     if (sendChatBtn) sendChatBtn.onclick = () => sendChatMessage();
 
@@ -165,15 +167,31 @@ export function initChat() {
                     html = '<div style="color: var(--text-dim);">No active E2EE peer sessions.</div>';
                 } else {
                     html = '<table style="width: 100%; border-collapse: collapse; font-family: monospace; font-size: 0.7rem;">';
-                    html += '<tr style="border-bottom: 1px solid var(--border-color); color: var(--neon-cyan);"><th style="text-align: left; padding: 4px;">Peer</th><th style="text-align: left; padding: 4px;">X25519 Key (Pub)</th></tr>';
+                    html += '<tr style="border-bottom: 1px solid var(--border-color); color: var(--neon-cyan);"><th style="text-align: left; padding: 4px;">Peer</th><th style="text-align: left; padding: 4px;">Schlüssel</th><th style="text-align: right; padding: 4px;">Aktion</th></tr>';
                     peers.forEach(peer => {
                         const keyInfo = peerKeys[peer];
-                        const x25519Short = keyInfo.x25519 ? keyInfo.x25519.substring(0, 20) + "..." : "None";
-                        html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 6px 4px; font-weight: bold; color: var(--neon-purple);">${peer}</td><td style="padding: 6px 4px; word-break: break-all; color: var(--text-dim);">${x25519Short}</td></tr>`;
+                        const keyShort = keyInfo.ed25519 ? keyInfo.ed25519.substring(0, 16) + "..." : (keyInfo.x25519 ? keyInfo.x25519.substring(0, 16) + "..." : "None");
+                        const isVerified = localStorage.getItem(`verified_peer_${peer}`) === 'true';
+                        html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 6px 4px; font-weight: bold; color: var(--neon-purple);">${peer} ${isVerified ? '🛡️' : ''}</td>
+                            <td style="padding: 6px 4px; word-break: break-all; color: var(--text-dim);">${keyShort}</td>
+                            <td style="padding: 6px 4px; text-align: right;">
+                                <button class="btn mini verify-safety-btn" data-peer="${peer}" style="padding: 3px 8px; font-size: 0.7rem; border-color:${isVerified ? 'var(--neon-green)' : 'var(--neon-cyan)'}; color:${isVerified ? 'var(--neon-green)' : 'var(--neon-cyan)'};">
+                                    ${isVerified ? 'Verifiziert' : 'Verifizieren'}
+                                </button>
+                            </td>
+                        </tr>`;
                     });
                     html += '</table>';
                 }
                 chatKeysList.innerHTML = html;
+
+                chatKeysList.querySelectorAll('.verify-safety-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        const peer = btn.getAttribute('data-peer');
+                        await openSafetyNumbersModal(peer);
+                    };
+                });
             }
             if (keysModal) keysModal.classList.add('active');
         };
@@ -184,6 +202,8 @@ export function initChat() {
             if (keysModal) keysModal.classList.remove('active');
         };
     }
+
+    setupSafetyNumbersModal();
 
     const retrySyncBtn = getEl('chat-retry-sync');
     if (retrySyncBtn) {
@@ -341,26 +361,31 @@ export function initChat() {
 
     if (voiceBtn) {
         voiceBtn.onclick = async () => {
-            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-                mediaRecorder.onstop = async () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onload = async () => {
-                        const base64 = reader.result.split(',')[1];
-                        await sendChatMessage(`VOICE:${base64}`, false);
+            try {
+                if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                    mediaRecorder.onstop = async () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                            const base64 = reader.result.split(',')[1];
+                            await sendChatMessage(`VOICE:${base64}`, false);
+                        };
+                        reader.readAsDataURL(blob);
+                        voiceBtn.style.color = '';
                     };
-                    reader.readAsDataURL(blob);
-                    voiceBtn.style.color = '';
-                };
-                mediaRecorder.start();
-                voiceBtn.style.color = 'var(--neon-purple)';
-                appendMsg("System", "Aufnahme läuft...", false);
-            } else {
-                mediaRecorder.stop();
+                    mediaRecorder.start();
+                    voiceBtn.style.color = 'var(--neon-purple)';
+                    appendMsg("System", "Aufnahme läuft...", false);
+                } else {
+                    mediaRecorder.stop();
+                }
+            } catch (err) {
+                console.warn("Mikrofon-Zugriff fehlgeschlagen:", err);
+                appendMsg("System", "Mikrofon nicht verfügbar oder Berechtigung verweigert.", false);
             }
         };
     }
@@ -642,10 +667,23 @@ export function appendMsg(sender, text, isMe, skipSave = false, securityType = '
         downloadBtn.onclick = () => downloadFile(downloadBtn.dataset.name, downloadBtn.dataset.data);
     }
     const locLink = div.querySelector('.loc-link');
-    if (locLink && window.skoodaMap) {
+    if (locLink) {
         locLink.onclick = (e) => {
             e.preventDefault();
-            window.skoodaMap.map.setView([locLink.dataset.lat, locLink.dataset.lon], 16);
+            const lat = parseFloat(locLink.dataset.lat);
+            const lon = parseFloat(locLink.dataset.lon);
+            if (window.skoodaNav) {
+                window.skoodaNav.switchTab('tools-tab');
+                window.skoodaNav.openSubTool('map-toolset');
+            }
+            setTimeout(() => {
+                if (window.skoodaMap && window.skoodaMap.map) {
+                    window.skoodaMap.map.setView([lat, lon], 16);
+                    if (typeof window.skoodaMap.addTacticalMarker === 'function') {
+                        window.skoodaMap.addTacticalMarker(lat, lon, false);
+                    }
+                }
+            }, 300);
         };
     }
 
@@ -773,11 +811,117 @@ export async function sendChatMessage(text = null, isSystem = false) {
 
 async function sendPushNotification(title, body) {
     try {
-        const { isPermissionGranted, requestPermission, sendNotification } = window.__TAURI__.notification;
-        let permission = await isPermissionGranted();
-        if (!permission) permission = await requestPermission();
-        if (permission === 'granted') {
-            sendNotification({ title: `Skooda: ${title}`, body: body.substring(0, 100) });
+        if (window.__TAURI__ && window.__TAURI__.notification) {
+            const notif = window.__TAURI__.notification;
+            if (typeof notif.isPermissionGranted === 'function') {
+                let permission = await notif.isPermissionGranted();
+                if (!permission && typeof notif.requestPermission === 'function') {
+                    permission = await notif.requestPermission();
+                }
+                if (permission === 'granted' && typeof notif.sendNotification === 'function') {
+                    notif.sendNotification({ title: `Skooda: ${title}`, body: body.substring(0, 100) });
+                }
+            }
         }
     } catch(e) { console.error("Notification Error", e); }
+}
+
+// =============================================================================
+// SAFETY NUMBERS VERIFICATION MODAL
+// =============================================================================
+let currentVerifyingPeer = null;
+
+async function openSafetyNumbersModal(peer) {
+    currentVerifyingPeer = peer;
+    const modal = getEl('safety-modal');
+    const peerNameEl = getEl('safety-peer-name');
+    const numbersEl = getEl('safety-numbers-display');
+    const qrContainer = getEl('safety-qr-container');
+    const confirmBtn = getEl('safety-confirm-btn');
+
+    if (peerNameEl) peerNameEl.innerText = peer;
+
+    try {
+        const myIdentity = await window.__TAURI__.core.invoke('get_identity');
+        const keyInfo = peerKeys[peer];
+        const peerKey = keyInfo ? (keyInfo.ed25519 || keyInfo.x25519) : null;
+
+        if (!peerKey) {
+            showToast('Kein Identitätsschlüssel für diesen Peer vorhanden', 'warn');
+            return;
+        }
+
+        const res = await window.__TAURI__.core.invoke('generate_safety_numbers', {
+            myPubkeyB64: myIdentity,
+            peerPubkeyB64: peerKey
+        });
+
+        if (numbersEl) {
+            const blocks = res.display_code.split(' ');
+            let gridHtml = '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; font-family:monospace; font-size:0.95rem; text-align:center; margin:12px 0;">';
+            blocks.forEach(b => {
+                gridHtml += `<div style="background:rgba(0,0,0,0.4); padding:6px; border-radius:4px; color:var(--neon-green); font-weight:bold; letter-spacing:1px;">${b}</div>`;
+            });
+            gridHtml += '</div>';
+            numbersEl.innerHTML = gridHtml;
+        }
+
+        if (qrContainer && window.QRCode) {
+            qrContainer.innerHTML = '';
+            new window.QRCode(qrContainer, {
+                text: res.qr_data,
+                width: 150,
+                height: 150,
+                colorDark: "#00f0ff",
+                colorLight: "#050811",
+                correctLevel: window.QRCode.CorrectLevel.M
+            });
+        }
+
+        const isAlreadyVerified = localStorage.getItem(`verified_peer_${peer}`) === 'true';
+        if (confirmBtn) {
+            confirmBtn.innerText = isAlreadyVerified ? "Verifizierung aufheben" : "Als verifiziert markieren 🛡️";
+            confirmBtn.style.color = isAlreadyVerified ? "var(--neon-red)" : "var(--neon-green)";
+        }
+
+        if (modal) modal.style.display = 'flex';
+    } catch (err) {
+        showToast('Fehler bei Sicherheitsnummern: ' + err.message, 'error');
+    }
+}
+
+function setupSafetyNumbersModal() {
+    const modal = getEl('safety-modal');
+    const closeBtn = getEl('safety-close-btn');
+    const confirmBtn = getEl('safety-confirm-btn');
+    const scanBtn = getEl('safety-scan-btn');
+
+    if (closeBtn && modal) {
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+
+    if (confirmBtn) {
+        confirmBtn.onclick = () => {
+            if (!currentVerifyingPeer) return;
+            const key = `verified_peer_${currentVerifyingPeer}`;
+            const current = localStorage.getItem(key) === 'true';
+            if (current) {
+                localStorage.removeItem(key);
+                showToast(`Verifizierung für ${currentVerifyingPeer} aufgehoben`, 'info');
+            } else {
+                localStorage.setItem(key, 'true');
+                showToast(`${currentVerifyingPeer} erfolgreich als vertrauenswürdig verifiziert! 🛡️`, 'success');
+            }
+            if (modal) modal.style.display = 'none';
+        };
+    }
+
+    if (scanBtn) {
+        scanBtn.onclick = () => {
+            showToast('Kamera-Verifikation bereit - Öffne QR-Scanner im Tools-Menü', 'info');
+            if (modal) modal.style.display = 'none';
+        };
+    }
 }

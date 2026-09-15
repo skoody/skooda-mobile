@@ -39,3 +39,33 @@ export function setPos(id, x, y) {
         if (el.style.top !== top) el.style.top = top;
     }
 }
+
+export async function openExternalUrl(url) {
+    if (!url) return;
+    if (window.__TAURI__ && window.__TAURI__.core) {
+        try {
+            await window.__TAURI__.core.invoke('open_url', { url });
+            return;
+        } catch (e) {
+            console.warn("Tauri open_url error:", e);
+        }
+    }
+    if (window.Android && window.Android.openExternalUrl) {
+        try {
+            window.Android.openExternalUrl(url);
+            return;
+        } catch (e) {}
+    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        if (a.parentNode) a.parentNode.removeChild(a);
+    }, 200);
+}
+
+window.openExternalUrl = openExternalUrl;
+

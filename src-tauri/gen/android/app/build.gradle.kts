@@ -32,6 +32,11 @@ android {
     }
 
     signingConfigs {
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = false
+        }
         create("release") {
             if (keystorePropertiesFile.exists()) {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
@@ -39,6 +44,9 @@ android {
                 storeFile = file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
             }
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 
@@ -66,6 +74,16 @@ android {
             )
         }
     }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+            // keep uncompressed page-aligned .so (AGP default with extractNativeLibs=false)
+        }
+        resources {
+            excludes += setOf("META-INF/INDEX.LIST", "META-INF/DEPENDENCIES")
+        }
+    }
+
     androidResources {
         noCompress.add("tflite")
     }

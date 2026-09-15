@@ -1,4 +1,4 @@
-import { getEl } from '../../core/ui.js';
+import { getEl, openExternalUrl } from '../../core/ui.js';
 
 const qrInput = getEl('qr-input');
 const qrResult = getEl('qr-code-result');
@@ -186,11 +186,7 @@ export function initQR() {
 
     if (qrOpen) {
         qrOpen.addEventListener('click', () => {
-            if (window.Android && window.Android.openExternalUrl) {
-                window.Android.openExternalUrl(lastResult);
-            } else {
-                window.open(lastResult, '_blank');
-            }
+            openExternalUrl(lastResult);
         });
     }
 }

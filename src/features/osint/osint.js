@@ -1,6 +1,11 @@
-import { getEl } from '../../core/ui.js';
+import { getEl, openExternalUrl } from '../../core/ui.js';
 
-const invoke = window.__TAURI__.core.invoke;
+function invoke(cmd, args) {
+    if (window.__TAURI__ && window.__TAURI__.core) {
+        return window.__TAURI__.core.invoke(cmd, args);
+    }
+    return Promise.reject(new Error("Tauri core not available"));
+}
 
 const PLATFORMS = [
     { name: 'GitHub', url: 'https://github.com/{}' },
@@ -402,11 +407,7 @@ function runGoogleDorking(target, type, resultsContainer) {
         `;
         card.querySelector('a').addEventListener('click', (e) => {
             e.preventDefault();
-            if (window.Android && typeof window.Android.openExternalUrl === 'function') {
-                window.Android.openExternalUrl(dorkUrl);
-            } else {
-                window.open(dorkUrl, '_blank');
-            }
+            openExternalUrl(dorkUrl);
         });
         resultsContainer.appendChild(card);
     });
@@ -475,6 +476,107 @@ async function runIpLookup(ip, resultsContainer) {
     }
 }
 
+async function runSubdomainScan(domain, resultsContainer, statsContainer) {
+    resultsContainer.innerHTML = '';
+    const cleanDomain = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!cleanDomain || !cleanDomain.includes('.')) {
+        statsContainer.innerHTML = `<span class="osint-stats-text" style="color:var(--neon-red)">Bitte gib eine gültige Domain ein (z.B. example.com).</span>`;
+        return;
+    }
+
+    statsContainer.innerHTML = `<span class="osint-stats-text">🔍 Durchsuche Certificate Logs nach *.${cleanDomain}...</span>`;
+
+    const loadingCard = document.createElement('div');
+    loadingCard.className = 'osint-result-card pending';
+    loadingCard.innerHTML = `<div class="osint-result-header"><span class="osint-platform-name">Subdomain Enumeration</span><span class="osint-status-badge pending">🔄 Querying crt.sh & DNS...</span></div>`;
+    resultsContainer.appendChild(loadingCard);
+
+    try {
+        const subdomains = await invoke('find_subdomains', { domain: cleanDomain });
+        resultsContainer.innerHTML = '';
+
+        if (!subdomains || subdomains.length === 0) {
+            statsContainer.innerHTML = `<span class="osint-stats-text">Keine Subdomains für ${cleanDomain} gefunden.</span>`;
+            const emptyCard = document.createElement('div');
+            emptyCard.className = 'osint-result-card not-found';
+            emptyCard.innerHTML = `<div class="osint-result-header"><span class="osint-platform-name">Subdomain Finder</span><span class="osint-status-badge not-found">❌ Keine Einträge</span></div>`;
+            resultsContainer.appendChild(emptyCard);
+            return;
+        }
+
+        const activeCount = subdomains.filter(s => s.is_active).length;
+        statsContainer.innerHTML = `
+            <span class="osint-stats-text">
+                ✅ ${subdomains.length} Subdomains gefunden | 🟢 ${activeCount} aktiv aufgelöst
+            </span>
+        `;
+
+        subdomains.forEach(sub => {
+            const card = document.createElement('div');
+            card.className = `osint-result-card ${sub.is_active ? 'found' : 'not-found'}`;
+
+            const badgeText = sub.is_active ? '🟢 Aktiv' : '⚪ Kein DNS';
+            const badgeClass = sub.is_active ? 'found' : 'not-found';
+            const ipDisplay = sub.ip ? `<span style="color:var(--neon-cyan); font-family:monospace; font-size:0.75rem;">IP: ${sub.ip}</span>` : `<span style="color:var(--text-dim); font-size:0.75rem;">Keine IP aufgelöst</span>`;
+
+            card.innerHTML = `
+                <div class="osint-result-header">
+                    <span class="osint-platform-name" style="font-family:monospace; font-size:0.85rem;">🌐 ${sub.subdomain}</span>
+                    <span class="osint-status-badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="osint-detail" style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                    ${ipDisplay}
+                    <div style="display:flex; gap:6px;">
+                        ${sub.ip ? `<button class="btn mini btn-geo-ip" data-ip="${sub.ip}" style="font-size:0.65rem; padding:2px 6px;">📍 GeoIP</button>` : ''}
+                        <button class="btn mini primary btn-open-sub" data-url="https://${sub.subdomain}" style="font-size:0.65rem; padding:2px 6px;">🔗 Öffnen</button>
+                    </div>
+                </div>
+            `;
+
+            const openBtn = card.querySelector('.btn-open-sub');
+            if (openBtn) {
+                openBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetUrl = openBtn.dataset.url;
+                    openExternalUrl(targetUrl);
+                });
+            }
+
+            const geoBtn = card.querySelector('.btn-geo-ip');
+            if (geoBtn) {
+                geoBtn.addEventListener('click', () => {
+                    const targetIp = geoBtn.dataset.ip;
+                    const ipTabBtn = document.querySelector('.osint-tab-btn[data-tab="osint-tab-iplookup"]');
+                    const ipInputField = document.getElementById('osint-ip-input');
+                    const scanIpButton = document.getElementById('osint-scan-ip');
+
+                    if (ipTabBtn && ipInputField && scanIpButton) {
+                        ipTabBtn.click();
+                        ipInputField.value = targetIp;
+                        scanIpButton.click();
+                    }
+                });
+            }
+
+            resultsContainer.appendChild(card);
+        });
+
+    } catch (err) {
+        resultsContainer.innerHTML = '';
+        statsContainer.innerHTML = `<span class="osint-stats-text" style="color:var(--neon-red)">❌ Fehler: ${err}</span>`;
+        const errorCard = document.createElement('div');
+        errorCard.className = 'osint-result-card error';
+        errorCard.innerHTML = `
+            <div class="osint-result-header">
+                <span class="osint-platform-name">Subdomain Finder</span>
+                <span class="osint-status-badge error">❌ Fehler</span>
+            </div>
+            <div class="osint-detail">${err}</div>
+        `;
+        resultsContainer.appendChild(errorCard);
+    }
+}
+
 export function initOsint() {
     const tabBtns = document.querySelectorAll('.osint-tab-btn');
     const tabContents = document.querySelectorAll('.osint-tab-content');
@@ -500,6 +602,12 @@ export function initOsint() {
     const ipInput = getEl('osint-ip-input');
     const scanIpBtn = getEl('osint-scan-ip');
     const ipResults = getEl('osint-ip-results');
+
+    // Subdomain selectors
+    const subTarget = getEl('osint-subdomain-target');
+    const scanSubBtn = getEl('osint-scan-subdomains');
+    const subResults = getEl('osint-subdomain-results');
+    const subStats = getEl('osint-subdomain-stats');
 
     if (!usernameInput) return;
 
@@ -572,4 +680,27 @@ export function initOsint() {
             runIpLookup(ipVal, ipResults);
         });
     }
+
+    // Subdomain button listener
+    if (scanSubBtn) {
+        scanSubBtn.addEventListener('click', () => {
+            const targetVal = subTarget ? subTarget.value.trim() : '';
+            if (!targetVal) return;
+            scanSubBtn.disabled = true;
+            scanSubBtn.textContent = 'Scanning...';
+            runSubdomainScan(targetVal, subResults, subStats).finally(() => {
+                scanSubBtn.disabled = false;
+                scanSubBtn.textContent = '📡 Subdomains suchen';
+            });
+        });
+    }
+
+    // Global link delegation for all OSINT results
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('.osint-container a, .osint-result-card a, .osint-profile-link');
+        if (link && link.href && !link.href.startsWith('#') && !link.href.startsWith('javascript:')) {
+            e.preventDefault();
+            openExternalUrl(link.href);
+        }
+    });
 }
