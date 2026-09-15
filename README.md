@@ -1,13 +1,26 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.25.0** (VersionCode: 132)
+Aktuelle Version: **v0.26.0** (VersionCode: 133)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
+### 📥 Direkte Download-Links (v0.26.0):
+- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.26.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.0/skooda-mobile-v0.26.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~45 MB - 50% kleiner):** [skooda-mobile-v0.26.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.0/skooda-mobile-v0.26.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.0/skooda-mobile.apk)
+
+---
+
 ### 🚀 Kern-Module & Features:
-- 🧮 **Rechner Evolution 2.0 & Erweiterte Schulmathematik (Kl. 1–12) (Neu in v0.25.0):**
+- 🎛️ **Taktisches System-HUD & Hardware-Monitor 2.0 (Neu in v0.26.0):**
+  - **Kompaktes 2-Spalten HUD-Raster:** Taktisches Obsidian-Design (`#0a0103`) mit scharfen Karmesin-Borderkanten (`#ff003c`), Quick-Status-Header (Uptime, SoC-Modell, RAM-Füllstand, Watt-Leistungsaufnahme) und 4-Stufen Pollingregler (*Turbo 200ms*, *Normal 1s*, *Eco 3s*, *Pause*).
+  - **60s Live Rolling Canvas Charts:** Performante 2D-Graphen für CPU-Auslastung mit Peak-Hold-Linie, RAM- & ZRAM-Swap-Allokation, Echtzeit-Wattmeter ($P = V \cdot I$) sowie Dual-Netzwerkgraph (Download Cyan / Upload Karmesin).
+  - **Tiefen-Telemetrie ohne Root (100% Non-Root):** Thermal-Matrix aller Zonen (`/sys/class/thermal/thermal_zone*`), Kernel Load Averages (1m, 5m, 15m), Speicher-Partitions-Explorer (`/data`, `/system`, `/cache` via `statvfs`) und Netzwerk-Interface-Übersicht mit MB-Zählern.
+  - **3D-Lagehorizont & Sensor-Kompass (Attitude Indicator):** Flugzeuginstrumenten-HUD mit Pitch-Leiter ($\pm 10^\circ, \pm 20^\circ, \pm 30^\circ$), Roll-Winkel, künstlichem Horizont (Navy vs. Crimson), Flugzeug-Reticle, 360°-Kompassrose und $G$-Force-Vektor ($G_x, G_y, G_z$).
+  - **Taktische Quick-Tools & Benchmark:** 5s Multi-Core CPU-Stresstest zur MFLOPS-Messung mit Leistungsbewertung, RAM-Trim Pufferbereinigung und 1-Klick Systembericht-Export (Markdown / JSON) in die Zwischenablage.
+- 🧮 **Rechner Evolution 2.0 & Erweiterte Schulmathematik (Kl. 1–12):**
   - **100 % Reaktive Live-Berechnung & CAS:** Rechnet verzögerungsfrei bei jedem Tastenanschlag, erkennt implizite Multiplikation (`2pi`, `3(x+1)`), physikalische Konstanten ($c, g, G, h, \hbar, k_B, q_e, N_A, R$), komplexe Zahlen ($a+bi$) und bietet Rechnerspeicher ($MC, MR, M+, M-$) mit Haptik und Klick-zum-Kopieren.
   - **Erweiterte Oberstufen-Mathematik (26 interaktive Module):** Neu hinzugefügt wurden LGS 2x2 (Cramer), LGS 3x3 (Gauß-Jordan Stufenform), Matrizenrechnung 2x2 (Determinante, Inverse, Quadrierung), Integralrechnung & Stammfunktion (symbolisch für Polynome bis 3. Grades + numerisches bestimmtes Integral), Analytische 3D-Geometrie (Hessesche Normalform, Punkt-Ebene-Abstand, Lotfußpunkt), Deskriptive Statistik (Mittelwert, Median, Quartile, IQR, empirische Varianz, Standardabweichung) und Annuitätendarlehen & Tilgungspläne. Inklusive 1-Klick-Lösungsweg-Kopieren auf allen Karten.
   - **Touch-Plotter 2.0:** Interaktiver Canvas mit Touch Drag-to-Pan, Pinch-to-Zoom, Fadenkreuz mit schwebendem Koordinaten-Badge $(x, f(x))$, simultanem Dual-Funktionsplot ($f_1, f_2$) und schraffierter Integralfläche unter der Kurve.
