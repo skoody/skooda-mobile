@@ -1,17 +1,25 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.24.0** (VersionCode: 131)
+Aktuelle Version: **v0.25.0** (VersionCode: 132)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🧮 **Live-Rechner, Schulmathematik (Kl. 1–11) & 2D Funktionsplotter (Neu in v0.24.0):**
-  - **100 % Reaktive Live-Berechnung:** Rechnet verzögerungsfrei bei jedem Tastenanschlag und aktualisiert Ergebnisse sofort beim Wechsel von Einheiten oder Winkelmodi (DEG, RAD, GRAD).
-  - **Wissenschaftlicher Ausdrucks-Parser & Programmierer-HUD:** Shunting-Yard AST/RPN Parser für komplexe Formeln mit Klammern, Potenzen, Fakultäten, Trigonometrie, Logarithmen und exakter Bruchrechnung (inkl. Kürzen und gemischten Zahlen). Simultaner Programmierer-HUD für Dezimal, Hexadezimal (`0x...`), Binär (4-Bit-Gruppierung) und Oktal.
-  - **Schulmathematik mit Rechenwegen (Klasse 1 bis 11):** 19 interaktive Lehrplan-Karten mit detaillierten Zwischenschritten: Schriftliche Grundrechenarten mit Divisionsrest, Runden, Römische Zahlen, Bruchrechnung, ggT/kgV/Primfaktorzerlegung, 2D-Flächen & Umfänge, Dreisatz (proportional & antiproportional), Prozent- & Zinseszinsrechnung, lineare Gleichungen & Funktionsgeraden ($y = mx + b$), Binomische Formeln (1., 2. & 3. Binom), quadratische Gleichungen ($p/q$- & $a/b/c$-Formel mit Scheitelpunktform), Satz des Pythagoras, rechtwinklige Trigonometrie, Kombinatorik ($n!$, Permutationen, Kombinationen), Kurvendiskussion für Polynome 3. Grades (1. & 2. Ableitung, Nullstellen, Extrema, Wendepunkte, Tangente), 2D/3D Vektorrechnung (Skalarprodukt, Kreuzprodukt, Vektorlängen, Zwischenwinkel) und Binomialverteilung nach Bernoulli ($B(n,p,k)$, kumulierte Wahrscheinlichkeit, Erwartungswert $\mu$, Standardabweichung $\sigma$).
-  - **Interaktiver 2D Funktionsplotter:** Flüssiges Canvas-Rendering von Funktionsgraphen $f(x)$ mit anpassbaren Koordinaten-Achsen, Nullstellen-Markern, Kurvenverlauf und interaktiver Tangenten-Visualisierung am Punkt $x_0$.
+- 🧮 **Rechner Evolution 2.0 & Erweiterte Schulmathematik (Kl. 1–12) (Neu in v0.25.0):**
+  - **100 % Reaktive Live-Berechnung & CAS:** Rechnet verzögerungsfrei bei jedem Tastenanschlag, erkennt implizite Multiplikation (`2pi`, `3(x+1)`), physikalische Konstanten ($c, g, G, h, \hbar, k_B, q_e, N_A, R$), komplexe Zahlen ($a+bi$) und bietet Rechnerspeicher ($MC, MR, M+, M-$) mit Haptik und Klick-zum-Kopieren.
+  - **Erweiterte Oberstufen-Mathematik (26 interaktive Module):** Neu hinzugefügt wurden LGS 2x2 (Cramer), LGS 3x3 (Gauß-Jordan Stufenform), Matrizenrechnung 2x2 (Determinante, Inverse, Quadrierung), Integralrechnung & Stammfunktion (symbolisch für Polynome bis 3. Grades + numerisches bestimmtes Integral), Analytische 3D-Geometrie (Hessesche Normalform, Punkt-Ebene-Abstand, Lotfußpunkt), Deskriptive Statistik (Mittelwert, Median, Quartile, IQR, empirische Varianz, Standardabweichung) und Annuitätendarlehen & Tilgungspläne. Inklusive 1-Klick-Lösungsweg-Kopieren auf allen Karten.
+  - **Touch-Plotter 2.0:** Interaktiver Canvas mit Touch Drag-to-Pan, Pinch-to-Zoom, Fadenkreuz mit schwebendem Koordinaten-Badge $(x, f(x))$, simultanem Dual-Funktionsplot ($f_1, f_2$) und schraffierter Integralfläche unter der Kurve.
+- 📊 **Sensor-Logger & Zeitreihen-Recorder Studio (Neu in v0.25.0):**
+  - Live-Aufzeichnung von Barometer, Luxmeter und EMF mit konfigurierbarer Abtastrate (100 ms bis 5.000 ms) und 1.000-Punkte-Ringpuffer.
+  - Echtzeit-Canvas-Sparkline mit Glow-Effekten und kontinuierlicher Min/Max/Durchschnitts-Telemetrie.
+  - 1-Klick Export nach CSV, JSON und Zwischenablage.
+- 💬 **E2EE Chat Waveform Audio & Panik-Modus (Neu in v0.25.0):**
+  - **Waveform Audio-Scrubber:** Neuer taktischer Audioplayer für Sprachnachrichten mit 28 dynamischen Balken, Play/Pause-Steuerung und Touch-Scrubbing.
+  - **Panik-Modus & Notfall-Bereinigung:** Schnelltaste `/panic`, `/wipe` oder PIN `9999` vernichtet sofort sämtliche Chat-Historien, SQLCipher-Datenbanken und kryptografische Schlüssel restlos.
+- 📦 **Performance & 50% APK-Größenreduktion:**
+  - Bereitstellung einer separaten schlanken ARM64-v8a APK (~45 MB) neben der universellen Multi-Arch APK (~86 MB).
 - 📱 **Universelle Android-Kompatibilität & Dual-Architektur:** Volle Unterstützung für ausnahmslos alle physischen Android-Smartphones weltweit durch echten Dual-Architektur-Build (`arm64-v8a` + `armeabi-v7a`). Alle 17 Hardware-Funktionen (Kameras, Sensoren, GPS, Barometer, BLE, Telefonie etc.) sind als optional deklariert (`android:required="false"`), sodass die App auf jedem Gerät ohne Installations-Blocker lauffähig ist. Inklusive adaptiver Cutout/Notch Safe-Area-Insets und fluidem Responsive Design von Kleinst-Smartphones (≤ 360px) bis hin zu Tablets und Foldables.
 - 🛠️ **Tools-Tab & Sub-Tool Layout-Modernisierung:** Taktisches Redesign der 14 Werkzeug-Karten in `#tool-categories` mit 2-Spalten Mobil-Grid, Obsidian-Glow-Karten und Domain-Badges (`SEC`, `OPTIC`, `GEO`, `VISION`, `CTRL`, `CALC`, `INTEL`, `CRYPT`, `SENS`, `ENV`, `AUDIO`, `RADIO`, `FORENSIC`, `TAC`), durchgängiges Sticky-Header-HUD (`.subtool-header`) mit Schnell-Rücksprung (`← Tools`) für alle 14 Subtools, sowie horizontale Scroll-Pill-Leisten (`.cyber-subnav`, `.conv-tabs`, `.osint-tabs`, `.el-subtabs`) mit Touch-Gesten, Scroll-Snap und klarem Karmesin-Glühen.
 - 📱 **Permanente Bottom-Navigation:** Viewport-geankerte Navigationsleiste (`#bottom-nav`), 100 % sicht- und bedienbar auf allen Geräten, vollständige Android 15 Edge-to-Edge System-Insets-Kompatibilität (`fitsSystemWindows`) und blickdichtes High-Z-Index Obsidian-Design.
