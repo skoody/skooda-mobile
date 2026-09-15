@@ -7,6 +7,7 @@ import { initMap } from './features/map/map.js';
 import { initVision } from './features/vision/vision.js';
 import { initSettings } from './features/settings/settings.js';
 import { initRechner } from './features/rechner/rechner.js';
+import { ensureGeometryDom } from './features/rechner/geometry-ui.js';
 import { initOsint } from './features/osint/osint.js';
 import { initScreenRecorder } from './features/device/screenrecorder.js';
 import { initCoder } from './features/coder/coder.js';
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initVision();
     initSettings();
+    ensureGeometryDom();
     initRechner();
     initOsint();
     initScreenRecorder();
