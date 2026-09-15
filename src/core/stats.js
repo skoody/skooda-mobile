@@ -60,185 +60,193 @@ if (typeof navigator !== 'undefined' && navigator.getBattery) {
     }).catch(e => console.warn('Battery API note:', e));
 }
 
+function applySkoodaStatsUpdate(stats) {
+    if (!stats) return;
+    try {
+        // 1. Device Specifications
+        if (stats.manufacturer && stats.model) {
+            const modelStr = stats.manufacturer === 'Android' && stats.model === 'Device'
+                ? (navigator.userAgent.includes('Mobile') ? 'Android Smartphone' : 'Android Device')
+                : `${stats.manufacturer} ${stats.model}`;
+            setText('dev-model', modelStr);
+        }
+        if (stats.cpu_model) setText('dev-hw', stats.cpu_model);
+        if (stats.android_ver) {
+            const apiStr = stats.api_level ? ` (API ${stats.api_level})` : '';
+            setText('dev-android', `Android ${stats.android_ver}${apiStr}`);
+        }
+
+        const screenRes = stats.resolution || `${Math.round(window.screen.width * (window.devicePixelRatio || 1))}x${Math.round(window.screen.height * (window.devicePixelRatio || 1))}`;
+        setText('dev-res', screenRes);
+        if (stats.bluetooth_ver) setText('dev-bt', stats.bluetooth_ver);
+
+        // 2. Battery (Real Level from Hardware or Android Battery API)
+        let pct = liveBattery.level;
+        if (stats.battery_percent !== undefined && stats.battery_percent >= 0) {
+            pct = Math.min(100, Math.max(0, Math.round(stats.battery_percent)));
+        }
+
+        if (pct !== null && pct !== undefined) {
+            setText('battery-pct', pct);
+            setWidth('battery-progress', pct);
+        }
+
+        if (stats.battery_voltage && stats.battery_voltage > 0) {
+            setText('battery-volts', stats.battery_voltage.toFixed(2));
+        } else if (pct !== null && pct !== undefined) {
+            const estV = 3.65 + (pct / 100) * 0.55;
+            setText('battery-volts', estV.toFixed(2));
+        }
+
+        if (stats.battery_current !== undefined && stats.battery_current !== 0) {
+            targetMA = Math.round(stats.battery_current);
+        } else if (liveBattery.charging) {
+            targetMA = 1450;
+        }
+
+        if (stats.battery_health && stats.battery_health.length > 0) {
+            setText('battery-health', `Status: ${stats.battery_health}`);
+        } else if (liveBattery.charging) {
+            setText('battery-health', 'Status: Lädt ⚡');
+        }
+
+        // 3. Processor (CPU Usage, Temp & Heatmap with Smooth Transition)
+        if (stats.cpu_usage !== undefined) {
+            if (smoothedCpu === null) smoothedCpu = stats.cpu_usage;
+            else smoothedCpu = (smoothedCpu * 0.6) + (stats.cpu_usage * 0.4);
+            const cpu = Math.min(100, Math.max(1, Math.round(smoothedCpu)));
+            setText('cpu-usage', cpu);
+            setWidth('cpu-progress', cpu);
+            if (stats.temperature !== undefined) {
+                setText('cpu-temp', Math.round(stats.temperature));
+            }
+        }
+
+        if (stats.cpu_cores && stats.cpu_cores.length > 0) {
+            const coresContainer = getCached('cpu-cores-container');
+            if (coresContainer) {
+                if (coresContainer.children.length !== stats.cpu_cores.length) {
+                    setHTML('cpu-cores-container', stats.cpu_cores.map((_, i) => `
+                        <div class="core-item">
+                            <div id="core-bar-${i}" class="core-bar"></div>
+                            <span class="core-label">C${i}</span>
+                        </div>
+                    `).join(''));
+                    smoothedCores = [...stats.cpu_cores];
+                }
+                stats.cpu_cores.forEach((pct, i) => {
+                    smoothedCores[i] = ((smoothedCores[i] || pct) * 0.6) + (pct * 0.4);
+                    const rounded = Math.min(100, Math.max(0, Math.round(smoothedCores[i])));
+                    setWidth(`core-bar-${i}`, rounded);
+                    let color = 'var(--neon-cyan)';
+                    if (rounded >= 45 && rounded < 75) color = 'var(--neon-purple)';
+                    else if (rounded >= 75) color = '#ff3344';
+                    setBg(`core-bar-${i}`, color);
+                });
+            }
+        }
+
+        // 4. Memory (RAM)
+        if (stats.ram_used !== undefined && stats.ram_total !== undefined && stats.ram_total > 0) {
+            const usedGB = (stats.ram_used / (1024 * 1024 * 1024)).toFixed(1);
+            const totalGB = (stats.ram_total / (1024 * 1024 * 1024)).toFixed(1);
+            const pct = Math.min(100, Math.max(0, Math.round((stats.ram_used / stats.ram_total) * 100)));
+            setText('ram-pct', pct);
+            setText('ram-used', usedGB);
+            setText('ram-total', totalGB);
+            setWidth('ram-progress', pct);
+        }
+
+        // 5. Storage
+        if (stats.storage_used !== undefined && stats.storage_total !== undefined && stats.storage_total > 0) {
+            const freeGB = ((stats.storage_total - stats.storage_used) / (1024 * 1024 * 1024)).toFixed(1);
+            const pct = Math.min(100, Math.max(0, Math.round((stats.storage_used / stats.storage_total) * 100)));
+            setText('storage-pct', pct);
+            setText('storage-free', freeGB);
+            setWidth('storage-progress', pct);
+        }
+
+        // 6. Network Speed (Live Throughput)
+        if (stats.net_down !== undefined && stats.net_up !== undefined) {
+            const downKB = stats.net_down / 1024;
+            const upKB = stats.net_up / 1024;
+
+            const downUnit = getEl('net-down')?.nextElementSibling;
+            const upUnit = getEl('net-up')?.nextElementSibling;
+
+            if (downKB >= 1024) {
+                setText('net-down', (downKB / 1024).toFixed(2));
+                if (downUnit) downUnit.textContent = 'MB/s';
+            } else {
+                setText('net-down', downKB.toFixed(1));
+                if (downUnit) downUnit.textContent = 'KB/s';
+            }
+
+            if (upKB >= 1024) {
+                setText('net-up', (upKB / 1024).toFixed(2));
+                if (upUnit) upUnit.textContent = 'MB/s';
+            } else {
+                setText('net-up', upKB.toFixed(1));
+                if (upUnit) upUnit.textContent = 'KB/s';
+            }
+        }
+
+        // 7. Network Identity & Uptime
+        if (stats.wifi_ssid) setText('wifi-ssid', stats.wifi_ssid);
+        if (stats.local_ip) setText('local-ip', stats.local_ip);
+        if (stats.wifi_rssi !== undefined) setText('wifi-rssi', `${stats.wifi_rssi} dBm`);
+
+        if (stats.uptime !== undefined) {
+            const h = Math.floor(stats.uptime / 3600);
+            const m = Math.floor((stats.uptime % 3600) / 60);
+            const s = Math.floor(stats.uptime % 60);
+            setText('uptime-val', `${h}h ${m}m ${s}s`);
+        }
+
+        // 8. Motion & Environment Sensors
+        const sensorData = stats.sensors || liveSensors;
+        if (sensorData) {
+            // 3D Orientation Crosshair
+            const moveX = Math.max(-45, Math.min(45, sensorData.roll));
+            const moveY = Math.max(-45, Math.min(45, sensorData.pitch));
+            setPos('crosshair', 50 + moveX, 50 + moveY);
+
+            // Proximity
+            const isNear = (sensorData.prox || 100) < 1.0;
+            setText('prox-val', isNear ? "Near" : "Far");
+            const pVal = getCached('prox-val');
+            if (pVal) {
+                pVal.style.color = isNear ? "var(--neon-purple)" : "var(--text-dim)";
+            }
+            setText('prox-alert', isNear ? "⚠️ PROXIMITY ALERT" : "");
+
+            // Sensor Tracks & Peak Hold
+            updatePeakBar('sensor-ax', Math.abs(sensorData.ax) * 8);
+            updatePeakBar('sensor-gx', Math.abs(sensorData.gx) * 20);
+            updatePeakBar('sensor-mag', Math.min(100, ((sensorData.mag_strength || 42) / 80) * 100));
+
+            setText('gforce-val', `${(sensorData.gforce || 1.0).toFixed(2)} G`);
+            setText('mag-val', `${Math.round(sensorData.mag_strength || 42)} µT`);
+
+            if (window.skoodaMap && typeof window.skoodaMap.updateMapHeading === 'function') {
+                window.skoodaMap.updateMapHeading(sensorData);
+            }
+        }
+    } catch (e) {
+        console.error("UI Update Error", e);
+    }
+}
+
+// Register ASAP so Kotlin MainActivity.collectStatsJSON can push before initStats() finishes.
+if (typeof window !== 'undefined') {
+    window.__skoodaUpdate = applySkoodaStatsUpdate;
+}
+
 export function initStats() {
     requestAnimationFrame(measureRefreshRate);
 
-    window.__skoodaUpdate = (stats) => {
-        if (!stats) return;
-        try {
-            // 1. Device Specifications
-            if (stats.manufacturer && stats.model) {
-                const modelStr = stats.manufacturer === 'Android' && stats.model === 'Device'
-                    ? (navigator.userAgent.includes('Mobile') ? 'Android Smartphone' : 'Android Device')
-                    : `${stats.manufacturer} ${stats.model}`;
-                setText('dev-model', modelStr);
-            }
-            if (stats.cpu_model) setText('dev-hw', stats.cpu_model);
-            if (stats.android_ver) {
-                const apiStr = stats.api_level ? ` (API ${stats.api_level})` : '';
-                setText('dev-android', `Android ${stats.android_ver}${apiStr}`);
-            }
-
-            const screenRes = stats.resolution || `${Math.round(window.screen.width * (window.devicePixelRatio || 1))}x${Math.round(window.screen.height * (window.devicePixelRatio || 1))}`;
-            setText('dev-res', screenRes);
-            if (stats.bluetooth_ver) setText('dev-bt', stats.bluetooth_ver);
-
-            // 2. Battery (Real Level from Hardware or Android Battery API)
-            let pct = liveBattery.level;
-            if (stats.battery_percent !== undefined && stats.battery_percent >= 0) {
-                pct = Math.min(100, Math.max(0, Math.round(stats.battery_percent)));
-            }
-
-            if (pct !== null && pct !== undefined) {
-                setText('battery-pct', pct);
-                setWidth('battery-progress', pct);
-            }
-
-            if (stats.battery_voltage && stats.battery_voltage > 0) {
-                setText('battery-volts', stats.battery_voltage.toFixed(2));
-            } else if (pct !== null && pct !== undefined) {
-                const estV = 3.65 + (pct / 100) * 0.55;
-                setText('battery-volts', estV.toFixed(2));
-            }
-
-            if (stats.battery_current !== undefined && stats.battery_current !== 0) {
-                targetMA = Math.round(stats.battery_current);
-            } else if (liveBattery.charging) {
-                targetMA = 1450;
-            }
-
-            if (stats.battery_health && stats.battery_health.length > 0) {
-                setText('battery-health', `Status: ${stats.battery_health}`);
-            } else if (liveBattery.charging) {
-                setText('battery-health', 'Status: Lädt ⚡');
-            }
-
-            // 3. Processor (CPU Usage, Temp & Heatmap with Smooth Transition)
-            if (stats.cpu_usage !== undefined) {
-                if (smoothedCpu === null) smoothedCpu = stats.cpu_usage;
-                else smoothedCpu = (smoothedCpu * 0.6) + (stats.cpu_usage * 0.4);
-                const cpu = Math.min(100, Math.max(1, Math.round(smoothedCpu)));
-                setText('cpu-usage', cpu);
-                setWidth('cpu-progress', cpu);
-                if (stats.temperature !== undefined) {
-                    setText('cpu-temp', Math.round(stats.temperature));
-                }
-            }
-
-            if (stats.cpu_cores && stats.cpu_cores.length > 0) {
-                const coresContainer = getCached('cpu-cores-container');
-                if (coresContainer) {
-                    if (coresContainer.children.length !== stats.cpu_cores.length) {
-                        setHTML('cpu-cores-container', stats.cpu_cores.map((_, i) => `
-                            <div class="core-item">
-                                <div id="core-bar-${i}" class="core-bar"></div>
-                                <span class="core-label">C${i}</span>
-                            </div>
-                        `).join(''));
-                        smoothedCores = [...stats.cpu_cores];
-                    }
-                    stats.cpu_cores.forEach((pct, i) => {
-                        smoothedCores[i] = ((smoothedCores[i] || pct) * 0.6) + (pct * 0.4);
-                        const rounded = Math.min(100, Math.max(0, Math.round(smoothedCores[i])));
-                        setWidth(`core-bar-${i}`, rounded);
-                        let color = 'var(--neon-cyan)';
-                        if (rounded >= 45 && rounded < 75) color = 'var(--neon-purple)';
-                        else if (rounded >= 75) color = '#ff3344';
-                        setBg(`core-bar-${i}`, color);
-                    });
-                }
-            }
-
-            // 4. Memory (RAM)
-            if (stats.ram_used !== undefined && stats.ram_total !== undefined && stats.ram_total > 0) {
-                const usedGB = (stats.ram_used / (1024 * 1024 * 1024)).toFixed(1);
-                const totalGB = (stats.ram_total / (1024 * 1024 * 1024)).toFixed(1);
-                const pct = Math.min(100, Math.max(0, Math.round((stats.ram_used / stats.ram_total) * 100)));
-                setText('ram-pct', pct);
-                setText('ram-used', usedGB);
-                setText('ram-total', totalGB);
-                setWidth('ram-progress', pct);
-            }
-
-            // 5. Storage
-            if (stats.storage_used !== undefined && stats.storage_total !== undefined && stats.storage_total > 0) {
-                const freeGB = ((stats.storage_total - stats.storage_used) / (1024 * 1024 * 1024)).toFixed(1);
-                const pct = Math.min(100, Math.max(0, Math.round((stats.storage_used / stats.storage_total) * 100)));
-                setText('storage-pct', pct);
-                setText('storage-free', freeGB);
-                setWidth('storage-progress', pct);
-            }
-
-            // 6. Network Speed (Live Throughput)
-            if (stats.net_down !== undefined && stats.net_up !== undefined) {
-                const downKB = stats.net_down / 1024;
-                const upKB = stats.net_up / 1024;
-
-                const downUnit = getEl('net-down')?.nextElementSibling;
-                const upUnit = getEl('net-up')?.nextElementSibling;
-
-                if (downKB >= 1024) {
-                    setText('net-down', (downKB / 1024).toFixed(2));
-                    if (downUnit) downUnit.textContent = 'MB/s';
-                } else {
-                    setText('net-down', downKB.toFixed(1));
-                    if (downUnit) downUnit.textContent = 'KB/s';
-                }
-
-                if (upKB >= 1024) {
-                    setText('net-up', (upKB / 1024).toFixed(2));
-                    if (upUnit) upUnit.textContent = 'MB/s';
-                } else {
-                    setText('net-up', upKB.toFixed(1));
-                    if (upUnit) upUnit.textContent = 'KB/s';
-                }
-            }
-
-            // 7. Network Identity & Uptime
-            if (stats.wifi_ssid) setText('wifi-ssid', stats.wifi_ssid);
-            if (stats.local_ip) setText('local-ip', stats.local_ip);
-            if (stats.wifi_rssi !== undefined) setText('wifi-rssi', `${stats.wifi_rssi} dBm`);
-
-            if (stats.uptime !== undefined) {
-                const h = Math.floor(stats.uptime / 3600);
-                const m = Math.floor((stats.uptime % 3600) / 60);
-                const s = Math.floor(stats.uptime % 60);
-                setText('uptime-val', `${h}h ${m}m ${s}s`);
-            }
-
-            // 8. Motion & Environment Sensors
-            const sensorData = stats.sensors || liveSensors;
-            if (sensorData) {
-                // 3D Orientation Crosshair
-                const moveX = Math.max(-45, Math.min(45, sensorData.roll));
-                const moveY = Math.max(-45, Math.min(45, sensorData.pitch));
-                setPos('crosshair', 50 + moveX, 50 + moveY);
-
-                // Proximity
-                const isNear = (sensorData.prox || 100) < 1.0;
-                setText('prox-val', isNear ? "Near" : "Far");
-                const pVal = getCached('prox-val');
-                if (pVal) {
-                    pVal.style.color = isNear ? "var(--neon-purple)" : "var(--text-dim)";
-                }
-                setText('prox-alert', isNear ? "⚠️ PROXIMITY ALERT" : "");
-
-                // Sensor Tracks & Peak Hold
-                updatePeakBar('sensor-ax', Math.abs(sensorData.ax) * 8);
-                updatePeakBar('sensor-gx', Math.abs(sensorData.gx) * 20);
-                updatePeakBar('sensor-mag', Math.min(100, ((sensorData.mag_strength || 42) / 80) * 100));
-
-                setText('gforce-val', `${(sensorData.gforce || 1.0).toFixed(2)} G`);
-                setText('mag-val', `${Math.round(sensorData.mag_strength || 42)} µT`);
-
-                if (window.skoodaMap && typeof window.skoodaMap.updateMapHeading === 'function') {
-                    window.skoodaMap.updateMapHeading(sensorData);
-                }
-            }
-        } catch (e) {
-            console.error("UI Update Error", e);
-        }
-    };
+    // Ensure handler is present even if something cleared it
+    window.__skoodaUpdate = applySkoodaStatsUpdate;
 
     // Public IP Tap to Reveal
     const pubIpEl = getEl('public-ip');

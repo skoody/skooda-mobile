@@ -29,29 +29,45 @@ window.skoodaVision = VisionModule;
 window.skoodaNav = NavigationModule;
 window.skoodaQR = QRModule;
 
-document.addEventListener('DOMContentLoaded', () => {
+function boot() {
     console.log("🚀 Skooda Mobile Modular Core Initializing...");
 
-    initErrorBoundary();
-    initNavigation();
-    initStats();
-    initChat();
-    initCyber();
-    initQR();
-    initMap();
-    initVision();
-    initSettings();
-    ensureGeometryDom();
-    initRechner();
-    initOsint();
-    initScreenRecorder();
-    initCoder();
-    initAudioLab();
-    initSurvival();
-    initRf();
-    initAudioMeter();
-    initBaroLux();
-    initEmfMeter();
+    const steps = [
+        ['initErrorBoundary', initErrorBoundary],
+        ['initStats', initStats],
+        ['initNavigation', initNavigation],
+        ['initChat', initChat],
+        ['initCyber', initCyber],
+        ['initQR', initQR],
+        ['initMap', initMap],
+        ['initVision', initVision],
+        ['initSettings', initSettings],
+        ['ensureGeometryDom', ensureGeometryDom],
+        ['initRechner', initRechner],
+        ['initOsint', initOsint],
+        ['initScreenRecorder', initScreenRecorder],
+        ['initCoder', initCoder],
+        ['initAudioLab', initAudioLab],
+        ['initSurvival', initSurvival],
+        ['initRf', initRf],
+        ['initAudioMeter', initAudioMeter],
+        ['initBaroLux', initBaroLux],
+        ['initEmfMeter', initEmfMeter],
+    ];
+
+    for (const [name, fn] of steps) {
+        try {
+            fn();
+        } catch (err) {
+            console.error(`Init failed: ${name}`, err);
+        }
+    }
 
     console.log("✨ All modules initialized.");
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
