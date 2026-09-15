@@ -1,12 +1,17 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.23.5** (VersionCode: 130)
+Aktuelle Version: **v0.24.0** (VersionCode: 131)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🧮 **Live-Rechner, Schulmathematik (Kl. 1–11) & 2D Funktionsplotter (Neu in v0.24.0):**
+  - **100 % Reaktive Live-Berechnung:** Rechnet verzögerungsfrei bei jedem Tastenanschlag und aktualisiert Ergebnisse sofort beim Wechsel von Einheiten oder Winkelmodi (DEG, RAD, GRAD).
+  - **Wissenschaftlicher Ausdrucks-Parser & Programmierer-HUD:** Shunting-Yard AST/RPN Parser für komplexe Formeln mit Klammern, Potenzen, Fakultäten, Trigonometrie, Logarithmen und exakter Bruchrechnung (inkl. Kürzen und gemischten Zahlen). Simultaner Programmierer-HUD für Dezimal, Hexadezimal (`0x...`), Binär (4-Bit-Gruppierung) und Oktal.
+  - **Schulmathematik mit Rechenwegen (Klasse 1 bis 11):** 19 interaktive Lehrplan-Karten mit detaillierten Zwischenschritten: Schriftliche Grundrechenarten mit Divisionsrest, Runden, Römische Zahlen, Bruchrechnung, ggT/kgV/Primfaktorzerlegung, 2D-Flächen & Umfänge, Dreisatz (proportional & antiproportional), Prozent- & Zinseszinsrechnung, lineare Gleichungen & Funktionsgeraden ($y = mx + b$), Binomische Formeln (1., 2. & 3. Binom), quadratische Gleichungen ($p/q$- & $a/b/c$-Formel mit Scheitelpunktform), Satz des Pythagoras, rechtwinklige Trigonometrie, Kombinatorik ($n!$, Permutationen, Kombinationen), Kurvendiskussion für Polynome 3. Grades (1. & 2. Ableitung, Nullstellen, Extrema, Wendepunkte, Tangente), 2D/3D Vektorrechnung (Skalarprodukt, Kreuzprodukt, Vektorlängen, Zwischenwinkel) und Binomialverteilung nach Bernoulli ($B(n,p,k)$, kumulierte Wahrscheinlichkeit, Erwartungswert $\mu$, Standardabweichung $\sigma$).
+  - **Interaktiver 2D Funktionsplotter:** Flüssiges Canvas-Rendering von Funktionsgraphen $f(x)$ mit anpassbaren Koordinaten-Achsen, Nullstellen-Markern, Kurvenverlauf und interaktiver Tangenten-Visualisierung am Punkt $x_0$.
 - 📱 **Universelle Android-Kompatibilität & Dual-Architektur:** Volle Unterstützung für ausnahmslos alle physischen Android-Smartphones weltweit durch echten Dual-Architektur-Build (`arm64-v8a` + `armeabi-v7a`). Alle 17 Hardware-Funktionen (Kameras, Sensoren, GPS, Barometer, BLE, Telefonie etc.) sind als optional deklariert (`android:required="false"`), sodass die App auf jedem Gerät ohne Installations-Blocker lauffähig ist. Inklusive adaptiver Cutout/Notch Safe-Area-Insets und fluidem Responsive Design von Kleinst-Smartphones (≤ 360px) bis hin zu Tablets und Foldables.
 - 🛠️ **Tools-Tab & Sub-Tool Layout-Modernisierung:** Taktisches Redesign der 14 Werkzeug-Karten in `#tool-categories` mit 2-Spalten Mobil-Grid, Obsidian-Glow-Karten und Domain-Badges (`SEC`, `OPTIC`, `GEO`, `VISION`, `CTRL`, `CALC`, `INTEL`, `CRYPT`, `SENS`, `ENV`, `AUDIO`, `RADIO`, `FORENSIC`, `TAC`), durchgängiges Sticky-Header-HUD (`.subtool-header`) mit Schnell-Rücksprung (`← Tools`) für alle 14 Subtools, sowie horizontale Scroll-Pill-Leisten (`.cyber-subnav`, `.conv-tabs`, `.osint-tabs`, `.el-subtabs`) mit Touch-Gesten, Scroll-Snap und klarem Karmesin-Glühen.
 - 📱 **Permanente Bottom-Navigation:** Viewport-geankerte Navigationsleiste (`#bottom-nav`), 100 % sicht- und bedienbar auf allen Geräten, vollständige Android 15 Edge-to-Edge System-Insets-Kompatibilität (`fitsSystemWindows`) und blickdichtes High-Z-Index Obsidian-Design.
