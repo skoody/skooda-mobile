@@ -1,20 +1,28 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.26.1** (VersionCode: 134)
+Aktuelle Version: **v0.27.0** (VersionCode: 135)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.26.1):
-- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.26.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.1/skooda-mobile-v0.26.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~45 MB - 50% kleiner):** [skooda-mobile-v0.26.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.1/skooda-mobile-v0.26.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.1/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.27.0):
+- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.27.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.27.0/skooda-mobile-v0.27.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~46 MB - 50% kleiner):** [skooda-mobile-v0.27.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.27.0/skooda-mobile-v0.27.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.27.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🔄 **Dynamische Echtzeit-Telemetrie & Non-Root Heuristik (Neu in v0.26.1):**
+- 🚀 **Taktisches System Update & Distribution Center 2.0 (Neu in v0.27.0):**
+  - **Obsidian Dark-Crimson HUD-Design:** Status-Pills, animierter Radar-Impuls bei der Prüfung, Server-Latenz-Anzeige (Ping zum GitHub CDN) und Zeitstempel der letzten Prüfung.
+  - **Smart Asset Hub & Architektur-Empfehlung:** Automatische Erkennung der Geräte-Architektur (`ARM64-v8a` vs `ARMv7`) und gezielte Empfehlung der schlanken ARM64-v8a APK (~46 MB, 50% Speicherersparnis und schnellerer Start). Direkte Download-Buttons, 1-Klick Link-Kopieren für Messenger und Browser-Aufruf.
+  - **Integritäts-Guard & SHA-256 Verifier:** Lokale WebCrypto-Berechnung von SHA-256 Prüfsummen für heruntergeladene `.apk`-Pakete zur Verifikation vor der Installation.
+  - **Tactical Markdown Changelog:** Formatierte Release-Notes mit Überschriften, Feature-Tags, Trennlinien und Code-Pills statt unformatiertem Text.
+  - **Versions-Historie & Rollback-Explorer:** Interaktives Archiv zur Einsicht und zum Download früherer Versionen (`v0.26.1`, `v0.26.0`, etc.).
+  - **Automatisierung & Konfiguration:** Wählbares Hintergrund-Prüfintervall (*Beim Start*, *Alle 4h*, *Alle 12h*, *Einmal täglich*, *Manuell*), In-App Update-Benachrichtigung und dynamischer Badge am Navigations-Tab.
+  - **Taktischer Feedback- & Diagnose-Reporter:** Ticket-Erstellung mit Kategorien (*Feature-Wunsch*, *Bug-Report*, *Allgemein*) und optionaler System- und Telemetrie-Signatur (App-Version, Display, Architektur, Non-Root Android).
+- 🔄 **Dynamische Echtzeit-Telemetrie & Non-Root Heuristik (v0.26.1):**
   - **SELinux-sicheres CPU-Sampling:** Rust Core Sampling via `clock_gettime(CLOCK_PROCESS_CPUTIME_ID)` mit Delta-Messung und dynamischer Lastverteilung auf Little-, Mid- und Big-Cores. Kein Einfrieren der 60s-Charts mehr.
   - **Multi-Zonen-Thermal-Matrix:** Dynamische thermische Heuristik für 7 System-Zonen (SoC Core, CPU Big/Little, GPU, Akku, Modem, Gehäuse).
   - **Partitions- & Netzwerk-Heuristik:** App-zugängliche Speicherabfrage (`/data/user/0/...`) und dynamische Up/Down-Durchsatz-Ermittlung für `wlan0` / `rmnet0`.
