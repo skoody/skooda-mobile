@@ -1,20 +1,26 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.26.0** (VersionCode: 133)
+Aktuelle Version: **v0.26.1** (VersionCode: 134)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.26.0):
-- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.26.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.0/skooda-mobile-v0.26.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~45 MB - 50% kleiner):** [skooda-mobile-v0.26.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.0/skooda-mobile-v0.26.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.26.1):
+- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.26.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.1/skooda-mobile-v0.26.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~45 MB - 50% kleiner):** [skooda-mobile-v0.26.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.1/skooda-mobile-v0.26.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.26.1/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🎛️ **Taktisches System-HUD & Hardware-Monitor 2.0 (Neu in v0.26.0):**
+- 🔄 **Dynamische Echtzeit-Telemetrie & Non-Root Heuristik (Neu in v0.26.1):**
+  - **SELinux-sicheres CPU-Sampling:** Rust Core Sampling via `clock_gettime(CLOCK_PROCESS_CPUTIME_ID)` mit Delta-Messung und dynamischer Lastverteilung auf Little-, Mid- und Big-Cores. Kein Einfrieren der 60s-Charts mehr.
+  - **Multi-Zonen-Thermal-Matrix:** Dynamische thermische Heuristik für 7 System-Zonen (SoC Core, CPU Big/Little, GPU, Akku, Modem, Gehäuse).
+  - **Partitions- & Netzwerk-Heuristik:** App-zugängliche Speicherabfrage (`/data/user/0/...`) und dynamische Up/Down-Durchsatz-Ermittlung für `wlan0` / `rmnet0`.
+  - **Sekundengenaue Uptime & Sensor-Horizont:** Uptime-Inkrementierung in Sekunden und sanfte Mikrobewegungen für den 3D-Lagehorizont.
+  - **Rechner Live-Recalculation:** Sofortige Neuberechnung bei Änderungen an Einheiten-Dropdowns im Ohm & Power Modul.
+- 🎛️ **Taktisches System-HUD & Hardware-Monitor 2.0 (v0.26.0):**
   - **Kompaktes 2-Spalten HUD-Raster:** Taktisches Obsidian-Design (`#0a0103`) mit scharfen Karmesin-Borderkanten (`#ff003c`), Quick-Status-Header (Uptime, SoC-Modell, RAM-Füllstand, Watt-Leistungsaufnahme) und 4-Stufen Pollingregler (*Turbo 200ms*, *Normal 1s*, *Eco 3s*, *Pause*).
   - **60s Live Rolling Canvas Charts:** Performante 2D-Graphen für CPU-Auslastung mit Peak-Hold-Linie, RAM- & ZRAM-Swap-Allokation, Echtzeit-Wattmeter ($P = V \cdot I$) sowie Dual-Netzwerkgraph (Download Cyan / Upload Karmesin).
   - **Tiefen-Telemetrie ohne Root (100% Non-Root):** Thermal-Matrix aller Zonen (`/sys/class/thermal/thermal_zone*`), Kernel Load Averages (1m, 5m, 15m), Speicher-Partitions-Explorer (`/data`, `/system`, `/cache` via `statvfs`) und Netzwerk-Interface-Übersicht mit MB-Zählern.
