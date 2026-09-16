@@ -1,20 +1,34 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.28.1** (VersionCode: 137)
+Aktuelle Version: **v0.29.0** (VersionCode: 138)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.28.1):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.28.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.1/skooda-mobile-v0.28.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.28.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.1/skooda-mobile-v0.28.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.1/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.0):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.0/skooda-mobile-v0.29.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.0/skooda-mobile-v0.29.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- ⚡ **Elektrik- & Elektronik-Labor 2.0 (Neu in v0.28.1):**
+- 📐 **Pythagoras Planfiguren & Aufgabenblatt 9b (Neu in v0.29.0):**
+  - **Reale Vektor-SVG-Planfiguren:** Maßstabsgetreue, dynamische Illustrationen statt statischer Schemata für jede Schulaufgabe:
+    - *Aufgabe 5 (Leiter an Hauswand):* Ziegelstein-Hauswand, Pflasterboden, 6,5 m lange Leiter mit Quersprossen, Wandabstand $d=2,5\text{ m}$, Steighöhe $h=6,0\text{ m}$, Anstellwinkel $\alpha=67,4^\circ$ sowie DIN EN 131 Sicherheitsprüfung.
+    - *Aufgabe 6 (Euklid-Dreieck):* Katheten, Hypotenuse, Höhenvektor $h$ und Abschnitte $p, q$ mit rechten Winkeln.
+    - *Aufgabe 7 (Drachensteigen):* $100\text{ m}$ Schnur, $80\text{ m}$ Bodenentfernung, Steighöhe $h=60\text{ m}$, Windvektor und Drachenfigur.
+    - *Aufgabe 8 (Rechteck & Raumdiagonale):* 2D-Rechteck $a \times b$ mit Flächendiagonale $d$ und Quader-Raumdiagonale $D$.
+    - *Aufgabe 9 (Leuchtturm-Sichtweite & Erdkrümmung):* $80\text{ m}$ Leuchtturm auf gekrümmter Erdoberfläche ($R=6371\text{ km}$), Tangentenlinie zur Kimm ($s \approx 31,93\text{ km}$).
+  - **📋 1-Klick DIN-Hausaufgaben-Export:**
+    - Button zum sofortigen Kopieren des vollständigen schulkonformen Rechenwegs (Gegeben, Gesucht, Formel, Einsetzen, Ausrechnen, Antwortsatz) in die Zwischenablage für Schule und Nachhilfe.
+- 🧮 **Rechner UX & Kompaktheits-Rework (Neu in v0.29.0):**
+  - **Kompaktes Akkordeon-System:** Alle 30 Schulmathe-Karten standardmäßig eingeklappt für blitzschnelle Übersicht und minimale Scrollwege; per Header-Tap ein-/ausklappbar mit animiertem Chevron.
+  - **Toolbar mit 1-Klick Toggle:** Button `⏫ Alle einklappen` / `⏬ Alle ausklappen` für sofortigen Komplettüberblick.
+  - **Favoriten-Pins (Quick-Access Bar):** Jede Schulmathe-Karte besitzt einen ⭐-Pin; Favoriten werden dauerhaft gespeichert und in einer horizontalen Chip-Leiste oben angezeigt. Ein Klick scrollt die Karte sanft ins Blickfeld und hebt sie golden neon hervor.
+  - **Schwebendes Quick-Pad (Floating Mini-Calculator):** Schwebender Cyber-Button (🧮) mit einklappbarem Mini-Taschenrechner für schnelle Zwischenrechnungen ($+, -, \times, \div, \sqrt{}, ()$) direkt im Rechner-Toolset ohne Hin- und Herspringen.
+- ⚡ **Elektrik- & Elektronik-Labor 2.0 (v0.28.1):**
   - ⭐ **Stern-Dreieck-Wandler (Y ⇄ Δ):** Transformation symmetrischer und unsymmetrischer 3-Phasen-Netzwerke ($Y \rightarrow \Delta$ und $\Delta \rightarrow Y$) mit Symmetrie-Gleichlaufschaltung ($R_\Delta = 3 \cdot R_Y$, $R_Y = R_\Delta / 3$) und Presets für Drehstrommotoren (3x 12 Ω), Heizstäbe (3x 46 Ω) und Messbrücken.
   - 🔌 **Transformator- & Übertrager-Rechner:** Übersetzung $ü = U_1/U_2 = N_1/N_2 = I_2/I_1$, Scheinleistung $S$ [VA], Primärstrom $I_1$ mit Wirkungsgrad $\eta$, Windungen pro Volt ($w/V$), Eisenkern-Querschnitt $A_{Fe} \approx c \cdot \sqrt{S}$ [cm²] (EI, M-Kern, Ringkern) sowie Drahtquerschnitte & Durchmesser ($q_1, q_2, d_1, d_2$).
   - 🔋 **Peukert-Akkulaufzeit & Nicht-lineare Kapazitätsanalyse:** Reale Entladezeit unter Berücksichtigung des Peukert-Effekts $t = H \cdot (C / (I \cdot H))^k \cdot \text{DoD}$, Peukert-Kapazitätsverlust im Vergleich zur linearen Rechnung ($t_{lin} = C/I$), konfigurierbare Peukert-Exponenten für LiFePO4 ($k \approx 1,05$), AGM/VRLA ($k \approx 1,15$), Gel ($k \approx 1,18$), Nasszellen ($k \approx 1,26$), Starterbatterien ($k \approx 1,35$), effektive Restkapazität ($C_{eff}$ in Ah und Wh) und C-Rate mit Warnindikator.
