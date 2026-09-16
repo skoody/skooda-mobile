@@ -1,19 +1,37 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.27.0** (VersionCode: 135)
+Aktuelle Version: **v0.28.0** (VersionCode: 136)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.27.0):
-- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.27.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.27.0/skooda-mobile-v0.27.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~46 MB - 50% kleiner):** [skooda-mobile-v0.27.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.27.0/skooda-mobile-v0.27.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.27.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.28.0):
+- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.28.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.0/skooda-mobile-v0.28.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~46 MB - 50% kleiner):** [skooda-mobile-v0.28.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.0/skooda-mobile-v0.28.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 📐 **Satzgruppe des Pythagoras & Euklid (Universal Solver & Reale Aufgaben Kl. 9–10):**
+  - **Universal-Löser:** Berechnet aus 2 beliebigen Dreieckswerten ($a, b, c, p, q, h$) sofort alle 6 Größen, Fläche $A$, Umfang $U$ und Winkel $\alpha, \beta, \gamma=90^\circ$ mit vollständiger Schritt-für-Schritt-Herleitung.
+  - **Reale Aufgabenblatt-Presets (Klasse 9b):**
+    - *Aufgabe 5 (Leiter an Hauswand):* $L=6,5\text{ m}, d=2,5\text{ m} \rightarrow h=6,0\text{ m}$, Anstellwinkel $\alpha=67,4^\circ$.
+    - *Aufgabe 6 (Euklid-Dreieck):* Katheten $a=4,2\text{ cm}, b=3,1\text{ cm}, p=3,38\text{ cm} \rightarrow c, q, h$ über Pythagoras und Euklid.
+    - *Aufgabe 7 (Drachensteigen):* $L=100\text{ m}, d=80\text{ m} \rightarrow h=60\text{ m}$.
+    - *Aufgabe 8 (Diagonalen):* 2D-Rechteck und 3D-Quader-Raumdiagonale ($d = \sqrt{a^2+b^2}$, $D = \sqrt{a^2+b^2+c^2}$).
+    - *Aufgabe 9 (Horizont-Sichtweite & Erdkrümmung):* Leuchtturm mit $h=80\text{ m} \rightarrow$ Sichtweite $s \approx 31,93\text{ km}$ ($31926\text{ m}$) und Vergleich mit nautischer Faustformel ($3,57 \cdot \sqrt{h}$).
+  - **Dynamische SVG-Planfigur:** Mathematisch exakte Vektor-Zeichnung des Dreiecks mit Hypotenuse als Grundlinie, Katheten, Lot der Höhe $h_c$, Abschnittsmarkierungen $p$ und $q$ sowie Kennzeichnung der rechten Winkel.
+- 🎓 **Erweiterte Schulmathematik (Karten 27–30):**
+  - **Karte 27 (Strahlensätze, Kl. 9):** 1. und 2. Strahlensatz für V- und X-Figuren, zentrische Streckung, Streckenverhältnisse und Parallelen.
+  - **Karte 28 (Allgemeine Trigonometrie, Kl. 10):** Dreiecksberechnung über Sinussatz und Kosinussatz für SSS, SWS und WSW mit Heron-Fläche.
+  - **Karte 29 (Kurvendiskussion & Polynome, Kl. 11–12):** Vollständige Funktionsanalyse für Polynome bis Grad 4 mit Ableitungen $f', f'', f'''$, Nullstellen via Bisektion, Hoch-/Tiefpunkten, Wendepunkten und Symmetrie.
+  - **Karte 30 (Wahrscheinlichkeitsrechnung & Baumdiagramme, Kl. 8–11):** Zweistufiges Urnenmodell (mit/ohne Zurücklegen), 1. Pfadregel (Multiplikation) und 2. Pfadregel (Summensatz) mit dynamischem SVG-Baumdiagramm.
+- 📈 **Funktionsplotter 2D & Programmer Upgrades:**
+  - 1. Ableitung $f'(x)$ als gestrichelte Kurve einblendbar.
+  - Wertetabelle mit Schrittweite und Export der Plotter-Kurve als PNG.
+  - Bitweise Operatoren (`AND`, `OR`, `XOR`, `NOT`, `<<`, `>>`) im Live-Rechner.
 - 🚀 **Taktisches System Update & Distribution Center 2.0 (Neu in v0.27.0):**
   - **Obsidian Dark-Crimson HUD-Design:** Status-Pills, animierter Radar-Impuls bei der Prüfung, Server-Latenz-Anzeige (Ping zum GitHub CDN) und Zeitstempel der letzten Prüfung.
   - **Smart Asset Hub & Architektur-Empfehlung:** Automatische Erkennung der Geräte-Architektur (`ARM64-v8a` vs `ARMv7`) und gezielte Empfehlung der schlanken ARM64-v8a APK (~46 MB, 50% Speicherersparnis und schnellerer Start). Direkte Download-Buttons, 1-Klick Link-Kopieren für Messenger und Browser-Aufruf.
