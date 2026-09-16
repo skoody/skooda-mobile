@@ -1,19 +1,23 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.28.0** (VersionCode: 136)
+Aktuelle Version: **v0.28.1** (VersionCode: 137)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.28.0):
-- **Universal Multi-Arch APK (~86 MB):** [skooda-mobile-v0.28.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.0/skooda-mobile-v0.28.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~46 MB - 50% kleiner):** [skooda-mobile-v0.28.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.0/skooda-mobile-v0.28.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.28.1):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.28.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.1/skooda-mobile-v0.28.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.28.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.1/skooda-mobile-v0.28.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.28.1/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- ⚡ **Elektrik- & Elektronik-Labor 2.0 (Neu in v0.28.1):**
+  - ⭐ **Stern-Dreieck-Wandler (Y ⇄ Δ):** Transformation symmetrischer und unsymmetrischer 3-Phasen-Netzwerke ($Y \rightarrow \Delta$ und $\Delta \rightarrow Y$) mit Symmetrie-Gleichlaufschaltung ($R_\Delta = 3 \cdot R_Y$, $R_Y = R_\Delta / 3$) und Presets für Drehstrommotoren (3x 12 Ω), Heizstäbe (3x 46 Ω) und Messbrücken.
+  - 🔌 **Transformator- & Übertrager-Rechner:** Übersetzung $ü = U_1/U_2 = N_1/N_2 = I_2/I_1$, Scheinleistung $S$ [VA], Primärstrom $I_1$ mit Wirkungsgrad $\eta$, Windungen pro Volt ($w/V$), Eisenkern-Querschnitt $A_{Fe} \approx c \cdot \sqrt{S}$ [cm²] (EI, M-Kern, Ringkern) sowie Drahtquerschnitte & Durchmesser ($q_1, q_2, d_1, d_2$).
+  - 🔋 **Peukert-Akkulaufzeit & Nicht-lineare Kapazitätsanalyse:** Reale Entladezeit unter Berücksichtigung des Peukert-Effekts $t = H \cdot (C / (I \cdot H))^k \cdot \text{DoD}$, Peukert-Kapazitätsverlust im Vergleich zur linearen Rechnung ($t_{lin} = C/I$), konfigurierbare Peukert-Exponenten für LiFePO4 ($k \approx 1,05$), AGM/VRLA ($k \approx 1,15$), Gel ($k \approx 1,18$), Nasszellen ($k \approx 1,26$), Starterbatterien ($k \approx 1,35$), effektive Restkapazität ($C_{eff}$ in Ah und Wh) und C-Rate mit Warnindikator.
 - 📐 **Satzgruppe des Pythagoras & Euklid (Universal Solver & Reale Aufgaben Kl. 9–10):**
   - **Universal-Löser:** Berechnet aus 2 beliebigen Dreieckswerten ($a, b, c, p, q, h$) sofort alle 6 Größen, Fläche $A$, Umfang $U$ und Winkel $\alpha, \beta, \gamma=90^\circ$ mit vollständiger Schritt-für-Schritt-Herleitung.
   - **Reale Aufgabenblatt-Presets (Klasse 9b):**
