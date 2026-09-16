@@ -1,28 +1,33 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.0** (VersionCode: 138)
+Aktuelle Version: **v0.29.1** (VersionCode: 139)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.0):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.0/skooda-mobile-v0.29.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.0/skooda-mobile-v0.29.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.1):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.1/skooda-mobile-v0.29.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.1/skooda-mobile-v0.29.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.1/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 📐 **Pythagoras Planfiguren & Aufgabenblatt 9b (Neu in v0.29.0):**
-  - **Reale Vektor-SVG-Planfiguren:** Maßstabsgetreue, dynamische Illustrationen statt statischer Schemata für jede Schulaufgabe:
-    - *Aufgabe 5 (Leiter an Hauswand):* Ziegelstein-Hauswand, Pflasterboden, 6,5 m lange Leiter mit Quersprossen, Wandabstand $d=2,5\text{ m}$, Steighöhe $h=6,0\text{ m}$, Anstellwinkel $\alpha=67,4^\circ$ sowie DIN EN 131 Sicherheitsprüfung.
-    - *Aufgabe 6 (Euklid-Dreieck):* Katheten, Hypotenuse, Höhenvektor $h$ und Abschnitte $p, q$ mit rechten Winkeln.
-    - *Aufgabe 7 (Drachensteigen):* $100\text{ m}$ Schnur, $80\text{ m}$ Bodenentfernung, Steighöhe $h=60\text{ m}$, Windvektor und Drachenfigur.
-    - *Aufgabe 8 (Rechteck & Raumdiagonale):* 2D-Rechteck $a \times b$ mit Flächendiagonale $d$ und Quader-Raumdiagonale $D$.
-    - *Aufgabe 9 (Leuchtturm-Sichtweite & Erdkrümmung):* $80\text{ m}$ Leuchtturm auf gekrümmter Erdoberfläche ($R=6371\text{ km}$), Tangentenlinie zur Kimm ($s \approx 31,93\text{ km}$).
-  - **📋 1-Klick DIN-Hausaufgaben-Export:**
-    - Button zum sofortigen Kopieren des vollständigen schulkonformen Rechenwegs (Gegeben, Gesucht, Formel, Einsetzen, Ausrechnen, Antwortsatz) in die Zwischenablage für Schule und Nachhilfe.
+- 📐 **Pythagoras Evolution 4.0 - Das ultimative Geometrie- & Pythagoras-Studio (Neu in v0.29.1):**
+  - **🔲 Visuelles Beweis-Studio (Geometrischer Flächenbeweis a² + b² = c²):** Echte maßstabsgetreue Quadrate über den Katheten $a, b$ und der Hypotenuse $c$ mit Farbkodierung und Flächensummen-Nachweis ($A_a + A_b = A_c$).
+  - **⚖️ Umkehrung des Satzes des Pythagoras (Rechtwinkligkeits- & Dreiecksart-Test):** Prüft beliebige 3 Seiten $a, b, c$ auf rechtwinklig ($=90^\circ$), spitzwinklig ($<90^\circ$) oder stumpfwinklig ($>90^\circ$) mit Dreiecksungleichung, Kosinussatz-Winkeln und Schulbegründungssatz.
+  - **√ Exaktes Radizieren (Teilweises Wurzelziehen):** Automatische Zerlegung von Radikanden in quadratische Faktoren direkt im Rechenweg (z. B. $\sqrt{50} = 5\sqrt{2} \approx 7{,}07$).
+  - **✨ Pythagoreische Tripel Engine & Schnellwahl-Leiste:** Automatische Erkennung primitiver und skalierter Tripel mit ggT-Faktor $k$ sowie interaktive Schnellwahl-Chips ($3-4-5$, $5-12-13$, $8-15-17$, $7-24-25$, $20-21-29$, $9-40-41$).
+  - **🏠 Reale Praxis- & Prüfungsaufgaben:**
+    - *Aufgabe 10 (Dachstuhl & Dachsparren):* Firsthöhe $h$, Spannweite $b$, Sparrenlänge $s$, Dachneigung $\alpha$, Gesamtdachfläche und Giebel-Planfigur.
+    - *Aufgabe 11 (Flussbreite & Seepeilung):* Standlinie $a$, Peildiagonale $c$, Flussbreite $b$, Peilwinkel $\alpha$ und top-down Flussbett-Planfigur.
+    - *3-4-5 Maurerdreieck:* Handwerker-Baustellenabsteckung mit 12-Knoten-Schnur und Skalierungsfaktor $k$ für 100% rechte Winkel.
+  - **🎛️ Interaktiver Live-Slider:** Flüssiger Schieberegler für den Leiter-Wandabstand $d$ für ruckelfreie Echtzeit-SVG-Veränderung samt DIN EN 131 Sicherheitsbadge.
+  - **🔵 Satz des Thales & 🎯 Inkreis/Umkreis:** Didaktische Umschaltung zwischen Planfigur-Modi: Thales-Halbkreis ($R = c/2$) mit Radiuslinie zum rechten Winkel sowie Inkreis ($r = (a+b-c)/2$) mit baryzentrischem Incenter.
+  - **🔲 Euklid-Höhenrechteck:** Visuelle Flächengleichheit zwischen Höhenquadrat $h^2$ und Abschnittsrechteck $p \cdot q$.
+  - **🎲 Klassenarbeits-Trainer:** Zufallsaufgaben-Generator für Klasse 9/10 mit Aufgabenstellung, Kategorie und 1-Klick-Ladefunktion in den Rechner.
+  - **📋 1-Klick DIN-Hausaufgaben-Export:** Vollständiger schulkonformer Rechenweg direkt in die Zwischenablage kopierbar.
 - 🧮 **Rechner UX & Kompaktheits-Rework (Neu in v0.29.0):**
   - **Kompaktes Akkordeon-System:** Alle 30 Schulmathe-Karten standardmäßig eingeklappt für blitzschnelle Übersicht und minimale Scrollwege; per Header-Tap ein-/ausklappbar mit animiertem Chevron.
   - **Toolbar mit 1-Klick Toggle:** Button `⏫ Alle einklappen` / `⏬ Alle ausklappen` für sofortigen Komplettüberblick.
