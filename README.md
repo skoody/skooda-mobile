@@ -1,19 +1,28 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.3** (VersionCode: 141)
+Aktuelle Version: **v0.29.4** (VersionCode: 142)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.3):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.3-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.3/skooda-mobile-v0.29.3-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.3-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.3/skooda-mobile-v0.29.3-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.3/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.4):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.4-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.4/skooda-mobile-v0.29.4-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.4-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.4/skooda-mobile-v0.29.4-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.4/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🎨 **Umfassende GUI- & Theme-Perfektionierung (Neu in v0.29.4):**
+  - **100 % Viewport- und Grid-Stabilität:** Behebung aller horizontalen Overflows in Rechner- und Elektrik-Rastern (`.el-grid-2`, `.conv-row`). Saubere Ausrichtung selbst auf schmalen Smartphone-Displays.
+  - **Cyberpunk Dark Theme für alle Formular-Controls:** Beseitigung weißer Standard-Browser-Selects durch `.cyber-select` mit tiefschwarzem Look, Neon-Border und custom SVG-Pfeil.
+  - **Universelle Input-Rahmung:** Standardmäßig gerahmte, dunkle Inputs (`.cyber-input-field`) in allen Rechner- und Cyber-Modulen bei sauber isoliertem CLI-Terminal.
+  - **Kompakter 1-Zeilen Favoriten-Slider:** Schlanke, horizontal wischbare Leiste für schnellen Zugriff auf alle 23 Elektrik-Rechner.
+  - **Subtool Header-Hierarchie:** Automatisches Ausblenden des Haupt-Headers beim Betreten von Werkzeugen für maximalen vertikalen Arbeitsraum.
+  - **Chat-Layout & Sende-Button:** Ergonomische, horizontale Chat-Eingabeleiste mit festem Sicherheitsabstand zur Navigationsleiste.
+  - **Defensiver R(T)-Kurvenplotter:** Zuverlässige Absicherung gegen mathematische Sonderfälle und `NaN` in SVG-Pfaden.
+  - **Optimierter Floating Quick-Pad Mini-Rechner:** 38 px FAB-Größe mit 95 px Scroll-Padding in allen Subtools gegen Verdeckungen.
 - 🌀 **Spulen-, Windungs- & Wicklungslabor (Neu in v0.29.3):**
   - **Zylinderspulen & Drosseln:** Induktivität $L$ ($H$, $\text{mH}$, $\mu H$), Gleichstromwiderstand $R_\text{Spule}$, Drahtlänge $l_\text{ges}$, mittlere Windungslänge, Lagenanzahl, Wickelhöhe und Kupfergewicht für Luftspulen, Eisenkerne ($\mu_r \approx 500$), Ferritkerne ($\mu_r \approx 2000$) und Mu-Metall ($\mu_r \approx 10000$).
   - **Heizwendel & Spiralen:** Dorndurchmesser $D_\text{dorn}$, Drahtdurchmesser $d$, Windungszahl $N$, geschlossene Blocklänge und gestreckte Einbaulänge unter Berücksichtigung der Steigung (Pitch).
