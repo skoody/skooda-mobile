@@ -1,20 +1,36 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.2** (VersionCode: 140)
+Aktuelle Version: **v0.29.3** (VersionCode: 141)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.2):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.2-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.2/skooda-mobile-v0.29.2-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.2-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.2/skooda-mobile-v0.29.2-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.2/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.3):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.3-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.3/skooda-mobile-v0.29.3-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.3-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.3/skooda-mobile-v0.29.3-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.3/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🧲 **Spezifischer Widerstand & Leiter-Labor (Neu in v0.29.2):**
+- 🌀 **Spulen-, Windungs- & Wicklungslabor (Neu in v0.29.3):**
+  - **Zylinderspulen & Drosseln:** Induktivität $L$ ($H$, $\text{mH}$, $\mu H$), Gleichstromwiderstand $R_\text{Spule}$, Drahtlänge $l_\text{ges}$, mittlere Windungslänge, Lagenanzahl, Wickelhöhe und Kupfergewicht für Luftspulen, Eisenkerne ($\mu_r \approx 500$), Ferritkerne ($\mu_r \approx 2000$) und Mu-Metall ($\mu_r \approx 10000$).
+  - **Heizwendel & Spiralen:** Dorndurchmesser $D_\text{dorn}$, Drahtdurchmesser $d$, Windungszahl $N$, geschlossene Blocklänge und gestreckte Einbaulänge unter Berücksichtigung der Steigung (Pitch).
+- 🔥 **Heizdraht- & Glühdraht-Labor (Neu in v0.29.3):**
+  - Kanthal A1, Nichrom 80/20, Konstantan, Edelstahl V2A mit Leistung $P$, Strom $I$, Widerstand $R$, Mantelfläche und spezifischer Oberflächenbelastung $p$ ($\text{W/cm}^2$).
+  - Physikalische Drahttemperatur-Schätzung und dynamische optische Glühfarben-Skala (Dunkelrot bis Gelbweiß) mit farbcodiertem HUD.
+- ⚡ **Leitungsbelastung & Spannungsfall (Neu in v0.29.3):**
+  - Spannungsfall $\Delta U$ ($V$ und $\%$), Leitungsabwärme $P_v$ ($W$ / $kW$) und Stromdichte $J = I/A$ ($\text{A/mm}^2$) mit VDE-Belastungsampel.
+- 📈 **Dynamische $R(T)$-Kennlinie (SVG) (Neu in v0.29.3):**
+  - Interaktives Vektor-Diagramm von $-50^\circ\text{C}$ bis $+300^\circ\text{C}$ mit $20^\circ\text{C}$-Achse und goldenem Live-Betriebspunkt.
+- 🔬 **NTC-Thermistor Studio (Neu in v0.29.3):**
+  - B-Wert-Gleichung & Steinhart-Hart für 10k, 100k (3D-Drucker Hotend), 5k, 2.2k oder benutzerdefiniert inklusive Sensor-Empfindlichkeit $\mathrm{d}R/\mathrm{d}T$ und Temperaturbeiwert $\alpha$.
+- ⭐ **Elektrik Quick-Favorites Ribbon (Neu in v0.29.3):**
+  - Persistente Favoriten-Leiste (`#el-favorites-bar`) mit Schnellzugriffs-Chips und dynamischem Pin/Unpin-Button für alle 23 Elektrik-Rechner.
+- 📏 **American Wire Gauge (AWG) Wähler (Neu in v0.29.3):**
+  - Dropdown für AWG 0000 bis 40 mit sofortiger Übernahme des Querschnitts in mm² und Durchmessers in mm.
+- 🧲 **Spezifischer Widerstand & Leiter-Labor (Erweitert in v0.29.2):**
   - **📏 Ohmscher Leiter-Rechner ($R = \rho \cdot \frac{l}{A} = \frac{l}{\gamma \cdot A}$):** Flexible Umkehrung nach Widerstand $R$, Leiterlänge $l$, Querschnitt $A$ oder Material $\rho$. Integrierter Durchmesser-Wandler ($d \rightleftharpoons A = \frac{\pi d^2}{4}$), Schleifenwiderstand-Modus ($2 \cdot l$ Hin- + Rückweg), Leitwert $G$ in Siemens, Leitfähigkeit $\gamma$ in MS/m sowie automatische Leitermasse-Berechnung ($m$ in g und kg) anhand der Werkstoffdichte.
   - **🌡️ Temperaturkoeffizienten & Wicklungserwärmung (VDE 0530 / IEC 60034-1):** Exakte Berechnung des Warmwiderstands $R(T) = R_{20} \cdot [1 + \alpha_{20} \cdot (T - 20^\circ\text{C})]$ sowie thermische Wicklungsprüfung von Motoren und Trafos mit Isolierstoffklassen-Bewertung (A, E, B, F, H).
   - **🔬 Platin- & Nickel-Messwiderstände (DIN EN 60751 & DIN 43760):** PT100, PT500, PT1000, Ni100, Ni120, Ni1000 mit bidirektionaler Umrechnung ($T \rightleftharpoons R$), Empfindlichkeit $\mathrm{d}R/\mathrm{d}T$ und Grenzabweichungen nach Toleranzklasse B.
