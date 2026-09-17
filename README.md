@@ -1,20 +1,30 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.4** (VersionCode: 142)
+Aktuelle Version: **v0.29.5** (VersionCode: 143)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.4):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.4-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.4/skooda-mobile-v0.29.4-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.4-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.4/skooda-mobile-v0.29.4-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.4/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.5):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.5-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.5/skooda-mobile-v0.29.5-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.5-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.5/skooda-mobile-v0.29.5-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.5/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🎨 **Umfassende GUI- & Theme-Perfektionierung (Neu in v0.29.4):**
+- ⚡ **Gemischte Schaltungen 2.0 & Schaltungs-Studio (Neu in v0.29.5):**
+  - **1:1 Schul- und Praxisaufgaben-Kompatibilität:** Berechnet reale und komplexe Netzwerke fehlerfrei und didaktisch aufbereitet.
+  - **Interaktiver DIN EN 60617 Vektor-Schaltplan:** Dynamisches Cyberpunk-SVG-Schaltbild mit DIN-Widerstandssymbolen, Knotenpunkten A/B und Live-Messwert-Badges ($U_x, I_x$) an jedem Bauteil.
+  - **4 Topologien zur Auswahl:** Typ 1 ($R_1 + R_2 + ((R_3 + R_4) \parallel R_5)$), Typ 2 ($R_1 + (R_2 \parallel R_3)$), Typ 3 ($(R_1 + R_2) \parallel (R_3 + R_4)$), Typ 4 ($(R_1 \parallel R_2) + (R_3 \parallel R_4)$).
+  - **Didaktischer Lösungsweg:** Detaillierte Schritt-für-Schritt Herleitung mit allen Zwischenwiderständen ($R_{1,2}$, $R_{3,4}$, $R_{3,4,5}$, $R_\text{ges}$) und Berechnungsformeln.
+  - **Kompakte Teillasten-Tabelle & Kirchhoff-Validierung:** Platzsparende 6-Spalten-Tabelle (`Bauteil | Wert | U | I | P | Last`) ohne seitliches Scrollen sowie rechnerischer Nachweis der Maschen- und Knotenregeln ($\sum U_i = U_\text{ges}$, $\sum P_i = P_\text{ges}$).
+  - **1-Klick Schulaufgaben-Preset:** Sofortige Vorbelegung mit $U = 24\,\text{V}$, $R_1 = 120\,\Omega$, $R_2 = 680\,\Omega$, $R_3 = 100\,\Omega$, $R_4 = 150\,\Omega$, $R_5 = 680\,\Omega$ ($R_\text{ges} = 982{,}80\,\Omega$, $I_\text{ges} = 24{,}42\,\text{mA}$).
+- 🔌 **Leiter-Labor: Doppelleitung & Drehstrom (Neu in v0.29.5):**
+  - **Erweiterter Leitungsmodus:** Einzelleiter ($1\times L$), Doppelleitung Hin- & Rückleiter ($2\times L$, Schleifenwiderstand) und symmetrischer Drehstrom ($\sqrt{3}\times L$).
+  - **Motor-Zuleitungs-Preset:** 1-Klick-Button für Motor-Zuleitungsaufgaben ($200\,\text{m}$ Distanz, $1{,}5\,\text{mm}^2$ Kupfer $\to 4{,}75\,\Omega$).
+- 🎨 **Umfassende GUI- & Theme-Perfektionierung (v0.29.4):**
   - **100 % Viewport- und Grid-Stabilität:** Behebung aller horizontalen Overflows in Rechner- und Elektrik-Rastern (`.el-grid-2`, `.conv-row`). Saubere Ausrichtung selbst auf schmalen Smartphone-Displays.
   - **Cyberpunk Dark Theme für alle Formular-Controls:** Beseitigung weißer Standard-Browser-Selects durch `.cyber-select` mit tiefschwarzem Look, Neon-Border und custom SVG-Pfeil.
   - **Universelle Input-Rahmung:** Standardmäßig gerahmte, dunkle Inputs (`.cyber-input-field`) in allen Rechner- und Cyber-Modulen bei sauber isoliertem CLI-Terminal.
