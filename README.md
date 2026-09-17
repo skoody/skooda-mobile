@@ -1,19 +1,25 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.1** (VersionCode: 139)
+Aktuelle Version: **v0.29.2** (VersionCode: 140)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.1):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.1/skooda-mobile-v0.29.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.1/skooda-mobile-v0.29.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.1/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.2):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.2-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.2/skooda-mobile-v0.29.2-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.2-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.2/skooda-mobile-v0.29.2-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.2/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🧲 **Spezifischer Widerstand & Leiter-Labor (Neu in v0.29.2):**
+  - **📏 Ohmscher Leiter-Rechner ($R = \rho \cdot \frac{l}{A} = \frac{l}{\gamma \cdot A}$):** Flexible Umkehrung nach Widerstand $R$, Leiterlänge $l$, Querschnitt $A$ oder Material $\rho$. Integrierter Durchmesser-Wandler ($d \rightleftharpoons A = \frac{\pi d^2}{4}$), Schleifenwiderstand-Modus ($2 \cdot l$ Hin- + Rückweg), Leitwert $G$ in Siemens, Leitfähigkeit $\gamma$ in MS/m sowie automatische Leitermasse-Berechnung ($m$ in g und kg) anhand der Werkstoffdichte.
+  - **🌡️ Temperaturkoeffizienten & Wicklungserwärmung (VDE 0530 / IEC 60034-1):** Exakte Berechnung des Warmwiderstands $R(T) = R_{20} \cdot [1 + \alpha_{20} \cdot (T - 20^\circ\text{C})]$ sowie thermische Wicklungsprüfung von Motoren und Trafos mit Isolierstoffklassen-Bewertung (A, E, B, F, H).
+  - **🔬 Platin- & Nickel-Messwiderstände (DIN EN 60751 & DIN 43760):** PT100, PT500, PT1000, Ni100, Ni120, Ni1000 mit bidirektionaler Umrechnung ($T \rightleftharpoons R$), Empfindlichkeit $\mathrm{d}R/\mathrm{d}T$ und Grenzabweichungen nach Toleranzklasse B.
+  - **📚 18-Werkstoffe-Datenbank & Dynamische SVG-Planfigur:** Kupfer, Aluminium, Silber, Gold, Eisen, Stahl, Edelstahl, Wolfram, Platin, Messing, Zinn, Blei, Konstantan, Manganin, Nichrom, Kanthal, Grafit und Custom-Werte mit interaktivem Zylinder und temperaturabhängigem Glüheffekt.
+  - **⚡ Elektrik Kompaktheits-Rework:** Neuer Dropdown-Schnellwähler `#el-subtab-select` synchron zu allen 23 Elektrik-Rechnern für sofortiges Umschalten ohne horizontales Scrollen.
 - 📐 **Pythagoras Evolution 4.0 - Das ultimative Geometrie- & Pythagoras-Studio (Neu in v0.29.1):**
   - **🔲 Visuelles Beweis-Studio (Geometrischer Flächenbeweis a² + b² = c²):** Echte maßstabsgetreue Quadrate über den Katheten $a, b$ und der Hypotenuse $c$ mit Farbkodierung und Flächensummen-Nachweis ($A_a + A_b = A_c$).
   - **⚖️ Umkehrung des Satzes des Pythagoras (Rechtwinkligkeits- & Dreiecksart-Test):** Prüft beliebige 3 Seiten $a, b, c$ auf rechtwinklig ($=90^\circ$), spitzwinklig ($<90^\circ$) oder stumpfwinklig ($>90^\circ$) mit Dreiecksungleichung, Kosinussatz-Winkeln und Schulbegründungssatz.
