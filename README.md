@@ -1,20 +1,47 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.5** (VersionCode: 143)
+Aktuelle Version: **v0.29.6** (VersionCode: 144)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.5):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.5-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.5/skooda-mobile-v0.29.5-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.5-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.5/skooda-mobile-v0.29.5-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.5/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.6):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.6-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.6/skooda-mobile-v0.29.6-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.6-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.6/skooda-mobile-v0.29.6-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.6/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- ⚡ **Gemischte Schaltungen 2.0 & Schaltungs-Studio (Neu in v0.29.5):**
+- ⚡ **Wechselstrom- & Drehstrom-Studio (AC / 3-Phasen Engine) (Neu in v0.29.6):**
+  - **1~ Wechselstrom (230 V) & 3~ Drehstrom (400 V):** Nahtlose Berechnung von Wirkleistung $P$, Blindleistung $Q$, Scheinleistung $S$, Phasenwinkel $\varphi$, Leistungsfaktor $\cos \varphi$ und Scheinwiderstand/Impedanz $Z$.
+  - **Interaktives SVG-Leistungsdreieck:** Vektorbasiertes Leistungsdreieck mit Vektorpfeilen für Wirkleistung (grün), Blindleistung (rot), Scheinleistung (cyan) und Phasenwinkel (gelb).
+  - **Blindleistungskompensation (PFC-Studio):** Präzise Auslegung von Kompensationskondensatoren ($Q_C$ in kvar und $C$ in $\mu\text{F}$) zur gezielten Anhebung des Leistungsfaktors von $\cos \varphi_1$ auf Ziel-$\cos \varphi_2$, inklusive Ersparnisberechnung des reduzierten Schein- und Netzstroms.
+  - **Praxis-Presets:** Sofortige Wertebelegung für 1~ Motor ($1{,}5\,\text{kW}$), 3~ Drehstrommotor ($5{,}5\,\text{kW}$), ohmsche Heizung und induktiven Transformator.
+- ⭐ **Stern-Dreieck-Wandler ($Y \rightleftharpoons \Delta$) mit dynamischem SVG (Neu in v0.29.6):**
+  - **Bidirektionale Netzwerk-Transformation:** Vollständige Konvertierung von Stern- zu Dreieckschaltung ($R_{12}, R_{23}, R_{31}$) sowie Dreieck- zu Sternschaltung ($R_1, R_2, R_3$).
+  - **Schematisches Vektor-Schaltbild:** Dynamisches SVG visualisiert Stern- und Dreiecktopologie synchron mit Leiterknoten (L1, L2, L3) und Widerstandswerten.
+  - **Symmetrie-Erkennung & Presets:** Direkte Erkennung symmetrischer Netze ($R_\Delta = 3 \cdot R_Y$) mit Schnellwahltasten für symmetrische Lasten, Motoren und Heizwicklungen.
+- ⏱️ **Kondensator- & RC-Dynamik-Kurve (Neu in v0.29.6):**
+  - **Interaktiver SVG-Vektorplotter:** Umschaltbare Ladekurve und Entladekurve von $0$ bis $5\tau$.
+  - **Wichtige Zeitmarken:** Präzise Hervorhebung der Zeitkonstante $\tau = R \cdot C$ mit Marker bei $1\tau$ ($63{,}2\,\%$ bei Ladung bzw. $36{,}8\,\%$ bei Entladung), $3\tau$ und $5\tau$ ($99{,}3\,\%$, Vollladung).
+  - **Grenzfrequenz & Schaltzeiten:** Automatische Ermittlung von $f_c = 1 / (2\pi RC)$ und Halbwertzeit $t_{50\%} = \tau \cdot \ln(2)$.
+- 📋 **1-Klick Didaktik- & Protokoll-Export (Neu in v0.29.6):**
+  - **Kopier- & Share-Export:** Export-Buttons im Didaktischen Rechenweg des Schaltungs-Studios 2.0 (`#mixed-export-btn`) und im Leiter-Labor (`#spez-export-btn`).
+  - **Formatierte Protokollausgabe:** Erzeugt sauberen Text mit Formeln, Teilschritten und Gesamtwerten für Dokumentationen, Prüfungsnachweise oder Messenger.
+- 🔍 **Globaler Spotlight Quick-Launcher (Neu in v0.29.6):**
+  - **Bilateraler Floating FAB:** Schneller Direktzugriff über schwebenden Lupe-Button (`#floating-spotlight-fab`) links über der Bottom-Nav.
+  - **Keyboard-Shortcut:** Globale Tastenkombination `Ctrl+K` bzw. `Cmd+K` für Desktop- und Tablet-User.
+  - **Vollständige Werkzeug-Registry:** Sofortiges Anspringen aller 26+ Rechner-, Elektrik-, Coder-, Cyber-, Audio- und Navigations-Tools.
+- 📜 **Persistenter Rechner-Verlauf & Speicher (Neu in v0.29.6):**
+  - **Bottom Drawer (`#calc-history-drawer`):** Schiebt sich bei Klick auf "📜 Verlauf" ergonomisch von unten herein.
+  - **Auto-Recording:** Speichert automatisch alle Berechnungen aus Live-Rechner, Ohm, Spannungsteiler, Wechselstrom, RC-Filter und Stern-Dreieck in `localStorage`.
+  - **Kopierfunktion:** Einzelne Resultate können mit einem Klick in die Zwischenablage kopiert oder gelöscht werden.
+- 📳 **Haptik-Engine & E2EE QR-Sicherheitsabgleich (Neu in v0.29.6):**
+  - **Taktiles Feedback:** Haptische Vibration (`triggerHaptic`) bei Rechner-Eingaben, Modus-Wechseln und Exports.
+  - **QR Safety-Scan im Chat:** Direkte Verknüpfung im Sicherheitsnummern-Modal (`#safety-scan-btn`) zum Prüfen von Chat-Peer-Schlüsseln via Kamera-Scanner.
+- ⚡ **Gemischte Schaltungen 2.0 & Schaltungs-Studio (v0.29.5):**
   - **1:1 Schul- und Praxisaufgaben-Kompatibilität:** Berechnet reale und komplexe Netzwerke fehlerfrei und didaktisch aufbereitet.
   - **Interaktiver DIN EN 60617 Vektor-Schaltplan:** Dynamisches Cyberpunk-SVG-Schaltbild mit DIN-Widerstandssymbolen, Knotenpunkten A/B und Live-Messwert-Badges ($U_x, I_x$) an jedem Bauteil.
   - **4 Topologien zur Auswahl:** Typ 1 ($R_1 + R_2 + ((R_3 + R_4) \parallel R_5)$), Typ 2 ($R_1 + (R_2 \parallel R_3)$), Typ 3 ($(R_1 + R_2) \parallel (R_3 + R_4)$), Typ 4 ($(R_1 \parallel R_2) + (R_3 \parallel R_4)$).
