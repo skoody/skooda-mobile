@@ -1,19 +1,26 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.6** (VersionCode: 144)
+Aktuelle Version: **v0.29.7** (VersionCode: 145)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.6):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.6-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.6/skooda-mobile-v0.29.6-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.6-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.6/skooda-mobile-v0.29.6-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.6/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.7):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.7-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.7/skooda-mobile-v0.29.7-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.7-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.7/skooda-mobile-v0.29.7-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.7/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🔐 **Sicherheits-Härtung & Offline-Karte (Neu in v0.29.7):**
+  - **XSS-Schutz für alle Fremddaten:** Chat-Nachrichten, Port-Banner, TLS-Zertifikate, WLAN-Namen, OSINT-Treffer, Karten- und Routing-Texte sowie QR-Inhalte laufen über eine zentrale Escaping-Schicht (`src/core/sanitize.js`). Eingeschleustes Markup kann damit nicht mehr im Webview mit Tauri-Rechten laufen.
+  - **CSP ohne `unsafe-inline`:** Inline-Event-Handler sind entfernt, das CDN-Laden von `unpkg.com` ebenfalls.
+  - **Leaflet lokal:** Die Karte lädt Leaflet aus `src/vendor/leaflet/` — die Offline-Karte startet jetzt ohne Internet.
+  - **Modultests:** `npm test` prüft die sechs Rechenmodule über den eingebauten `node:test`-Runner.
+  - **Stärkeres Build-Gate:** `verify_frontend_integrity.js` erzwingt einheitliche Version und `versionCode`, verbietet versionierte Keystores und Inline-Handler. Dazu ein versionierter Pre-Commit-Hook und ein Escape-Audit (`npm run audit`).
+  - **Fünf Rechenfehler behoben:** `-2^2` ergibt jetzt -4 nach Schulkonvention, der SWR-Rechner akzeptiert 0 W Rücklaufleistung (SWR 1,00:1 bei perfekter Anpassung), Strahlensatz und Baumdiagramm erkennen eingegebene Nullen, und der Matrizen-Rechenweg zeigt `c₂₂` korrekt. Alle Fälle sind als Regressionstests abgesichert.
 - ⚡ **Wechselstrom- & Drehstrom-Studio (AC / 3-Phasen Engine) (Neu in v0.29.6):**
   - **1~ Wechselstrom (230 V) & 3~ Drehstrom (400 V):** Nahtlose Berechnung von Wirkleistung $P$, Blindleistung $Q$, Scheinleistung $S$, Phasenwinkel $\varphi$, Leistungsfaktor $\cos \varphi$ und Scheinwiderstand/Impedanz $Z$.
   - **Interaktives SVG-Leistungsdreieck:** Vektorbasiertes Leistungsdreieck mit Vektorpfeilen für Wirkleistung (grün), Blindleistung (rot), Scheinleistung (cyan) und Phasenwinkel (gelb).
