@@ -1,19 +1,28 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.7** (VersionCode: 145)
+Aktuelle Version: **v0.29.8** (VersionCode: 146)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.7):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.7-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.7/skooda-mobile-v0.29.7-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.7-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.7/skooda-mobile-v0.29.7-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.7/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.8):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.8-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.8/skooda-mobile-v0.29.8-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.8-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.8/skooda-mobile-v0.29.8-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.8/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 📡 **Mesh-Fix, A*-Korrektur & Rust-Tests (Neu in v0.29.8):**
+  - **P2P-Mesh funktioniert wieder in der Release-APK:** Die Cleartext-Policy blockierte die lokale `ws://`-Verbindung des Mesh — im Debug-Build fiel das nicht auf. Die Freigabe liegt jetzt explizit in einer `network_security_config.xml`.
+  - **Relay-Adresse selbst einstellbar:** Eigene Angabe in den Chat-Einstellungen hat Vorrang vor `discovery.json`, damit ein manipulierter Eintrag nicht alle Clients umleiten kann. Nur `ws://` und `wss://` werden akzeptiert.
+  - **A*-Router korrigiert:** Mehrstufige Offline-Routen schlugen fehl, weil der Heap `f` speicherte, aber mit `g` verglich. Jetzt laufen die vorher fehlschlagenden Tests durch.
+  - **Rust-Tests von 0 auf 36:** Routing, MBTiles-Cache und Netzwerklogik (Statusklassifizierung, Banner-Bereinigung, Header-Audit, HTTP-Client) — hermetisch über einen Loopback-Server.
+  - **39 weitere JS-Tests** (194 gesamt): 25 Regressionstests für eingegebene Nullen in den Rechnern, 14 für die Relay-Adressvalidierung.
+  - **SHA-256-Prüfer vergleicht jetzt wirklich** gegen einen eingegebenen Erwartungswert statt nur einen Hash anzuzeigen.
+  - **Pre-Push-Gate:** verhindert, dass Quellcode in ein Remote wandert.
+
 - 🔐 **Sicherheits-Härtung & Offline-Karte (Neu in v0.29.7):**
   - **XSS-Schutz für alle Fremddaten:** Chat-Nachrichten, Port-Banner, TLS-Zertifikate, WLAN-Namen, OSINT-Treffer, Karten- und Routing-Texte sowie QR-Inhalte laufen über eine zentrale Escaping-Schicht (`src/core/sanitize.js`). Eingeschleustes Markup kann damit nicht mehr im Webview mit Tauri-Rechten laufen.
   - **CSP ohne `unsafe-inline`:** Inline-Event-Handler sind entfernt, das CDN-Laden von `unpkg.com` ebenfalls.
