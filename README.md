@@ -1,19 +1,24 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.8** (VersionCode: 146)
+Aktuelle Version: **v0.29.9** (VersionCode: 147)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.8):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.8-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.8/skooda-mobile-v0.29.8-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.8-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.8/skooda-mobile-v0.29.8-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.8/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.29.9):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.9-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.9/skooda-mobile-v0.29.9-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.9-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.9/skooda-mobile-v0.29.9-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.9/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🔄 **Update-Fallback repariert & 41 Nullwert-Korrekturen (Neu in v0.29.9):**
+  - **Update-Prüfung:** Die zweite Stufe liest die Version aus der README und traf die echte Zeile nie, weil Fettschrift-Markierungen dazwischenstehen. Antwortete die GitHub-API nicht, meldete die App die installierte Version als neueste. Die Auswertung ist jetzt getestet, inklusive Vertragstest gegen die `package.json`.
+  - **41 Stellen korrigiert, an denen eine eingegebene 0 ein gültiger Wert ist:** Temperatur, Spannung, Strom, Länge, Widerstand, Frequenz, Prozent, cos φ und Plot-Achsen — sowie 0 m Kabel, 0 dBm Sendeleistung, 0 dBi Gewinn, 0 km Distanz, 0 dBm Empfindlichkeit und 0 % Anfangstilgung (endfälliges Darlehen). Am deutlichsten war 0 dBm Empfindlichkeit: daraus wurde vorher -125 dBm, ein Fehler von 125 dB.
+  - **244 Tests** (vorher 194).
+
 - 📡 **Mesh-Fix, A*-Korrektur & Rust-Tests (Neu in v0.29.8):**
   - **P2P-Mesh funktioniert wieder in der Release-APK:** Die Cleartext-Policy blockierte die lokale `ws://`-Verbindung des Mesh — im Debug-Build fiel das nicht auf. Die Freigabe liegt jetzt explizit in einer `network_security_config.xml`.
   - **Relay-Adresse selbst einstellbar:** Eigene Angabe in den Chat-Einstellungen hat Vorrang vor `discovery.json`, damit ein manipulierter Eintrag nicht alle Clients umleiten kann. Nur `ws://` und `wss://` werden akzeptiert.
