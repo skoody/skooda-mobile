@@ -14,27 +14,27 @@ Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis vo
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🔄 **Update-Fallback repariert & 41 Nullwert-Korrekturen (Neu in v0.29.9):**
-  - **Update-Prüfung:** Die zweite Stufe liest die Version aus der README und traf die echte Zeile nie, weil Fettschrift-Markierungen dazwischenstehen. Antwortete die GitHub-API nicht, meldete die App die installierte Version als neueste. Die Auswertung ist jetzt getestet, inklusive Vertragstest gegen die `package.json`.
-  - **41 Stellen korrigiert, an denen eine eingegebene 0 ein gültiger Wert ist:** Temperatur, Spannung, Strom, Länge, Widerstand, Frequenz, Prozent, cos φ und Plot-Achsen — sowie 0 m Kabel, 0 dBm Sendeleistung, 0 dBi Gewinn, 0 km Distanz, 0 dBm Empfindlichkeit und 0 % Anfangstilgung (endfälliges Darlehen). Am deutlichsten war 0 dBm Empfindlichkeit: daraus wurde vorher -125 dBm, ein Fehler von 125 dB.
+- 🔄 **Update-Prüfung & Nullwert-Korrekturen (Neu in v0.29.9):**
+  - **Update-Prüfung:** Die zweite Stufe liest die Version aus der `README.md`. Der bisherige Ausdruck traf die Zeile wegen der Fettschrift-Markierungen nicht, wodurch ohne Antwort der GitHub-API die installierte Version als neueste galt. Auswertung jetzt in `src/core/release-parse.js`, mit Abgleich gegen die `package.json`.
+  - **41 Rechner-Stellen korrigiert**, an denen eine eingegebene 0 ein gültiger Wert ist: Temperatur, Spannung, Strom, Länge, Widerstand, Frequenz, Prozent, cos φ und Plot-Achsen sowie 0 m Kabel, 0 dBm Sendeleistung, 0 dBi Gewinn, 0 km Distanz, 0 dBm Empfindlichkeit und 0 % Anfangstilgung. Gemeinsamer Helfer `numberOr(value, fallback)` in allen vier Rechnermodulen.
   - **244 Tests** (vorher 194).
 
 - 📡 **Mesh-Fix, A*-Korrektur & Rust-Tests (Neu in v0.29.8):**
-  - **P2P-Mesh funktioniert wieder in der Release-APK:** Die Cleartext-Policy blockierte die lokale `ws://`-Verbindung des Mesh — im Debug-Build fiel das nicht auf. Die Freigabe liegt jetzt explizit in einer `network_security_config.xml`.
-  - **Relay-Adresse selbst einstellbar:** Eigene Angabe in den Chat-Einstellungen hat Vorrang vor `discovery.json`, damit ein manipulierter Eintrag nicht alle Clients umleiten kann. Nur `ws://` und `wss://` werden akzeptiert.
-  - **A*-Router korrigiert:** Mehrstufige Offline-Routen schlugen fehl, weil der Heap `f` speicherte, aber mit `g` verglich. Jetzt laufen die vorher fehlschlagenden Tests durch.
-  - **Rust-Tests von 0 auf 36:** Routing, MBTiles-Cache und Netzwerklogik (Statusklassifizierung, Banner-Bereinigung, Header-Audit, HTTP-Client) — hermetisch über einen Loopback-Server.
-  - **39 weitere JS-Tests** (194 gesamt): 25 Regressionstests für eingegebene Nullen in den Rechnern, 14 für die Relay-Adressvalidierung.
-  - **SHA-256-Prüfer vergleicht jetzt wirklich** gegen einen eingegebenen Erwartungswert statt nur einen Hash anzuzeigen.
-  - **Pre-Push-Gate:** verhindert, dass Quellcode in ein Remote wandert.
+  - **P2P-Mesh in der Release-APK:** Die Cleartext-Policy blockierte die lokale `ws://`-Verbindung des Mesh. Freigabe jetzt in `network_security_config.xml`, Manifest-Attribut und Gradle-Platzhalter entfallen.
+  - **Relay-Adresse einstellbar:** Eigene Angabe in den Chat-Einstellungen hat Vorrang vor `discovery.json`. Nur `ws://` und `wss://` mit Host werden akzeptiert.
+  - **A*-Router:** Der Heap speicherte `f = g + h`, verglich beim Pop aber mit `g`; mehrstufige Routen schlugen fehl und der Grid-Fallback war unbrauchbar. Der Zustand führt `g` jetzt mit.
+  - **Rust-Tests von 0 auf 36:** A*-Routing, MBTiles-Cache und Netzwerklogik über einen Loopback-Server.
+  - **39 weitere JS-Tests** (194 gesamt).
+  - **SHA-256-Prüfer** vergleicht gegen einen eingegebenen Erwartungswert und meldet Übereinstimmung oder Abweichung.
+  - **Pre-Push-Gate** bricht ab, sobald mehr als die `README.md` übertragen würde.
 
 - 🔐 **Sicherheits-Härtung & Offline-Karte (Neu in v0.29.7):**
-  - **XSS-Schutz für alle Fremddaten:** Chat-Nachrichten, Port-Banner, TLS-Zertifikate, WLAN-Namen, OSINT-Treffer, Karten- und Routing-Texte sowie QR-Inhalte laufen über eine zentrale Escaping-Schicht (`src/core/sanitize.js`). Eingeschleustes Markup kann damit nicht mehr im Webview mit Tauri-Rechten laufen.
-  - **CSP ohne `unsafe-inline`:** Inline-Event-Handler sind entfernt, das CDN-Laden von `unpkg.com` ebenfalls.
-  - **Leaflet lokal:** Die Karte lädt Leaflet aus `src/vendor/leaflet/` — die Offline-Karte startet jetzt ohne Internet.
-  - **Modultests:** `npm test` prüft die sechs Rechenmodule über den eingebauten `node:test`-Runner.
-  - **Stärkeres Build-Gate:** `verify_frontend_integrity.js` erzwingt einheitliche Version und `versionCode`, verbietet versionierte Keystores und Inline-Handler. Dazu ein versionierter Pre-Commit-Hook und ein Escape-Audit (`npm run audit`).
-  - **Fünf Rechenfehler behoben:** `-2^2` ergibt jetzt -4 nach Schulkonvention, der SWR-Rechner akzeptiert 0 W Rücklaufleistung (SWR 1,00:1 bei perfekter Anpassung), Strahlensatz und Baumdiagramm erkennen eingegebene Nullen, und der Matrizen-Rechenweg zeigt `c₂₂` korrekt. Alle Fälle sind als Regressionstests abgesichert.
+  - **Escaping-Schicht:** `src/core/sanitize.js` sichert Chat-Nachrichten, Port-Banner, TLS-Zertifikate, WLAN-Namen, OSINT-Treffer, Karten- und Routing-Texte sowie QR-Inhalte ab.
+  - **CSP ohne `unsafe-inline`:** Inline-Event-Handler entfernt, `unpkg.com` aus `script-src`, `style-src` und `img-src` gestrichen.
+  - **Leaflet lokal:** `src/vendor/leaflet/` samt Markern, Karte startet ohne Internet.
+  - **Modultests:** `npm test` prüft die sechs Rechenmodule.
+  - **Build-Gate:** `verify_frontend_integrity.js` prüft Version und `versionCode` über sechs Konfigdateien und verbietet versionierte Keystores sowie Inline-Handler. Dazu Pre-Commit-Hook, Escape-Audit und Browser-Smoke-Test.
+  - **Fünf Rechenfehler behoben:** `-2^2`, SWR bei 0 W Rücklaufleistung, Strahlensatz, Baumdiagramm und `c₂₂`-Anzeige.
 - ⚡ **Wechselstrom- & Drehstrom-Studio (AC / 3-Phasen Engine) (Neu in v0.29.6):**
   - **1~ Wechselstrom (230 V) & 3~ Drehstrom (400 V):** Nahtlose Berechnung von Wirkleistung $P$, Blindleistung $Q$, Scheinleistung $S$, Phasenwinkel $\varphi$, Leistungsfaktor $\cos \varphi$ und Scheinwiderstand/Impedanz $Z$.
   - **Interaktives SVG-Leistungsdreieck:** Vektorbasiertes Leistungsdreieck mit Vektorpfeilen für Wirkleistung (grün), Blindleistung (rot), Scheinleistung (cyan) und Phasenwinkel (gelb).
