@@ -1,20 +1,21 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.30.0** (VersionCode: 148)
+Aktuelle Version: **v0.30.1** (VersionCode: 149)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.30.0):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.30.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.0/skooda-mobile-v0.30.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.30.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.0/skooda-mobile-v0.30.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.30.1):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.30.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.1/skooda-mobile-v0.30.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.30.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.1/skooda-mobile-v0.30.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.1/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
-- 🎵 **Media-Player für MP3s & Audiodateien (Neu in v0.30.0):**
+- 🎵 **Media-Player für MP3s & Audiodateien (Neu in v0.30.0, eigener Tab seit v0.30.1):**
+  - **Eigener Tab Music** in der Bottom-Navigation, Reihenfolge Monitor, Tools, Music, Chat, Update.
   - **Erkennt heruntergeladene Musik automatisch:** Titelliste aus dem Android-Medienspeicher plus direkter Scan von Download, Downloads, Music, Documents, Podcasts, Telegram und WhatsApp-Sprachnotizen. Gleiche Pfade werden zusammengefasst, danach alphabetisch sortiert.
   - **Läuft im Hintergrund weiter:** Vordergrunddienst mit MediaPlayer und MediaSession, Benachrichtigung mit Zurück, Pause/Abspielen, Weiter und Stopp, Titel und Interpret in der Systemanzeige.
   - **Playlist, Suchlauf, Lautstärke, Zufall und Wiederholung** (aus / alle / einzelner Titel). Einstellungen bleiben gespeichert.
