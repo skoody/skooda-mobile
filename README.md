@@ -1,19 +1,32 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.30.1** (VersionCode: 149)
+Aktuelle Version: **v0.31.0** (VersionCode: 150)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.30.1):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.30.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.1/skooda-mobile-v0.30.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.30.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.1/skooda-mobile-v0.30.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.1/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.31.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.31.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.0/skooda-mobile-v0.31.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.31.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.0/skooda-mobile-v0.31.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🧭 **MGRS-Koordinaten korrigiert (Neu in v0.31.0):**
+  - Die 100-km-Reihenbuchstaben waren falsch; betroffene Punkte lagen 500 bis 1500 km daneben.
+  - Die Umrechnung liegt in `src/core/geo.js` und ist mit 35 Tests gegen die unabhängige Bibliothek `mgrs` (GeoTrans) geprüft.
+- 🔍 **Gesamtaudit: 78 Fehler behoben (Neu in v0.31.0):**
+  - **Rust-Core:** Abstürze durch ungeprüfte Nonce- und MAC-Längen, invertierte Zertifikatsablaufprüfung, unbegrenzte KDF-Iterationen, fehlender Contributory-Check, Endlosschleife bei negativen Kantengewichten, Ratchet-Desynchronisation, blockierendes I/O.
+  - **Frontend:** überlappende Telemetrie, verschluckte Nullwerte, veraltete Analyseergebnisse in der Forensik, Steuerzeichen-Lücke in der URL-Prüfung, Toast-Spam.
+  - **Module:** falsche MD5-Rundung (jede Prüfsumme falsch), ungeschützte POI- und JWT-Felder, falsche LeakCheck-Adresse mit falscher Entwarnung, flache R(T)-Kennlinie, falsche Strahlensatzformel.
+  - **Mikrofonaufnahme funktioniert jetzt:** `MODIFY_AUDIO_SETTINGS` fehlte im Manifest, jede Aufnahme wurde verweigert.
+  - **Startabsturz auf 32-Bit-Geräten behoben:** dem armeabi-v7a-APK fehlte der Rust-Core.
+  - **Rund 45 MB kleiner (86,6 MB → 42,1 MB):** 53 MB ungenutzte TFLite-Nativlibs und ein 7,25-MB-Duplikat des Modells entfernt, dazu ungenutzte Berechtigungen und Abhängigkeiten.
+  - **Keine erfundenen Messwerte mehr:** Netzwerk-Scan, Wake-on-LAN, Header-Audit und Integritätsprüfung meldeten ohne echte Quelle erfundene Ergebnisse.
+  - 385 JavaScript- und 75 Rust-Tests.
+
 - 🎵 **Media-Player für MP3s & Audiodateien (Neu in v0.30.0, eigener Tab seit v0.30.1):**
   - **Eigener Tab Music** in der Bottom-Navigation, Reihenfolge Monitor, Tools, Music, Chat, Update.
   - **Erkennt heruntergeladene Musik automatisch:** Titelliste aus dem Android-Medienspeicher plus direkter Scan von Download, Downloads, Music, Documents, Podcasts, Telegram und WhatsApp-Sprachnotizen. Gleiche Pfade werden zusammengefasst, danach alphabetisch sortiert.
@@ -21,6 +34,8 @@ Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis vo
   - **Playlist, Suchlauf, Lautstärke, Zufall und Wiederholung** (aus / alle / einzelner Titel). Einstellungen bleiben gespeichert.
   - **Berechtigungen:** READ_MEDIA_AUDIO ab Android 13, davor READ_EXTERNAL_STORAGE, dazu POST_NOTIFICATIONS. Abfrage beim ersten Suchen.
   - **Neue native Brücke:** `window.Android` wird erstmals registriert (`SkoodaBridge.kt`, `PlaybackService.kt`).
+  - **Ausbau in v0.31.0:** Suche, Sortierung, Favoriten, Warteschlange mit „Als Nächstes" und „Entfernen", Sleep-Timer, Wiedergabegeschwindigkeit, Album-Cover, gemerkte Position.
+  - **Audio-Fokus und Kopfhörer-Erkennung:** Pause bei Anruf oder Trennen der Kopfhörer, Fortsetzen danach. Die Benachrichtigung zeigt den Fortschritt.
 
 - 🔄 **Update-Prüfung & Nullwert-Korrekturen (Neu in v0.29.9):**
   - **Update-Prüfung:** Die zweite Stufe liest die Version aus der `README.md`. Der bisherige Ausdruck traf die Zeile wegen der Fettschrift-Markierungen nicht, wodurch ohne Antwort der GitHub-API die installierte Version als neueste galt. Auswertung jetzt in `src/core/release-parse.js`, mit Abgleich gegen die `package.json`.
