@@ -1,19 +1,24 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.31.0** (VersionCode: 150)
+Aktuelle Version: **v0.31.1** (VersionCode: 151)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.31.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.31.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.0/skooda-mobile-v0.31.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.31.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.0/skooda-mobile-v0.31.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.31.1):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.31.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.1/skooda-mobile-v0.31.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.31.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.1/skooda-mobile-v0.31.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.1/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🔋 **Dauerlast der Oberfläche behoben (Neu in v0.31.1):**
+  - Im Leerlauf lag die App auf einem 120-Hz-Gerät bei 137,7 % eines Kerns, verursacht durch eine endlose CSS-Animation im Kopf jeder Seite. Jetzt 43,0 %.
+  - Zwei weitere Endlosschleifen in der Telemetrie behoben (Bildwiederholraten-Messung, Glättung der Stromanzeige); die Last wuchs vorher mit der Laufzeit.
+  - Die Bildwiederholrate wird nativ gelesen statt gemessen.
+
 - 🧭 **MGRS-Koordinaten korrigiert (Neu in v0.31.0):**
   - Die 100-km-Reihenbuchstaben waren falsch; betroffene Punkte lagen 500 bis 1500 km daneben.
   - Die Umrechnung liegt in `src/core/geo.js` und ist mit 35 Tests gegen die unabhängige Bibliothek `mgrs` (GeoTrans) geprüft.
