@@ -1,19 +1,26 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.29.9** (VersionCode: 147)
+Aktuelle Version: **v0.30.0** (VersionCode: 148)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.29.9):
-- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.29.9-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.9/skooda-mobile-v0.29.9-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.29.9-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.9/skooda-mobile-v0.29.9-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.29.9/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.30.0):
+- **Universal Multi-Arch APK (~87 MB):** [skooda-mobile-v0.30.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.0/skooda-mobile-v0.30.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~47 MB - 50% kleiner):** [skooda-mobile-v0.30.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.0/skooda-mobile-v0.30.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.30.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🎵 **Media-Player für MP3s & Audiodateien (Neu in v0.30.0):**
+  - **Erkennt heruntergeladene Musik automatisch:** Titelliste aus dem Android-Medienspeicher plus direkter Scan von Download, Downloads, Music, Documents, Podcasts, Telegram und WhatsApp-Sprachnotizen. Gleiche Pfade werden zusammengefasst, danach alphabetisch sortiert.
+  - **Läuft im Hintergrund weiter:** Vordergrunddienst mit MediaPlayer und MediaSession, Benachrichtigung mit Zurück, Pause/Abspielen, Weiter und Stopp, Titel und Interpret in der Systemanzeige.
+  - **Playlist, Suchlauf, Lautstärke, Zufall und Wiederholung** (aus / alle / einzelner Titel). Einstellungen bleiben gespeichert.
+  - **Berechtigungen:** READ_MEDIA_AUDIO ab Android 13, davor READ_EXTERNAL_STORAGE, dazu POST_NOTIFICATIONS. Abfrage beim ersten Suchen.
+  - **Neue native Brücke:** `window.Android` wird erstmals registriert (`SkoodaBridge.kt`, `PlaybackService.kt`).
+
 - 🔄 **Update-Prüfung & Nullwert-Korrekturen (Neu in v0.29.9):**
   - **Update-Prüfung:** Die zweite Stufe liest die Version aus der `README.md`. Der bisherige Ausdruck traf die Zeile wegen der Fettschrift-Markierungen nicht, wodurch ohne Antwort der GitHub-API die installierte Version als neueste galt. Auswertung jetzt in `src/core/release-parse.js`, mit Abgleich gegen die `package.json`.
   - **41 Rechner-Stellen korrigiert**, an denen eine eingegebene 0 ein gültiger Wert ist: Temperatur, Spannung, Strom, Länge, Widerstand, Frequenz, Prozent, cos φ und Plot-Achsen sowie 0 m Kabel, 0 dBm Sendeleistung, 0 dBi Gewinn, 0 km Distanz, 0 dBm Empfindlichkeit und 0 % Anfangstilgung. Gemeinsamer Helfer `numberOr(value, fallback)` in allen vier Rechnermodulen.
