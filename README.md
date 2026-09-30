@@ -1,19 +1,27 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.31.1** (VersionCode: 151)
+Aktuelle Version: **v0.32.0** (VersionCode: 152)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.31.1):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.31.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.1/skooda-mobile-v0.31.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.31.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.1/skooda-mobile-v0.31.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.31.1/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.32.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.32.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.32.0/skooda-mobile-v0.32.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.32.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.32.0/skooda-mobile-v0.32.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.32.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🎨 **Media-Player: neue Oberfläche (Neu in v0.32.0):**
+  - Einfärbbare Symbole statt Emoji-Kreise, großer runder Abspielknopf mit Neon-Verlauf.
+  - Fortschritts- und Lautstärkeregler einheitlich, mit gefülltem Anteil.
+  - Titelliste mit Nummer, Titel, Interpret · Album, Dauer und je einem Stern- und Einreih-Symbol statt zwei Textknöpfen.
+  - Suchfeld mit Lupe, Sortierung und Favoritenfilter als Pille, einzeilige Kopfzeile.
+  - Der globale Suchknopf wird im Music-Tab ausgeblendet, er lag über der Liste.
+  - Auf dem Gerät verifiziert: Wiedergabe im Hintergrund, MediaSession mit Metadaten, Benachrichtigung mit vier Aktionen, Audio-Fokus.
+
 - 🔋 **Dauerlast der Oberfläche behoben (Neu in v0.31.1):**
   - Im Leerlauf lag die App auf einem 120-Hz-Gerät bei 137,7 % eines Kerns, verursacht durch eine endlose CSS-Animation im Kopf jeder Seite. Jetzt 43,0 %.
   - Zwei weitere Endlosschleifen in der Telemetrie behoben (Bildwiederholraten-Messung, Glättung der Stromanzeige); die Last wuchs vorher mit der Laufzeit.
