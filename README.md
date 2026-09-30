@@ -1,19 +1,21 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.34.0** (VersionCode: 155)
+Aktuelle Version: **v0.35.0** (VersionCode: 156)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.34.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.34.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.34.0/skooda-mobile-v0.34.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.34.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.34.0/skooda-mobile-v0.34.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.34.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.35.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.35.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.35.0/skooda-mobile-v0.35.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.35.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.35.0/skooda-mobile-v0.35.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.35.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🎨 **Tools-Tab auf SVG-Symbole umgestellt (Neu in v0.35.0):** 14 Kategorie-Kacheln, Schnellzugriff, Suchen-Knopf und Panels nutzen einfarbbare Symbole; der Schnellzugriff ist ein zweiseitiges Raster ohne Abschneiden.
+
 - 🎨 **Gemeinsame Formensprache (Neu in v0.34.0):** Karten, Abschnittsüberschriften und Kopfzeilen sind app-weit angeglichen.
 
 - ✨ **Media-Player Premium & ehrliche Messwerte (Neu in v0.33.0):**
