@@ -1,19 +1,28 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.32.0** (VersionCode: 152)
+Aktuelle Version: **v0.33.0** (VersionCode: 153)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.32.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.32.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.32.0/skooda-mobile-v0.32.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.32.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.32.0/skooda-mobile-v0.32.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.32.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.33.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.33.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.33.0/skooda-mobile-v0.33.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.33.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.33.0/skooda-mobile-v0.33.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.33.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- ✨ **Media-Player Premium & ehrliche Messwerte (Neu in v0.33.0):**
+  - Fortschrittsbalken läuft weich mit und zeigt die **Restzeit** ("-1:53") statt der Gesamtdauer.
+  - Navigationsleiste mit einfärbbaren SVG-Symbolen statt Emoji.
+  - Benachrichtigung mit Plattform-MediaStyle und schmalem Hinweis beim Titelwechsel.
+  - WLAN-Pegel wird echt gelesen oder als "unbekannt" angezeigt — keine erfundenen Werte mehr.
+  - PNG-Metadaten werden entfernt, Netzwerk-Scans begrenzt, Chat prüft Zertifikate.
+  - R8 aktiv: Universal-APK 42,15 → 38,87 MB.
+  - Testautomatik für das Gerät (`node scripts/device_test.js`).
+
 - 🎨 **Media-Player: neue Oberfläche (Neu in v0.32.0):**
   - Einfärbbare Symbole statt Emoji-Kreise, großer runder Abspielknopf mit Neon-Verlauf.
   - Fortschritts- und Lautstärkeregler einheitlich, mit gefülltem Anteil.
