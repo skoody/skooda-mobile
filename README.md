@@ -1,15 +1,15 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.44.0** (VersionCode: 165)
+Aktuelle Version: **v0.45.0** (VersionCode: 166)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.44.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.44.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.44.0/skooda-mobile-v0.44.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.44.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.44.0/skooda-mobile-v0.44.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.44.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.45.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.45.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.45.0/skooda-mobile-v0.45.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.45.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.45.0/skooda-mobile-v0.45.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.45.0/skooda-mobile.apk)
 
 ---
 
