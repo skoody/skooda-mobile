@@ -1,19 +1,21 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.36.0** (VersionCode: 157)
+Aktuelle Version: **v0.37.0** (VersionCode: 158)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.36.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.36.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.36.0/skooda-mobile-v0.36.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.36.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.36.0/skooda-mobile-v0.36.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.36.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.37.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.37.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.37.0/skooda-mobile-v0.37.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.37.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.37.0/skooda-mobile-v0.37.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.37.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 💬 **Chat-Tab im Player-Stil, Favoriten-Stern, Wischgeste, Equalizer und Wiederverbindung (Neu in v0.37.0).**
+
 - 📊 **Monitor mit echten Werten (Neu in v0.36.0):** Last des eigenen Prozesses, CPU-Cluster-Takte, Thermalzonen, echte Akku-Leistung über BatteryManager — statt dauerhaft "—".
 - 🌐 **Netzwerk ohne Root (Neu in v0.36.0):** TCP-Ping, Portscan, WLAN-Scan; Traceroute verweigert ehrlich statt Hops zu erfinden.
 - 🎵 **Player:** Playlist-Logik mit Tests. 🧪 **Visuelles Regressionsnetz** für die fünf Tabs.
