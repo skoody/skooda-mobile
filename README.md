@@ -1,19 +1,21 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.40.0** (VersionCode: 161)
+Aktuelle Version: **v0.41.0** (VersionCode: 162)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.40.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.40.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.40.0/skooda-mobile-v0.40.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.40.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.40.0/skooda-mobile-v0.40.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.40.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.41.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.41.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.41.0/skooda-mobile-v0.41.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.41.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.41.0/skooda-mobile-v0.41.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.41.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🔐 **Zertifikatsprüfung nativ (Neu in v0.41.0):** TLS-Zertifikate werden echt ausgelesen statt erfunden; Bluetooth-Scan meldet ehrlich, wenn die Brücke fehlt.
+
 - ♿ **Barrierefreiheit (Neu in v0.40.0):** Benannte Bedienelemente für Screenreader, AA-konforme Tippflächen, Prüfskript `scripts/a11y_check.js`.
 
 - 🌍 **Globaler Chat (Neu in v0.39.0):** Relay über Cloudflare-Tunnel öffentlich erreichbar, Adresse trägt sich selbst in discovery.json ein. Zwei blockierende Fehler behoben (discovery-Abruf über gedrosselte API, fehlende Wiederverbindung im Rust-Client).
