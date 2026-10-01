@@ -1,19 +1,23 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.35.0** (VersionCode: 156)
+Aktuelle Version: **v0.36.0** (VersionCode: 157)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.35.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.35.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.35.0/skooda-mobile-v0.35.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.35.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.35.0/skooda-mobile-v0.35.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.35.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.36.0):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.36.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.36.0/skooda-mobile-v0.36.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.36.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.36.0/skooda-mobile-v0.36.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.36.0/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 📊 **Monitor mit echten Werten (Neu in v0.36.0):** Last des eigenen Prozesses, CPU-Cluster-Takte, Thermalzonen, echte Akku-Leistung über BatteryManager — statt dauerhaft "—".
+- 🌐 **Netzwerk ohne Root (Neu in v0.36.0):** TCP-Ping, Portscan, WLAN-Scan; Traceroute verweigert ehrlich statt Hops zu erfinden.
+- 🎵 **Player:** Playlist-Logik mit Tests. 🧪 **Visuelles Regressionsnetz** für die fünf Tabs.
+
 - 🎨 **Tools-Tab auf SVG-Symbole umgestellt (Neu in v0.35.0):** 14 Kategorie-Kacheln, Schnellzugriff, Suchen-Knopf und Panels nutzen einfarbbare Symbole; der Schnellzugriff ist ein zweiseitiges Raster ohne Abschneiden.
 
 - 🎨 **Gemeinsame Formensprache (Neu in v0.34.0):** Karten, Abschnittsüberschriften und Kopfzeilen sind app-weit angeglichen.
