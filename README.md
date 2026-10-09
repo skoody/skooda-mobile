@@ -1,19 +1,21 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.46.0** (VersionCode: 167)
+Aktuelle Version: **v0.46.1** (VersionCode: 168)
 
 Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
 
 ---
 
-### 📥 Direkte Download-Links (v0.46.0):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.46.0-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.0/skooda-mobile-v0.46.0-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.46.0-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.0/skooda-mobile-v0.46.0-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.0/skooda-mobile.apk)
+### 📥 Direkte Download-Links (v0.46.1):
+- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.46.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.1/skooda-mobile-v0.46.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
+- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.46.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.1/skooda-mobile-v0.46.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
+- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.1/skooda-mobile.apk)
 
 ---
 
 ### 🚀 Kern-Module & Features:
+- 🔧 **Monitor-Anzeigen korrigiert (Neu in v0.46.1):** Die Leistungsaufnahme war tausendfach zu hoch (35 W statt 35 mW), die Stromanzeige hing auf 0 mA fest, die Cluster-Takte waren abgeschnitten. Die Upload-Linie im Netzwerk-Diagramm fehlte.
+
 - 🎥 **Bildschirmaufnahme läuft auf echter Hardware (Neu in v0.46.0):** Aufnahme startet, Hinweis steht in der Benachrichtigungsleiste, MP4 landet in `Movies/Skooda/`, Teilen über Androids Dialog. Gemessen am Redmi Note 14 Pro+ 5G: 32,7 s Aufnahme, 26,4 MB, 1220 x 2712, 6,46 Mbit/s. Kein Ton.
 
 - 📡 **Bluetooth-Scan nativ (Neu in v0.42.0):** echte Funde mit Name, Adresse und Signalstärke im Sparmodus; Berechtigungen werden angefragt.
