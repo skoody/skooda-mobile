@@ -1,275 +1,114 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.46.1** (VersionCode: 168)
+Aktuelle Version: **v0.48.0** (VersionCode: 170)
 
-Skooda Mobile ist eine moderne, hochperformante Android-Applikation auf Basis von **Tauri v2**, **Modular Rust Core**, **Native Kotlin** und einem modularen, reaktiven **Vanilla JS Frontend** mit On-Demand Lazy Module Loading.
+Android-App für Systemwerte, Messtechnik und Netzwerkarbeit: Tauri 2 mit
+Rust-Kern, nativer Kotlin-Brücke und einem modularen Frontend ohne Framework.
+Kein Root nötig.
 
----
+## Download
 
-### 📥 Direkte Download-Links (v0.46.1):
-- **Universal Multi-Arch APK (~42 MB, beide ABIs):** [skooda-mobile-v0.46.1-universal.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.1/skooda-mobile-v0.46.1-universal.apk) (Läuft auf ausnahmslos jedem Android-Gerät)
-- **ARM64-v8a APK (~25 MB):** [skooda-mobile-v0.46.1-arm64-v8a.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.1/skooda-mobile-v0.46.1-arm64-v8a.apk) (Empfohlen für alle modernen 64-Bit-Smartphones)
-- **Standard Release-Link:** [skooda-mobile.apk](https://github.com/skoody/skooda-mobile/releases/download/v0.46.1/skooda-mobile.apk)
+- Universal (beide ABIs): `skooda-mobile.apk`
+- ARM64-v8a: `skooda-mobile-v0.48.0-arm64-v8a.apk`
+- armeabi-v7a: `skooda-mobile-v0.48.0-armeabi-v7a.apk`
 
----
+Die Dateien hängen an der Release-Seite des Repositorys. Der Quellcode bleibt
+lokal; veröffentlicht werden nur die fertigen Pakete.
 
-### 🚀 Kern-Module & Features:
-- 🔧 **Monitor-Anzeigen korrigiert (Neu in v0.46.1):** Die Leistungsaufnahme war tausendfach zu hoch (35 W statt 35 mW), die Stromanzeige hing auf 0 mA fest, die Cluster-Takte waren abgeschnitten. Die Upload-Linie im Netzwerk-Diagramm fehlte.
+## Installation
 
-- 🎥 **Bildschirmaufnahme läuft auf echter Hardware (Neu in v0.46.0):** Aufnahme startet, Hinweis steht in der Benachrichtigungsleiste, MP4 landet in `Movies/Skooda/`, Teilen über Androids Dialog. Gemessen am Redmi Note 14 Pro+ 5G: 32,7 s Aufnahme, 26,4 MB, 1220 x 2712, 6,46 Mbit/s. Kein Ton.
+1. Datei herunterladen.
+2. Installation aus unbekannten Quellen für den Browser erlauben.
+3. Öffnen und installieren. Ein Update ersetzt die vorherige Fassung, die Daten
+   bleiben erhalten.
 
-- 📡 **Bluetooth-Scan nativ (Neu in v0.42.0):** echte Funde mit Name, Adresse und Signalstärke im Sparmodus; Berechtigungen werden angefragt.
+## Bereiche
 
-- 🔐 **Zertifikatsprüfung nativ (Neu in v0.41.0):** TLS-Zertifikate werden echt ausgelesen statt erfunden; Bluetooth-Scan meldet ehrlich, wenn die Brücke fehlt.
+### Kern-Module & Features:
 
-- ♿ **Barrierefreiheit (Neu in v0.40.0):** Benannte Bedienelemente für Screenreader, AA-konforme Tippflächen, Prüfskript `scripts/a11y_check.js`.
+- **Monitor:** CPU-Last je Kern und Cluster, Arbeitsspeicher mit Cache und
+  ZRAM, Akku mit Spannung, Strom, Leistung und Temperatur, Ladetest (lädt,
+  hält, entlädt, zu schwaches Ladegerät), Netzwerkdurchsatz, Speicherbereiche,
+  Temperaturzonen, Gerätedaten.
+- **Werkzeuge, 14 Kategorien:**
+  - Rechner: Terme mit Verlauf, Programmierung in vier Zahlensystemen mit
+    Bit-Schaltern, Einheiten, Funktionsplotter.
+  - Schulmathematik: von schriftlichem Rechnen bis Analysis, jeweils mit
+    Rechenweg.
+  - Elektrik: Ohm, Leistung, Spannungsteiler, Netzwerke, Wechselstrom,
+    Leiterwiderstand, Bauteile, Kühlung, Leiterbahnen.
+  - Netzwerk: Subnetz-Scanner, Diagnose, WLAN-Spektrum, TLS-Audit,
+    BLE-Scanner, Portscan, Wake-on-LAN, DoH-Benchmark, HTTP-Client,
+    DNS-Propagation, Security-Header, WHOIS und RDAP, IPv6.
+  - OSINT: Benutzername, E-Mail, Telefon, Name, Suchmaschinen-Abfragen,
+    IP-Standort, Subdomains.
+  - Forensik: Hex-Ansicht, Dateisignaturen, Entropie, Prüfsummen.
+  - Entwickler: Kodierungen, Hashes, JWT, JSON/YAML/XML, reguläre Ausdrücke,
+    Zeitstempel, Diff, Cron, cURL, Markdown, Passwortstärke.
+  - Audio-Labor: Schallpegel, Spektrum mit Wasserfall, Signalgenerator,
+    DTMF und Morse.
+  - Funk: Antennenlängen, Kabel und Link-Budget, SWR, Pegel und S-Meter.
+  - Sensorik: Magnetfeld, Luftdruck und Höhe, Licht, Bewegung, Messprotokoll.
+  - Orientierung: MGRS und UTM, Sonnenstand, Notfall-Taktgeber.
+  - Karte: Offline-Karte, Suche, Routen, GPX, POI, Kompass.
+  - QR-Code: lesen und erzeugen.
+  - Erkennung: Objekte über die Kamera.
+- **Musik:** lokale Dateien, Warteschlange, Playlists, Favoriten,
+  Equalizer, Sleep-Timer.
+- **Chat:** Ende-zu-Ende-verschlüsselt, Safety Numbers, verschlüsseltes
+  Backup, Bilder ohne Metadaten.
+- **Updates:** Prüfung gegen GitHub, passende APK je Prozessor, Änderungen der
+  Fassung.
 
-- 🌍 **Globaler Chat (Neu in v0.39.0):** Relay über Cloudflare-Tunnel öffentlich erreichbar, Adresse trägt sich selbst in discovery.json ein. Zwei blockierende Fehler behoben (discovery-Abruf über gedrosselte API, fehlende Wiederverbindung im Rust-Client).
+Alle Werte lassen sich in den Einstellungen anpassen: Messintervalle,
+Schwellen, Zeitfenster, Design, Schriftgröße, Bewegung, Anzeigedauer. Die
+Einstellungen werden ohne Neustart übernommen.
 
-- 📊 **Monitor unter 35 % (Neu in v0.38.0):** Standard-Abfragerate auf 3 s, gemessen 27,7 und 18,9 % eines Kerns.
+## Bauen
 
-- 💬 **Chat-Tab im Player-Stil, Favoriten-Stern, Wischgeste, Equalizer und Wiederverbindung (Neu in v0.37.0).**
+Voraussetzungen: Rust mit den Zielen `aarch64-linux-android` und
+`armv7-linux-androideabi`, Android SDK und NDK, JDK 17 oder neuer, Node 20 oder
+neuer.
 
-- 📊 **Monitor mit echten Werten (Neu in v0.36.0):** Last des eigenen Prozesses, CPU-Cluster-Takte, Thermalzonen, echte Akku-Leistung über BatteryManager — statt dauerhaft "—".
-- 🌐 **Netzwerk ohne Root (Neu in v0.36.0):** TCP-Ping, Portscan, WLAN-Scan; Traceroute verweigert ehrlich statt Hops zu erfinden.
-- 🎵 **Player:** Playlist-Logik mit Tests. 🧪 **Visuelles Regressionsnetz** für die fünf Tabs.
+```
+bash build_apk.sh
+```
 
-- 🎨 **Tools-Tab auf SVG-Symbole umgestellt (Neu in v0.35.0):** 14 Kategorie-Kacheln, Schnellzugriff, Suchen-Knopf und Panels nutzen einfarbbare Symbole; der Schnellzugriff ist ein zweiseitiges Raster ohne Abschneiden.
+Das Skript prüft Versionen und Module, baut beide ABIs, prüft Inhalt,
+Ausrichtung und Signatur und installiert die APK auf einem angeschlossenen
+Gerät. Der Signaturschlüssel liegt in `~/.skooda/keystore.properties` und
+gehört nicht ins Repository.
 
-- 🎨 **Gemeinsame Formensprache (Neu in v0.34.0):** Karten, Abschnittsüberschriften und Kopfzeilen sind app-weit angeglichen.
+## Prüfen
 
-- ✨ **Media-Player Premium & ehrliche Messwerte (Neu in v0.33.0):**
-  - Fortschrittsbalken läuft weich mit und zeigt die **Restzeit** ("-1:53") statt der Gesamtdauer.
-  - Navigationsleiste mit einfärbbaren SVG-Symbolen statt Emoji.
-  - Benachrichtigung mit Plattform-MediaStyle und schmalem Hinweis beim Titelwechsel.
-  - WLAN-Pegel wird echt gelesen oder als "unbekannt" angezeigt — keine erfundenen Werte mehr.
-  - PNG-Metadaten werden entfernt, Netzwerk-Scans begrenzt, Chat prüft Zertifikate.
-  - R8 aktiv: Universal-APK 42,15 → 38,87 MB.
-  - Testautomatik für das Gerät (`node scripts/device_test.js`).
+```
+node scripts/verify_frontend_integrity.js
+node --test tests/
+cargo test --manifest-path src-tauri/Cargo.toml
+node scripts/ui_check.js
+bash scripts/device_check.sh
+```
 
-- 🎨 **Media-Player: neue Oberfläche (Neu in v0.32.0):**
-  - Einfärbbare Symbole statt Emoji-Kreise, großer runder Abspielknopf mit Neon-Verlauf.
-  - Fortschritts- und Lautstärkeregler einheitlich, mit gefülltem Anteil.
-  - Titelliste mit Nummer, Titel, Interpret · Album, Dauer und je einem Stern- und Einreih-Symbol statt zwei Textknöpfen.
-  - Suchfeld mit Lupe, Sortierung und Favoritenfilter als Pille, einzeilige Kopfzeile.
-  - Der globale Suchknopf wird im Music-Tab ausgeblendet, er lag über der Liste.
-  - Auf dem Gerät verifiziert: Wiedergabe im Hintergrund, MediaSession mit Metadaten, Benachrichtigung mit vier Aktionen, Audio-Fokus.
+## Aufbau
 
-- 🔋 **Dauerlast der Oberfläche behoben (Neu in v0.31.1):**
-  - Im Leerlauf lag die App auf einem 120-Hz-Gerät bei 137,7 % eines Kerns, verursacht durch eine endlose CSS-Animation im Kopf jeder Seite. Jetzt 43,0 %.
-  - Zwei weitere Endlosschleifen in der Telemetrie behoben (Bildwiederholraten-Messung, Glättung der Stromanzeige); die Last wuchs vorher mit der Laufzeit.
-  - Die Bildwiederholrate wird nativ gelesen statt gemessen.
+```
+src/index.html      Hülle
+src/styles/         Design-Tokens und Bausteine
+src/config/         Einstellungen mit Prüfregeln
+src/core/           Konfiguration, Navigation, Brücke, Formate
+src/features/       Bereiche und Werkzeugkategorien
+src-tauri/src/      Rust-Kern
+docs/ARCHITEKTUR.md Schnittstelle für Bereiche
+DOKUMENTATION.md    vollständige Beschreibung
+```
 
-- 🧭 **MGRS-Koordinaten korrigiert (Neu in v0.31.0):**
-  - Die 100-km-Reihenbuchstaben waren falsch; betroffene Punkte lagen 500 bis 1500 km daneben.
-  - Die Umrechnung liegt in `src/core/geo.js` und ist mit 35 Tests gegen die unabhängige Bibliothek `mgrs` (GeoTrans) geprüft.
-- 🔍 **Gesamtaudit: 78 Fehler behoben (Neu in v0.31.0):**
-  - **Rust-Core:** Abstürze durch ungeprüfte Nonce- und MAC-Längen, invertierte Zertifikatsablaufprüfung, unbegrenzte KDF-Iterationen, fehlender Contributory-Check, Endlosschleife bei negativen Kantengewichten, Ratchet-Desynchronisation, blockierendes I/O.
-  - **Frontend:** überlappende Telemetrie, verschluckte Nullwerte, veraltete Analyseergebnisse in der Forensik, Steuerzeichen-Lücke in der URL-Prüfung, Toast-Spam.
-  - **Module:** falsche MD5-Rundung (jede Prüfsumme falsch), ungeschützte POI- und JWT-Felder, falsche LeakCheck-Adresse mit falscher Entwarnung, flache R(T)-Kennlinie, falsche Strahlensatzformel.
-  - **Mikrofonaufnahme funktioniert jetzt:** `MODIFY_AUDIO_SETTINGS` fehlte im Manifest, jede Aufnahme wurde verweigert.
-  - **Startabsturz auf 32-Bit-Geräten behoben:** dem armeabi-v7a-APK fehlte der Rust-Core.
-  - **Rund 45 MB kleiner (86,6 MB → 42,1 MB):** 53 MB ungenutzte TFLite-Nativlibs und ein 7,25-MB-Duplikat des Modells entfernt, dazu ungenutzte Berechtigungen und Abhängigkeiten.
-  - **Keine erfundenen Messwerte mehr:** Netzwerk-Scan, Wake-on-LAN, Header-Audit und Integritätsprüfung meldeten ohne echte Quelle erfundene Ergebnisse.
-  - 385 JavaScript- und 75 Rust-Tests.
+## Grenzen
 
-- 🎵 **Media-Player für MP3s & Audiodateien (Neu in v0.30.0, eigener Tab seit v0.30.1):**
-  - **Eigener Tab Music** in der Bottom-Navigation, Reihenfolge Monitor, Tools, Music, Chat, Update.
-  - **Erkennt heruntergeladene Musik automatisch:** Titelliste aus dem Android-Medienspeicher plus direkter Scan von Download, Downloads, Music, Documents, Podcasts, Telegram und WhatsApp-Sprachnotizen. Gleiche Pfade werden zusammengefasst, danach alphabetisch sortiert.
-  - **Läuft im Hintergrund weiter:** Vordergrunddienst mit MediaPlayer und MediaSession, Benachrichtigung mit Zurück, Pause/Abspielen, Weiter und Stopp, Titel und Interpret in der Systemanzeige.
-  - **Playlist, Suchlauf, Lautstärke, Zufall und Wiederholung** (aus / alle / einzelner Titel). Einstellungen bleiben gespeichert.
-  - **Berechtigungen:** READ_MEDIA_AUDIO ab Android 13, davor READ_EXTERNAL_STORAGE, dazu POST_NOTIFICATIONS. Abfrage beim ersten Suchen.
-  - **Neue native Brücke:** `window.Android` wird erstmals registriert (`SkoodaBridge.kt`, `PlaybackService.kt`).
-  - **Ausbau in v0.31.0:** Suche, Sortierung, Favoriten, Warteschlange mit „Als Nächstes" und „Entfernen", Sleep-Timer, Wiedergabegeschwindigkeit, Album-Cover, gemerkte Position.
-  - **Audio-Fokus und Kopfhörer-Erkennung:** Pause bei Anruf oder Trennen der Kopfhörer, Fortsetzen danach. Die Benachrichtigung zeigt den Fortschritt.
+- Ohne Root kein Rohsocket, kein Paketmitschnitt, kein Traceroute ohne
+  passende Rechte. Die App sagt das und erfindet keine Werte.
+- Bildschirmaufnahme ohne Ton.
+- iOS wird nicht gebaut.
 
-- 🔄 **Update-Prüfung & Nullwert-Korrekturen (Neu in v0.29.9):**
-  - **Update-Prüfung:** Die zweite Stufe liest die Version aus der `README.md`. Der bisherige Ausdruck traf die Zeile wegen der Fettschrift-Markierungen nicht, wodurch ohne Antwort der GitHub-API die installierte Version als neueste galt. Auswertung jetzt in `src/core/release-parse.js`, mit Abgleich gegen die `package.json`.
-  - **41 Rechner-Stellen korrigiert**, an denen eine eingegebene 0 ein gültiger Wert ist: Temperatur, Spannung, Strom, Länge, Widerstand, Frequenz, Prozent, cos φ und Plot-Achsen sowie 0 m Kabel, 0 dBm Sendeleistung, 0 dBi Gewinn, 0 km Distanz, 0 dBm Empfindlichkeit und 0 % Anfangstilgung. Gemeinsamer Helfer `numberOr(value, fallback)` in allen vier Rechnermodulen.
-  - **244 Tests** (vorher 194).
+## Lizenz
 
-- 📡 **Mesh-Fix, A*-Korrektur & Rust-Tests (Neu in v0.29.8):**
-  - **P2P-Mesh in der Release-APK:** Die Cleartext-Policy blockierte die lokale `ws://`-Verbindung des Mesh. Freigabe jetzt in `network_security_config.xml`, Manifest-Attribut und Gradle-Platzhalter entfallen.
-  - **Relay-Adresse einstellbar:** Eigene Angabe in den Chat-Einstellungen hat Vorrang vor `discovery.json`. Nur `ws://` und `wss://` mit Host werden akzeptiert.
-  - **A*-Router:** Der Heap speicherte `f = g + h`, verglich beim Pop aber mit `g`; mehrstufige Routen schlugen fehl und der Grid-Fallback war unbrauchbar. Der Zustand führt `g` jetzt mit.
-  - **Rust-Tests von 0 auf 36:** A*-Routing, MBTiles-Cache und Netzwerklogik über einen Loopback-Server.
-  - **39 weitere JS-Tests** (194 gesamt).
-  - **SHA-256-Prüfer** vergleicht gegen einen eingegebenen Erwartungswert und meldet Übereinstimmung oder Abweichung.
-  - **Pre-Push-Gate** bricht ab, sobald mehr als die `README.md` übertragen würde.
-
-- 🔐 **Sicherheits-Härtung & Offline-Karte (Neu in v0.29.7):**
-  - **Escaping-Schicht:** `src/core/sanitize.js` sichert Chat-Nachrichten, Port-Banner, TLS-Zertifikate, WLAN-Namen, OSINT-Treffer, Karten- und Routing-Texte sowie QR-Inhalte ab.
-  - **CSP ohne `unsafe-inline`:** Inline-Event-Handler entfernt, `unpkg.com` aus `script-src`, `style-src` und `img-src` gestrichen.
-  - **Leaflet lokal:** `src/vendor/leaflet/` samt Markern, Karte startet ohne Internet.
-  - **Modultests:** `npm test` prüft die sechs Rechenmodule.
-  - **Build-Gate:** `verify_frontend_integrity.js` prüft Version und `versionCode` über sechs Konfigdateien und verbietet versionierte Keystores sowie Inline-Handler. Dazu Pre-Commit-Hook, Escape-Audit und Browser-Smoke-Test.
-  - **Fünf Rechenfehler behoben:** `-2^2`, SWR bei 0 W Rücklaufleistung, Strahlensatz, Baumdiagramm und `c₂₂`-Anzeige.
-- ⚡ **Wechselstrom- & Drehstrom-Studio (AC / 3-Phasen Engine) (Neu in v0.29.6):**
-  - **1~ Wechselstrom (230 V) & 3~ Drehstrom (400 V):** Nahtlose Berechnung von Wirkleistung $P$, Blindleistung $Q$, Scheinleistung $S$, Phasenwinkel $\varphi$, Leistungsfaktor $\cos \varphi$ und Scheinwiderstand/Impedanz $Z$.
-  - **Interaktives SVG-Leistungsdreieck:** Vektorbasiertes Leistungsdreieck mit Vektorpfeilen für Wirkleistung (grün), Blindleistung (rot), Scheinleistung (cyan) und Phasenwinkel (gelb).
-  - **Blindleistungskompensation (PFC-Studio):** Präzise Auslegung von Kompensationskondensatoren ($Q_C$ in kvar und $C$ in $\mu\text{F}$) zur gezielten Anhebung des Leistungsfaktors von $\cos \varphi_1$ auf Ziel-$\cos \varphi_2$, inklusive Ersparnisberechnung des reduzierten Schein- und Netzstroms.
-  - **Praxis-Presets:** Sofortige Wertebelegung für 1~ Motor ($1{,}5\,\text{kW}$), 3~ Drehstrommotor ($5{,}5\,\text{kW}$), ohmsche Heizung und induktiven Transformator.
-- ⭐ **Stern-Dreieck-Wandler ($Y \rightleftharpoons \Delta$) mit dynamischem SVG (Neu in v0.29.6):**
-  - **Bidirektionale Netzwerk-Transformation:** Vollständige Konvertierung von Stern- zu Dreieckschaltung ($R_{12}, R_{23}, R_{31}$) sowie Dreieck- zu Sternschaltung ($R_1, R_2, R_3$).
-  - **Schematisches Vektor-Schaltbild:** Dynamisches SVG visualisiert Stern- und Dreiecktopologie synchron mit Leiterknoten (L1, L2, L3) und Widerstandswerten.
-  - **Symmetrie-Erkennung & Presets:** Direkte Erkennung symmetrischer Netze ($R_\Delta = 3 \cdot R_Y$) mit Schnellwahltasten für symmetrische Lasten, Motoren und Heizwicklungen.
-- ⏱️ **Kondensator- & RC-Dynamik-Kurve (Neu in v0.29.6):**
-  - **Interaktiver SVG-Vektorplotter:** Umschaltbare Ladekurve und Entladekurve von $0$ bis $5\tau$.
-  - **Wichtige Zeitmarken:** Präzise Hervorhebung der Zeitkonstante $\tau = R \cdot C$ mit Marker bei $1\tau$ ($63{,}2\,\%$ bei Ladung bzw. $36{,}8\,\%$ bei Entladung), $3\tau$ und $5\tau$ ($99{,}3\,\%$, Vollladung).
-  - **Grenzfrequenz & Schaltzeiten:** Automatische Ermittlung von $f_c = 1 / (2\pi RC)$ und Halbwertzeit $t_{50\%} = \tau \cdot \ln(2)$.
-- 📋 **1-Klick Didaktik- & Protokoll-Export (Neu in v0.29.6):**
-  - **Kopier- & Share-Export:** Export-Buttons im Didaktischen Rechenweg des Schaltungs-Studios 2.0 (`#mixed-export-btn`) und im Leiter-Labor (`#spez-export-btn`).
-  - **Formatierte Protokollausgabe:** Erzeugt sauberen Text mit Formeln, Teilschritten und Gesamtwerten für Dokumentationen, Prüfungsnachweise oder Messenger.
-- 🔍 **Globaler Spotlight Quick-Launcher (Neu in v0.29.6):**
-  - **Bilateraler Floating FAB:** Schneller Direktzugriff über schwebenden Lupe-Button (`#floating-spotlight-fab`) links über der Bottom-Nav.
-  - **Keyboard-Shortcut:** Globale Tastenkombination `Ctrl+K` bzw. `Cmd+K` für Desktop- und Tablet-User.
-  - **Vollständige Werkzeug-Registry:** Sofortiges Anspringen aller 26+ Rechner-, Elektrik-, Coder-, Cyber-, Audio- und Navigations-Tools.
-- 📜 **Persistenter Rechner-Verlauf & Speicher (Neu in v0.29.6):**
-  - **Bottom Drawer (`#calc-history-drawer`):** Schiebt sich bei Klick auf "📜 Verlauf" ergonomisch von unten herein.
-  - **Auto-Recording:** Speichert automatisch alle Berechnungen aus Live-Rechner, Ohm, Spannungsteiler, Wechselstrom, RC-Filter und Stern-Dreieck in `localStorage`.
-  - **Kopierfunktion:** Einzelne Resultate können mit einem Klick in die Zwischenablage kopiert oder gelöscht werden.
-- 📳 **Haptik-Engine & E2EE QR-Sicherheitsabgleich (Neu in v0.29.6):**
-  - **Taktiles Feedback:** Haptische Vibration (`triggerHaptic`) bei Rechner-Eingaben, Modus-Wechseln und Exports.
-  - **QR Safety-Scan im Chat:** Direkte Verknüpfung im Sicherheitsnummern-Modal (`#safety-scan-btn`) zum Prüfen von Chat-Peer-Schlüsseln via Kamera-Scanner.
-- ⚡ **Gemischte Schaltungen 2.0 & Schaltungs-Studio (v0.29.5):**
-  - **1:1 Schul- und Praxisaufgaben-Kompatibilität:** Berechnet reale und komplexe Netzwerke fehlerfrei und didaktisch aufbereitet.
-  - **Interaktiver DIN EN 60617 Vektor-Schaltplan:** Dynamisches Cyberpunk-SVG-Schaltbild mit DIN-Widerstandssymbolen, Knotenpunkten A/B und Live-Messwert-Badges ($U_x, I_x$) an jedem Bauteil.
-  - **4 Topologien zur Auswahl:** Typ 1 ($R_1 + R_2 + ((R_3 + R_4) \parallel R_5)$), Typ 2 ($R_1 + (R_2 \parallel R_3)$), Typ 3 ($(R_1 + R_2) \parallel (R_3 + R_4)$), Typ 4 ($(R_1 \parallel R_2) + (R_3 \parallel R_4)$).
-  - **Didaktischer Lösungsweg:** Detaillierte Schritt-für-Schritt Herleitung mit allen Zwischenwiderständen ($R_{1,2}$, $R_{3,4}$, $R_{3,4,5}$, $R_\text{ges}$) und Berechnungsformeln.
-  - **Kompakte Teillasten-Tabelle & Kirchhoff-Validierung:** Platzsparende 6-Spalten-Tabelle (`Bauteil | Wert | U | I | P | Last`) ohne seitliches Scrollen sowie rechnerischer Nachweis der Maschen- und Knotenregeln ($\sum U_i = U_\text{ges}$, $\sum P_i = P_\text{ges}$).
-  - **1-Klick Schulaufgaben-Preset:** Sofortige Vorbelegung mit $U = 24\,\text{V}$, $R_1 = 120\,\Omega$, $R_2 = 680\,\Omega$, $R_3 = 100\,\Omega$, $R_4 = 150\,\Omega$, $R_5 = 680\,\Omega$ ($R_\text{ges} = 982{,}80\,\Omega$, $I_\text{ges} = 24{,}42\,\text{mA}$).
-- 🔌 **Leiter-Labor: Doppelleitung & Drehstrom (Neu in v0.29.5):**
-  - **Erweiterter Leitungsmodus:** Einzelleiter ($1\times L$), Doppelleitung Hin- & Rückleiter ($2\times L$, Schleifenwiderstand) und symmetrischer Drehstrom ($\sqrt{3}\times L$).
-  - **Motor-Zuleitungs-Preset:** 1-Klick-Button für Motor-Zuleitungsaufgaben ($200\,\text{m}$ Distanz, $1{,}5\,\text{mm}^2$ Kupfer $\to 4{,}75\,\Omega$).
-- 🎨 **Umfassende GUI- & Theme-Perfektionierung (v0.29.4):**
-  - **100 % Viewport- und Grid-Stabilität:** Behebung aller horizontalen Overflows in Rechner- und Elektrik-Rastern (`.el-grid-2`, `.conv-row`). Saubere Ausrichtung selbst auf schmalen Smartphone-Displays.
-  - **Cyberpunk Dark Theme für alle Formular-Controls:** Beseitigung weißer Standard-Browser-Selects durch `.cyber-select` mit tiefschwarzem Look, Neon-Border und custom SVG-Pfeil.
-  - **Universelle Input-Rahmung:** Standardmäßig gerahmte, dunkle Inputs (`.cyber-input-field`) in allen Rechner- und Cyber-Modulen bei sauber isoliertem CLI-Terminal.
-  - **Kompakter 1-Zeilen Favoriten-Slider:** Schlanke, horizontal wischbare Leiste für schnellen Zugriff auf alle 23 Elektrik-Rechner.
-  - **Subtool Header-Hierarchie:** Automatisches Ausblenden des Haupt-Headers beim Betreten von Werkzeugen für maximalen vertikalen Arbeitsraum.
-  - **Chat-Layout & Sende-Button:** Ergonomische, horizontale Chat-Eingabeleiste mit festem Sicherheitsabstand zur Navigationsleiste.
-  - **Defensiver R(T)-Kurvenplotter:** Zuverlässige Absicherung gegen mathematische Sonderfälle und `NaN` in SVG-Pfaden.
-  - **Optimierter Floating Quick-Pad Mini-Rechner:** 38 px FAB-Größe mit 95 px Scroll-Padding in allen Subtools gegen Verdeckungen.
-- 🌀 **Spulen-, Windungs- & Wicklungslabor (Neu in v0.29.3):**
-  - **Zylinderspulen & Drosseln:** Induktivität $L$ ($H$, $\text{mH}$, $\mu H$), Gleichstromwiderstand $R_\text{Spule}$, Drahtlänge $l_\text{ges}$, mittlere Windungslänge, Lagenanzahl, Wickelhöhe und Kupfergewicht für Luftspulen, Eisenkerne ($\mu_r \approx 500$), Ferritkerne ($\mu_r \approx 2000$) und Mu-Metall ($\mu_r \approx 10000$).
-  - **Heizwendel & Spiralen:** Dorndurchmesser $D_\text{dorn}$, Drahtdurchmesser $d$, Windungszahl $N$, geschlossene Blocklänge und gestreckte Einbaulänge unter Berücksichtigung der Steigung (Pitch).
-- 🔥 **Heizdraht- & Glühdraht-Labor (Neu in v0.29.3):**
-  - Kanthal A1, Nichrom 80/20, Konstantan, Edelstahl V2A mit Leistung $P$, Strom $I$, Widerstand $R$, Mantelfläche und spezifischer Oberflächenbelastung $p$ ($\text{W/cm}^2$).
-  - Physikalische Drahttemperatur-Schätzung und dynamische optische Glühfarben-Skala (Dunkelrot bis Gelbweiß) mit farbcodiertem HUD.
-- ⚡ **Leitungsbelastung & Spannungsfall (Neu in v0.29.3):**
-  - Spannungsfall $\Delta U$ ($V$ und $\%$), Leitungsabwärme $P_v$ ($W$ / $kW$) und Stromdichte $J = I/A$ ($\text{A/mm}^2$) mit VDE-Belastungsampel.
-- 📈 **Dynamische $R(T)$-Kennlinie (SVG) (Neu in v0.29.3):**
-  - Interaktives Vektor-Diagramm von $-50^\circ\text{C}$ bis $+300^\circ\text{C}$ mit $20^\circ\text{C}$-Achse und goldenem Live-Betriebspunkt.
-- 🔬 **NTC-Thermistor Studio (Neu in v0.29.3):**
-  - B-Wert-Gleichung & Steinhart-Hart für 10k, 100k (3D-Drucker Hotend), 5k, 2.2k oder benutzerdefiniert inklusive Sensor-Empfindlichkeit $\mathrm{d}R/\mathrm{d}T$ und Temperaturbeiwert $\alpha$.
-- ⭐ **Elektrik Quick-Favorites Ribbon (Neu in v0.29.3):**
-  - Persistente Favoriten-Leiste (`#el-favorites-bar`) mit Schnellzugriffs-Chips und dynamischem Pin/Unpin-Button für alle 23 Elektrik-Rechner.
-- 📏 **American Wire Gauge (AWG) Wähler (Neu in v0.29.3):**
-  - Dropdown für AWG 0000 bis 40 mit sofortiger Übernahme des Querschnitts in mm² und Durchmessers in mm.
-- 🧲 **Spezifischer Widerstand & Leiter-Labor (Erweitert in v0.29.2):**
-  - **📏 Ohmscher Leiter-Rechner ($R = \rho \cdot \frac{l}{A} = \frac{l}{\gamma \cdot A}$):** Flexible Umkehrung nach Widerstand $R$, Leiterlänge $l$, Querschnitt $A$ oder Material $\rho$. Integrierter Durchmesser-Wandler ($d \rightleftharpoons A = \frac{\pi d^2}{4}$), Schleifenwiderstand-Modus ($2 \cdot l$ Hin- + Rückweg), Leitwert $G$ in Siemens, Leitfähigkeit $\gamma$ in MS/m sowie automatische Leitermasse-Berechnung ($m$ in g und kg) anhand der Werkstoffdichte.
-  - **🌡️ Temperaturkoeffizienten & Wicklungserwärmung (VDE 0530 / IEC 60034-1):** Exakte Berechnung des Warmwiderstands $R(T) = R_{20} \cdot [1 + \alpha_{20} \cdot (T - 20^\circ\text{C})]$ sowie thermische Wicklungsprüfung von Motoren und Trafos mit Isolierstoffklassen-Bewertung (A, E, B, F, H).
-  - **🔬 Platin- & Nickel-Messwiderstände (DIN EN 60751 & DIN 43760):** PT100, PT500, PT1000, Ni100, Ni120, Ni1000 mit bidirektionaler Umrechnung ($T \rightleftharpoons R$), Empfindlichkeit $\mathrm{d}R/\mathrm{d}T$ und Grenzabweichungen nach Toleranzklasse B.
-  - **📚 18-Werkstoffe-Datenbank & Dynamische SVG-Planfigur:** Kupfer, Aluminium, Silber, Gold, Eisen, Stahl, Edelstahl, Wolfram, Platin, Messing, Zinn, Blei, Konstantan, Manganin, Nichrom, Kanthal, Grafit und Custom-Werte mit interaktivem Zylinder und temperaturabhängigem Glüheffekt.
-  - **⚡ Elektrik Kompaktheits-Rework:** Neuer Dropdown-Schnellwähler `#el-subtab-select` synchron zu allen 23 Elektrik-Rechnern für sofortiges Umschalten ohne horizontales Scrollen.
-- 📐 **Pythagoras Evolution 4.0 - Das ultimative Geometrie- & Pythagoras-Studio (Neu in v0.29.1):**
-  - **🔲 Visuelles Beweis-Studio (Geometrischer Flächenbeweis a² + b² = c²):** Echte maßstabsgetreue Quadrate über den Katheten $a, b$ und der Hypotenuse $c$ mit Farbkodierung und Flächensummen-Nachweis ($A_a + A_b = A_c$).
-  - **⚖️ Umkehrung des Satzes des Pythagoras (Rechtwinkligkeits- & Dreiecksart-Test):** Prüft beliebige 3 Seiten $a, b, c$ auf rechtwinklig ($=90^\circ$), spitzwinklig ($<90^\circ$) oder stumpfwinklig ($>90^\circ$) mit Dreiecksungleichung, Kosinussatz-Winkeln und Schulbegründungssatz.
-  - **√ Exaktes Radizieren (Teilweises Wurzelziehen):** Automatische Zerlegung von Radikanden in quadratische Faktoren direkt im Rechenweg (z. B. $\sqrt{50} = 5\sqrt{2} \approx 7{,}07$).
-  - **✨ Pythagoreische Tripel Engine & Schnellwahl-Leiste:** Automatische Erkennung primitiver und skalierter Tripel mit ggT-Faktor $k$ sowie interaktive Schnellwahl-Chips ($3-4-5$, $5-12-13$, $8-15-17$, $7-24-25$, $20-21-29$, $9-40-41$).
-  - **🏠 Reale Praxis- & Prüfungsaufgaben:**
-    - *Aufgabe 10 (Dachstuhl & Dachsparren):* Firsthöhe $h$, Spannweite $b$, Sparrenlänge $s$, Dachneigung $\alpha$, Gesamtdachfläche und Giebel-Planfigur.
-    - *Aufgabe 11 (Flussbreite & Seepeilung):* Standlinie $a$, Peildiagonale $c$, Flussbreite $b$, Peilwinkel $\alpha$ und top-down Flussbett-Planfigur.
-    - *3-4-5 Maurerdreieck:* Handwerker-Baustellenabsteckung mit 12-Knoten-Schnur und Skalierungsfaktor $k$ für 100% rechte Winkel.
-  - **🎛️ Interaktiver Live-Slider:** Flüssiger Schieberegler für den Leiter-Wandabstand $d$ für ruckelfreie Echtzeit-SVG-Veränderung samt DIN EN 131 Sicherheitsbadge.
-  - **🔵 Satz des Thales & 🎯 Inkreis/Umkreis:** Didaktische Umschaltung zwischen Planfigur-Modi: Thales-Halbkreis ($R = c/2$) mit Radiuslinie zum rechten Winkel sowie Inkreis ($r = (a+b-c)/2$) mit baryzentrischem Incenter.
-  - **🔲 Euklid-Höhenrechteck:** Visuelle Flächengleichheit zwischen Höhenquadrat $h^2$ und Abschnittsrechteck $p \cdot q$.
-  - **🎲 Klassenarbeits-Trainer:** Zufallsaufgaben-Generator für Klasse 9/10 mit Aufgabenstellung, Kategorie und 1-Klick-Ladefunktion in den Rechner.
-  - **📋 1-Klick DIN-Hausaufgaben-Export:** Vollständiger schulkonformer Rechenweg direkt in die Zwischenablage kopierbar.
-- 🧮 **Rechner UX & Kompaktheits-Rework (Neu in v0.29.0):**
-  - **Kompaktes Akkordeon-System:** Alle 30 Schulmathe-Karten standardmäßig eingeklappt für blitzschnelle Übersicht und minimale Scrollwege; per Header-Tap ein-/ausklappbar mit animiertem Chevron.
-  - **Toolbar mit 1-Klick Toggle:** Button `⏫ Alle einklappen` / `⏬ Alle ausklappen` für sofortigen Komplettüberblick.
-  - **Favoriten-Pins (Quick-Access Bar):** Jede Schulmathe-Karte besitzt einen ⭐-Pin; Favoriten werden dauerhaft gespeichert und in einer horizontalen Chip-Leiste oben angezeigt. Ein Klick scrollt die Karte sanft ins Blickfeld und hebt sie golden neon hervor.
-  - **Schwebendes Quick-Pad (Floating Mini-Calculator):** Schwebender Cyber-Button (🧮) mit einklappbarem Mini-Taschenrechner für schnelle Zwischenrechnungen ($+, -, \times, \div, \sqrt{}, ()$) direkt im Rechner-Toolset ohne Hin- und Herspringen.
-- ⚡ **Elektrik- & Elektronik-Labor 2.0 (v0.28.1):**
-  - ⭐ **Stern-Dreieck-Wandler (Y ⇄ Δ):** Transformation symmetrischer und unsymmetrischer 3-Phasen-Netzwerke ($Y \rightarrow \Delta$ und $\Delta \rightarrow Y$) mit Symmetrie-Gleichlaufschaltung ($R_\Delta = 3 \cdot R_Y$, $R_Y = R_\Delta / 3$) und Presets für Drehstrommotoren (3x 12 Ω), Heizstäbe (3x 46 Ω) und Messbrücken.
-  - 🔌 **Transformator- & Übertrager-Rechner:** Übersetzung $ü = U_1/U_2 = N_1/N_2 = I_2/I_1$, Scheinleistung $S$ [VA], Primärstrom $I_1$ mit Wirkungsgrad $\eta$, Windungen pro Volt ($w/V$), Eisenkern-Querschnitt $A_{Fe} \approx c \cdot \sqrt{S}$ [cm²] (EI, M-Kern, Ringkern) sowie Drahtquerschnitte & Durchmesser ($q_1, q_2, d_1, d_2$).
-  - 🔋 **Peukert-Akkulaufzeit & Nicht-lineare Kapazitätsanalyse:** Reale Entladezeit unter Berücksichtigung des Peukert-Effekts $t = H \cdot (C / (I \cdot H))^k \cdot \text{DoD}$, Peukert-Kapazitätsverlust im Vergleich zur linearen Rechnung ($t_{lin} = C/I$), konfigurierbare Peukert-Exponenten für LiFePO4 ($k \approx 1,05$), AGM/VRLA ($k \approx 1,15$), Gel ($k \approx 1,18$), Nasszellen ($k \approx 1,26$), Starterbatterien ($k \approx 1,35$), effektive Restkapazität ($C_{eff}$ in Ah und Wh) und C-Rate mit Warnindikator.
-- 📐 **Satzgruppe des Pythagoras & Euklid (Universal Solver & Reale Aufgaben Kl. 9–10):**
-  - **Universal-Löser:** Berechnet aus 2 beliebigen Dreieckswerten ($a, b, c, p, q, h$) sofort alle 6 Größen, Fläche $A$, Umfang $U$ und Winkel $\alpha, \beta, \gamma=90^\circ$ mit vollständiger Schritt-für-Schritt-Herleitung.
-  - **Reale Aufgabenblatt-Presets (Klasse 9b):**
-    - *Aufgabe 5 (Leiter an Hauswand):* $L=6,5\text{ m}, d=2,5\text{ m} \rightarrow h=6,0\text{ m}$, Anstellwinkel $\alpha=67,4^\circ$.
-    - *Aufgabe 6 (Euklid-Dreieck):* Katheten $a=4,2\text{ cm}, b=3,1\text{ cm}, p=3,38\text{ cm} \rightarrow c, q, h$ über Pythagoras und Euklid.
-    - *Aufgabe 7 (Drachensteigen):* $L=100\text{ m}, d=80\text{ m} \rightarrow h=60\text{ m}$.
-    - *Aufgabe 8 (Diagonalen):* 2D-Rechteck und 3D-Quader-Raumdiagonale ($d = \sqrt{a^2+b^2}$, $D = \sqrt{a^2+b^2+c^2}$).
-    - *Aufgabe 9 (Horizont-Sichtweite & Erdkrümmung):* Leuchtturm mit $h=80\text{ m} \rightarrow$ Sichtweite $s \approx 31,93\text{ km}$ ($31926\text{ m}$) und Vergleich mit nautischer Faustformel ($3,57 \cdot \sqrt{h}$).
-  - **Dynamische SVG-Planfigur:** Mathematisch exakte Vektor-Zeichnung des Dreiecks mit Hypotenuse als Grundlinie, Katheten, Lot der Höhe $h_c$, Abschnittsmarkierungen $p$ und $q$ sowie Kennzeichnung der rechten Winkel.
-- 🎓 **Erweiterte Schulmathematik (Karten 27–30):**
-  - **Karte 27 (Strahlensätze, Kl. 9):** 1. und 2. Strahlensatz für V- und X-Figuren, zentrische Streckung, Streckenverhältnisse und Parallelen.
-  - **Karte 28 (Allgemeine Trigonometrie, Kl. 10):** Dreiecksberechnung über Sinussatz und Kosinussatz für SSS, SWS und WSW mit Heron-Fläche.
-  - **Karte 29 (Kurvendiskussion & Polynome, Kl. 11–12):** Vollständige Funktionsanalyse für Polynome bis Grad 4 mit Ableitungen $f', f'', f'''$, Nullstellen via Bisektion, Hoch-/Tiefpunkten, Wendepunkten und Symmetrie.
-  - **Karte 30 (Wahrscheinlichkeitsrechnung & Baumdiagramme, Kl. 8–11):** Zweistufiges Urnenmodell (mit/ohne Zurücklegen), 1. Pfadregel (Multiplikation) und 2. Pfadregel (Summensatz) mit dynamischem SVG-Baumdiagramm.
-- 📈 **Funktionsplotter 2D & Programmer Upgrades:**
-  - 1. Ableitung $f'(x)$ als gestrichelte Kurve einblendbar.
-  - Wertetabelle mit Schrittweite und Export der Plotter-Kurve als PNG.
-  - Bitweise Operatoren (`AND`, `OR`, `XOR`, `NOT`, `<<`, `>>`) im Live-Rechner.
-- 🚀 **Taktisches System Update & Distribution Center 2.0 (Neu in v0.27.0):**
-  - **Obsidian Dark-Crimson HUD-Design:** Status-Pills, animierter Radar-Impuls bei der Prüfung, Server-Latenz-Anzeige (Ping zum GitHub CDN) und Zeitstempel der letzten Prüfung.
-  - **Smart Asset Hub & Architektur-Empfehlung:** Automatische Erkennung der Geräte-Architektur (`ARM64-v8a` vs `ARMv7`) und gezielte Empfehlung der schlanken ARM64-v8a APK (~46 MB, 50% Speicherersparnis und schnellerer Start). Direkte Download-Buttons, 1-Klick Link-Kopieren für Messenger und Browser-Aufruf.
-  - **Integritäts-Guard & SHA-256 Verifier:** Lokale WebCrypto-Berechnung von SHA-256 Prüfsummen für heruntergeladene `.apk`-Pakete zur Verifikation vor der Installation.
-  - **Tactical Markdown Changelog:** Formatierte Release-Notes mit Überschriften, Feature-Tags, Trennlinien und Code-Pills statt unformatiertem Text.
-  - **Versions-Historie & Rollback-Explorer:** Interaktives Archiv zur Einsicht und zum Download früherer Versionen (`v0.26.1`, `v0.26.0`, etc.).
-  - **Automatisierung & Konfiguration:** Wählbares Hintergrund-Prüfintervall (*Beim Start*, *Alle 4h*, *Alle 12h*, *Einmal täglich*, *Manuell*), In-App Update-Benachrichtigung und dynamischer Badge am Navigations-Tab.
-  - **Taktischer Feedback- & Diagnose-Reporter:** Ticket-Erstellung mit Kategorien (*Feature-Wunsch*, *Bug-Report*, *Allgemein*) und optionaler System- und Telemetrie-Signatur (App-Version, Display, Architektur, Non-Root Android).
-- 🔄 **Dynamische Echtzeit-Telemetrie & Non-Root Heuristik (v0.26.1):**
-  - **SELinux-sicheres CPU-Sampling:** Rust Core Sampling via `clock_gettime(CLOCK_PROCESS_CPUTIME_ID)` mit Delta-Messung und dynamischer Lastverteilung auf Little-, Mid- und Big-Cores. Kein Einfrieren der 60s-Charts mehr.
-  - **Multi-Zonen-Thermal-Matrix:** Dynamische thermische Heuristik für 7 System-Zonen (SoC Core, CPU Big/Little, GPU, Akku, Modem, Gehäuse).
-  - **Partitions- & Netzwerk-Heuristik:** App-zugängliche Speicherabfrage (`/data/user/0/...`) und dynamische Up/Down-Durchsatz-Ermittlung für `wlan0` / `rmnet0`.
-  - **Sekundengenaue Uptime & Sensor-Horizont:** Uptime-Inkrementierung in Sekunden und sanfte Mikrobewegungen für den 3D-Lagehorizont.
-  - **Rechner Live-Recalculation:** Sofortige Neuberechnung bei Änderungen an Einheiten-Dropdowns im Ohm & Power Modul.
-- 🎛️ **Taktisches System-HUD & Hardware-Monitor 2.0 (v0.26.0):**
-  - **Kompaktes 2-Spalten HUD-Raster:** Taktisches Obsidian-Design (`#0a0103`) mit scharfen Karmesin-Borderkanten (`#ff003c`), Quick-Status-Header (Uptime, SoC-Modell, RAM-Füllstand, Watt-Leistungsaufnahme) und 4-Stufen Pollingregler (*Turbo 200ms*, *Normal 1s*, *Eco 3s*, *Pause*).
-  - **60s Live Rolling Canvas Charts:** Performante 2D-Graphen für CPU-Auslastung mit Peak-Hold-Linie, RAM- & ZRAM-Swap-Allokation, Echtzeit-Wattmeter ($P = V \cdot I$) sowie Dual-Netzwerkgraph (Download Cyan / Upload Karmesin).
-  - **Tiefen-Telemetrie ohne Root (100% Non-Root):** Thermal-Matrix aller Zonen (`/sys/class/thermal/thermal_zone*`), Kernel Load Averages (1m, 5m, 15m), Speicher-Partitions-Explorer (`/data`, `/system`, `/cache` via `statvfs`) und Netzwerk-Interface-Übersicht mit MB-Zählern.
-  - **3D-Lagehorizont & Sensor-Kompass (Attitude Indicator):** Flugzeuginstrumenten-HUD mit Pitch-Leiter ($\pm 10^\circ, \pm 20^\circ, \pm 30^\circ$), Roll-Winkel, künstlichem Horizont (Navy vs. Crimson), Flugzeug-Reticle, 360°-Kompassrose und $G$-Force-Vektor ($G_x, G_y, G_z$).
-  - **Taktische Quick-Tools & Benchmark:** 5s Multi-Core CPU-Stresstest zur MFLOPS-Messung mit Leistungsbewertung, RAM-Trim Pufferbereinigung und 1-Klick Systembericht-Export (Markdown / JSON) in die Zwischenablage.
-- 🧮 **Rechner Evolution 2.0 & Erweiterte Schulmathematik (Kl. 1–12):**
-  - **100 % Reaktive Live-Berechnung & CAS:** Rechnet verzögerungsfrei bei jedem Tastenanschlag, erkennt implizite Multiplikation (`2pi`, `3(x+1)`), physikalische Konstanten ($c, g, G, h, \hbar, k_B, q_e, N_A, R$), komplexe Zahlen ($a+bi$) und bietet Rechnerspeicher ($MC, MR, M+, M-$) mit Haptik und Klick-zum-Kopieren.
-  - **Erweiterte Oberstufen-Mathematik (26 interaktive Module):** Neu hinzugefügt wurden LGS 2x2 (Cramer), LGS 3x3 (Gauß-Jordan Stufenform), Matrizenrechnung 2x2 (Determinante, Inverse, Quadrierung), Integralrechnung & Stammfunktion (symbolisch für Polynome bis 3. Grades + numerisches bestimmtes Integral), Analytische 3D-Geometrie (Hessesche Normalform, Punkt-Ebene-Abstand, Lotfußpunkt), Deskriptive Statistik (Mittelwert, Median, Quartile, IQR, empirische Varianz, Standardabweichung) und Annuitätendarlehen & Tilgungspläne. Inklusive 1-Klick-Lösungsweg-Kopieren auf allen Karten.
-  - **Touch-Plotter 2.0:** Interaktiver Canvas mit Touch Drag-to-Pan, Pinch-to-Zoom, Fadenkreuz mit schwebendem Koordinaten-Badge $(x, f(x))$, simultanem Dual-Funktionsplot ($f_1, f_2$) und schraffierter Integralfläche unter der Kurve.
-- 📊 **Sensor-Logger & Zeitreihen-Recorder Studio (Neu in v0.25.0):**
-  - Live-Aufzeichnung von Barometer, Luxmeter und EMF mit konfigurierbarer Abtastrate (100 ms bis 5.000 ms) und 1.000-Punkte-Ringpuffer.
-  - Echtzeit-Canvas-Sparkline mit Glow-Effekten und kontinuierlicher Min/Max/Durchschnitts-Telemetrie.
-  - 1-Klick Export nach CSV, JSON und Zwischenablage.
-- 💬 **E2EE Chat Waveform Audio & Panik-Modus (Neu in v0.25.0):**
-  - **Waveform Audio-Scrubber:** Neuer taktischer Audioplayer für Sprachnachrichten mit 28 dynamischen Balken, Play/Pause-Steuerung und Touch-Scrubbing.
-  - **Panik-Modus & Notfall-Bereinigung:** Schnelltaste `/panic`, `/wipe` oder PIN `9999` vernichtet sofort sämtliche Chat-Historien, SQLCipher-Datenbanken und kryptografische Schlüssel restlos.
-- 📦 **Performance & 50% APK-Größenreduktion:**
-  - Bereitstellung einer separaten schlanken ARM64-v8a APK (~45 MB) neben der universellen Multi-Arch APK (~86 MB).
-- 📱 **Universelle Android-Kompatibilität & Dual-Architektur:** Volle Unterstützung für ausnahmslos alle physischen Android-Smartphones weltweit durch echten Dual-Architektur-Build (`arm64-v8a` + `armeabi-v7a`). Alle 17 Hardware-Funktionen (Kameras, Sensoren, GPS, Barometer, BLE, Telefonie etc.) sind als optional deklariert (`android:required="false"`), sodass die App auf jedem Gerät ohne Installations-Blocker lauffähig ist. Inklusive adaptiver Cutout/Notch Safe-Area-Insets und fluidem Responsive Design von Kleinst-Smartphones (≤ 360px) bis hin zu Tablets und Foldables.
-- 🛠️ **Tools-Tab & Sub-Tool Layout-Modernisierung:** Taktisches Redesign der 14 Werkzeug-Karten in `#tool-categories` mit 2-Spalten Mobil-Grid, Obsidian-Glow-Karten und Domain-Badges (`SEC`, `OPTIC`, `GEO`, `VISION`, `CTRL`, `CALC`, `INTEL`, `CRYPT`, `SENS`, `ENV`, `AUDIO`, `RADIO`, `FORENSIC`, `TAC`), durchgängiges Sticky-Header-HUD (`.subtool-header`) mit Schnell-Rücksprung (`← Tools`) für alle 14 Subtools, sowie horizontale Scroll-Pill-Leisten (`.cyber-subnav`, `.conv-tabs`, `.osint-tabs`, `.el-subtabs`) mit Touch-Gesten, Scroll-Snap und klarem Karmesin-Glühen.
-- 📱 **Permanente Bottom-Navigation:** Viewport-geankerte Navigationsleiste (`#bottom-nav`), 100 % sicht- und bedienbar auf allen Geräten, vollständige Android 15 Edge-to-Edge System-Insets-Kompatibilität (`fitsSystemWindows`) und blickdichtes High-Z-Index Obsidian-Design.
-- 🛡️ **Frontend-Integritäts-Guard:** Automatisierte Pre-Build Link-Validierung (`scripts/verify_frontend_integrity.js`), 100% stabile ES-Modul-Initialisierung und fehlertolerante System-Telemetrie.
-- 🩸 **Dark-Crimson & Yandere Noir Redesign:** Vollständig überarbeitete Benutzeroberfläche in tiefem Obsidian-Schwarz (`#070103`), edler Blutglas-Optik (`rgba(36, 4, 11, 0.65)`), stechend scharfen Karmesin-Borderkanten (`#ff003c`), rubinrotem Glühen, pulsierendem Herzschlag-Statusdot und maßgeschneiderten Canvas-Farbverläufen (u. a. 2D-Wasserfall-Spektrogramm im Audio-Labor).
-- ⚡ **Modulare Lazy Architecture:** Sofortiger Boot (< 50ms), reaktives EventBus/Store-System, Globaler ErrorBoundary & Tactical Toast HUD.
-- 📊 **Hardware & System Monitor:** 100% echte Kernel-Telemetrie via `libc`, Multi-Core Heatmap (C0-C7), physische RAM- & Storage-Werte, Akku-Telemetrie mit mA-Smoothing, Display-Hz-Messung & 3D-Sensorik.
-- 🎙️ **Audio-Labor (Akustik & Signalverarbeitung):** **SPL Schallpegel-Messer** mit dB(A)/dB(C) IEC 61672-1 Filterung, Leq, Peak & Lärmampel, **2048-Punkt FFT-Spektrumanalysator & Wasserfall-Spektrogramm**, **DDS Signal- & Sweep-Generator** (Sinus, Rechteck, Dreieck, Sägezahn, 20Hz–20kHz Sweep, Rosa/Weißes Rauschen) und **DTMF & Morse-Studio** (Goertzel-Decoder, Audio/Taschenlampen-CW).
-- 📡 **Funk- & HF-Tools (RF Engineering):** **Antennenlängen-Rechner** (Dipol, Groundplane, J-Pole, Yagi mit $k$-Verkürzungsfaktor & Band-Presets), **Koaxialkabel-Dämpfung & Link-Budget** (Friis FSPL, RG-58, RG-213, Ecoflex 10, LMR-400), **SWR- & Reflexionsrechner** ($P_{fwd}, P_{refl}, \text{SWR}, \text{Return Loss}, \text{Mismatch Loss}$) und **HF-Pegelrechner** (dBm, W, $V_{eff}$, dBµV, 50Ω/75Ω, IARU S-Meter).
-- 🛡️ **Cyber Tools & Web-Forensik:** Subnetz NetScan mit MAC-OUI-Herstellererkennung & Shodan API, Diagnose-Konsole (Ping, DNS, Traceroute), Port-Matrix mit **Live Banner Grabbing**, 2.4/5GHz WLAN-Spektrum, SSL/TLS-Auditor, Wi-Fi Probe Radar, BLE Scanner, **DoH Multi-Resolver Benchmark**, **HTTP REST & API Client**, **IPv6 Subnetz-Analyzer**, **Native RDAP / WHOIS Domain-Lookup**, **X.509 TLS Zertifikats-Inspector**, **Globaler DNS-Propagation-Checker** und **HTTP Security Headers Auditor**.
-- 🔬 **Datei-Forensik & Hex-Viewer:** **Virtueller Hex-Viewer** (Offset, Hex, ASCII, 512B Paginierung), **Magic-Bytes Signatur-Erkennung** für 30+ Dateitypen, **Shannon-Entropie-Analyse** (0.0–8.0 bits/Byte) und **Prüfsummen-Vergleicher** (SHA-256, SHA-1, MD5).
-- 🧭 **Taktische Orientierung & Survival:** **MGRS & UTM Koordinaten-Konverter** (WGS84 $\leftrightarrow$ UTM $\leftrightarrow$ MGRS, 1m Genauigkeit), **Sonnenstand & Schattenradar** (NOAA Meeus Azimut, Elevation, Auf-/Untergang, Schattenstab-Nordpeilung) und **CPR & Notfall-Taktgeber** (100–120 BPM Metronom, 30:2 Taktung, ABCDE-Schema).
-- 📱 **QR Tools & Krypto-Engine:** Multi-Format Barcode/QR-Scanner, Ed25519-Signaturprüfung & Generierung, Hex-Inspector, Batch-Modus.
-- 🗺️ **Offline Map & Tactical Compass HUD:** Nominatim Suche, Interaktiver Pin-Drop, Fußgänger- & Auto-Routing mit Rust A*-Backend, Turn-by-Turn Wegbeschreibung, **Tactical Compass HUD** mit Zielpeilung & Kurskorrektur, **POI GPX & GeoJSON Ex-/Import**, MBTiles Offline-Kacheln, GPX-Trail-Recorder.
-- 🧲 **Sensorik-Suite:** **EMF Metallsucher & Leitungs-Finder** mit akustischem Geiger-Klick & Haptik, **Barometer & Höhenmesser** mit 3h Wettertrend & QNH, **Luxmeter** mit logarithmischer Wahrnehmungsskala.
-- 👁️ **ESP Kamera & KI-Vision:** Objekterkennung via Android GPU / MediaPipe TFLite mit Distanzschätzung, FPS-HUD & MJPEG-Stream-Unterstützung.
-- ⚙️ **Device Controls:** Taschenlampe, Bluetooth & nativer Bildschirm-Rekorder mit Live-HUD.
-- ⚡ **Elektrik- & Elektronik-Suite (9 Module):** Ohm & Power ($U, I, R, P$), 4/5/6-Band Farbcode-Decoder mit Reverse-Suche, LED-Vorwiderstandsrechner mit E12/E24-Normwerten, Kabelquerschnitt & Spannungsabfall (DC, 230V, 400V 3~), Spannungsteiler unter Last, Akkulaufzeit & C-Rate, Reihen-/Parallelschaltung ($R, C, L$), RC-Filter & Grenzfrequenz ($f_c, \tau$), SMD-Code Decoder & 8 Einheiten-Konverter.
-- 🕵️ **OSINT & Stalking Suite:** 30+ Plattformen Benutzername-Scan via Rust, **Subdomain Finder** (Certificate Transparency & DNS-Resolution), LeakCheck Datenleck-Prüfung, Telefonnummer-Analyse, Google Dorks Generator, IP Geolokalisierung.
-- 🔏 **Coder- & Entwickler-Suite:** Base64, Binärcode, Hexadezimal, Hashes (MD5, SHA-1, SHA-256), **JSON / YAML / XML Studio**, **RegEx Sandbox & Live-Tester** und **Unix Timestamp & Epoch Studio**.
-- 💬 **E2EE Secure Chat & P2P Mesh:** Ed25519/X25519 & XChaCha20-Poly1305 E2EE, **QR Safety Numbers Schlüsselverifikation**, **Verschlüsseltes Voll-Backup (.skooda)**, SQLCipher verschlüsselte lokale SQLite-DB, internetloser P2P-WLAN-Mesh-Modus, EXIF-Stripping, HIDS Root-Check.
-- 🎨 **HUD Themes & Spotlight:** 5 Theme-Profile (Crimson Blood / Yandere Noir als Standard, Cyberpunk, Matrix Green, Tactical Amber, Stealth Red) & systemweite Spotlight-Schnellsuche (Ctrl+K) mit Favoritenleiste.
-- 🔄 **Ausfallsicheres Update-System:** Raw-CDN GitHub-Fallback, Android WorkManager Hintergrund-Prüfung alle 8h, Auto-Bereinigung alter APKs.
-
----
-
-📖 *Ausführliche technische Details finden sich in der [DOKUMENTATION.md](file:///home/skoody/Projects/Coding/Skooda-App/skooda-mobile/DOKUMENTATION.md).*
+Alle Rechte vorbehalten. Nutzung auf eigenen Geräten gestattet.
