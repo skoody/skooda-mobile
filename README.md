@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.55.0** (VersionCode: 178)
+Aktuelle Version: **v0.56.0** (VersionCode: 179)
 
 Android-App für Systemwerte, Messtechnik und Netzwerkarbeit: Tauri 2 mit
 Rust-Kern, nativer Kotlin-Brücke und einem modularen Frontend ohne Framework.
@@ -60,8 +60,10 @@ lokal; veröffentlicht werden nur die fertigen Pakete.
   Kleinanzeigen. Alle Quellen in einer Liste nach Preis sortiert, mit Bild,
   Quelle und günstigstem Treffer obenauf; Preisfilter und Schnellfilter,
   Ansicht nach Quelle umschaltbar, Angebotsvergleich je Produkt mit Shop,
-  Versand und Gesamtpreis. Artikel lassen sich merken; die Merkliste zeigt
-  den Preis vom Merken und die Änderung beim nächsten Treffer.
+  Versand und Gesamtpreis. Treffer ohne den Suchbegriff im Titel werden
+  ausgeblendet (etwa „PC-Konfigurator“ bei einer Suche nach einer Grafikkarte),
+  umschaltbar. Artikel lassen sich merken; die Merkliste zeigt den Preis vom
+  Merken und die Änderung beim nächsten Treffer.
 - **Musik:** lokale Dateien, Warteschlange, Playlists, Favoriten,
   Equalizer, Sleep-Timer.
 - **Chat:** Ende-zu-Ende-verschlüsselt, Safety Numbers, verschlüsseltes
