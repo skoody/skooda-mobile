@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.54.0** (VersionCode: 176)
+Aktuelle Version: **v0.54.1** (VersionCode: 177)
 
 Android-App für Systemwerte, Messtechnik und Netzwerkarbeit: Tauri 2 mit
 Rust-Kern, nativer Kotlin-Brücke und einem modularen Frontend ohne Framework.
