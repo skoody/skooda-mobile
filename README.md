@@ -1,6 +1,6 @@
 # Skooda Mobile
 
-Aktuelle Version: **v0.52.0** (VersionCode: 174)
+Aktuelle Version: **v0.53.0** (VersionCode: 175)
 
 Android-App für Systemwerte, Messtechnik und Netzwerkarbeit: Tauri 2 mit
 Rust-Kern, nativer Kotlin-Brücke und einem modularen Frontend ohne Framework.
@@ -9,8 +9,8 @@ Kein Root nötig.
 ## Download
 
 - Universal (beide ABIs): `skooda-mobile.apk`
-- ARM64-v8a: `skooda-mobile-v0.52.0-arm64-v8a.apk`
-- armeabi-v7a: `skooda-mobile-v0.52.0-armeabi-v7a.apk`
+- ARM64-v8a: `skooda-mobile-v0.53.0-arm64-v8a.apk`
+- armeabi-v7a: `skooda-mobile-v0.53.0-armeabi-v7a.apk`
 
 Die Dateien hängen an der Release-Seite des Repositorys. Der Quellcode bleibt
 lokal; veröffentlicht werden nur die fertigen Pakete.
@@ -36,7 +36,8 @@ lokal; veröffentlicht werden nur die fertigen Pakete.
   - Schulmathematik: von schriftlichem Rechnen bis Analysis, jeweils mit
     Rechenweg.
   - Elektrik: Ohm, Leistung, Spannungsteiler, Netzwerke, Wechselstrom,
-    Leiterwiderstand, Bauteile, Kühlung, Leiterbahnen.
+    Leiterwiderstand, Bauteile, Kühlung, Leiterbahnen, dazu Energie und Wärme:
+    kWh und Stromkosten, Zähler, Stromwärme, Wasser erwärmen, Akkumulator.
   - Netzwerk: Subnetz-Scanner, Diagnose, WLAN-Spektrum, TLS-Audit,
     BLE-Scanner, Portscan, Wake-on-LAN, DoH-Benchmark, HTTP-Client,
     DNS-Propagation, Security-Header, WHOIS und RDAP, IPv6.
